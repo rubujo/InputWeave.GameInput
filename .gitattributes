@@ -1,0 +1,28 @@
+* text=auto
+
+*.cs text eol=crlf working-tree-encoding=UTF-8
+*.csproj text eol=crlf
+*.props text eol=crlf
+*.targets text eol=crlf
+*.sln text eol=crlf
+*.slnx text eol=crlf
+*.xml text eol=crlf working-tree-encoding=UTF-8
+*.json text eol=crlf working-tree-encoding=UTF-8
+*.md text eol=crlf working-tree-encoding=UTF-8
+*.ps1 text eol=crlf working-tree-encoding=UTF-8
+*.psm1 text eol=crlf working-tree-encoding=UTF-8
+*.psd1 text eol=crlf working-tree-encoding=UTF-8
+*.sh text eol=lf working-tree-encoding=UTF-8
+
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.snk binary
+*.nupkg binary
+*.snupkg binary
+*.msi binary
+*.dll binary
+*.exe binary
+*.lib binary

@@ -1,0 +1,14 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/InputWeave.GameInput/InputWeave.GameInput.csproj" />
+  </Folder>
+  <Folder Name="/samples/">
+    <Project Path="samples/InputWeave.GameInput.Samples/InputWeave.GameInput.Samples.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/InputWeave.GameInput.Tests/InputWeave.GameInput.Tests.csproj" />
+  </Folder>
+  <Folder Name="/tools/">
+    <Project Path="tools/InputWeave.GameInput.BindingsGenerator/InputWeave.GameInput.BindingsGenerator.csproj" />
+  </Folder>
+</Solution>

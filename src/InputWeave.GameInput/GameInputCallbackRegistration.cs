@@ -1,0 +1,81 @@
+using System;
+using System.Runtime.InteropServices;
+
+namespace InputWeave.GameInput
+{
+    /// <summary>
+    /// GameInput 原生回呼註冊。
+    /// </summary>
+    public sealed class GameInputCallbackRegistration : IDisposable
+    {
+        private readonly Action<ulong> _stopCallback;
+        private readonly Func<ulong, bool> _unregisterCallback;
+        private readonly Action<GameInputCallbackRegistration> _removeRegistration;
+        private readonly Action _deactivateContext;
+        private GCHandle _contextHandle;
+        private bool _disposed;
+
+        internal GameInputCallbackRegistration(
+            ulong token,
+            GCHandle contextHandle,
+            Action deactivateContext,
+            Action<ulong> stopCallback,
+            Func<ulong, bool> unregisterCallback,
+            Action<GameInputCallbackRegistration> removeRegistration)
+        {
+            Token = token;
+            _contextHandle = contextHandle;
+            _deactivateContext = deactivateContext;
+            _stopCallback = stopCallback;
+            _unregisterCallback = unregisterCallback;
+            _removeRegistration = removeRegistration;
+        }
+
+        /// <summary>
+        /// 原生 GameInput callback token。
+        /// </summary>
+        public ulong Token { get; }
+
+        /// <summary>
+        /// 註冊是否已釋放。
+        /// </summary>
+        public bool IsDisposed
+        {
+            get
+            {
+                return _disposed;
+            }
+        }
+
+        /// <inheritdoc />
+        public void Dispose()
+        {
+            if (_disposed)
+            {
+                return;
+            }
+
+            _disposed = true;
+            _deactivateContext();
+
+            try
+            {
+                if (Token != 0)
+                {
+                    _stopCallback(Token);
+                    _unregisterCallback(Token);
+                }
+            }
+            finally
+            {
+                if (_contextHandle.IsAllocated)
+                {
+                    _contextHandle.Free();
+                }
+
+                _removeRegistration(this);
+                GC.SuppressFinalize(this);
+            }
+        }
+    }
+}

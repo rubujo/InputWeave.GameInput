@@ -1,0 +1,40 @@
+## Visual Studio 2026 / .NET
+.vs/
+.vscode/.vs/
+*.user
+*.rsuser
+*.suo
+*.userosscache
+*.sln.docstates
+
+## Build outputs
+[Bb]in/
+[Oo]bj/
+artifacts/
+TestResults/
+coverage/
+coverage.*/
+*.coverage
+*.coveragexml
+*.trx
+
+## NuGet
+*.nupkg
+*.snupkg
+packages/
+.packages/
+project.assets.json
+project.nuget.cache
+*.nuget.g.props
+*.nuget.g.targets
+
+## Local tooling and scratch space
+.tmp/
+.local/
+*.binlog
+*.log
+
+## OS/editor noise
+Thumbs.db
+Desktop.ini
+.DS_Store
