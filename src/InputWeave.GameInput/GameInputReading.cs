@@ -49,6 +49,7 @@ public sealed class GameInputReading : IDisposable
     /// <summary>
     /// 取得 reading 所屬裝置。
     /// </summary>
+    /// <returns>操作完成後的查詢或建立結果。</returns>
     public GameInputDevice? GetDevice()
     {
         Native.GetDevice(out IGameInputDevice? device);
@@ -58,6 +59,7 @@ public sealed class GameInputReading : IDisposable
     /// <summary>
     /// 取得 controller 軸狀態。
     /// </summary>
+    /// <returns>操作完成後的查詢或建立結果。</returns>
     public float[] GetControllerAxisState()
     {
         uint count = Native.GetControllerAxisCount();
@@ -80,6 +82,7 @@ public sealed class GameInputReading : IDisposable
     /// <summary>
     /// 取得 controller 按鈕狀態。
     /// </summary>
+    /// <returns>操作完成後的查詢或建立結果。</returns>
     public bool[] GetControllerButtonState()
     {
         uint count = Native.GetControllerButtonCount();
@@ -102,6 +105,7 @@ public sealed class GameInputReading : IDisposable
     /// <summary>
     /// 取得 controller switch 狀態。
     /// </summary>
+    /// <returns>操作完成後的查詢或建立結果。</returns>
     public GameInputSwitchPosition[] GetControllerSwitchState()
     {
         uint count = Native.GetControllerSwitchCount();
@@ -124,6 +128,7 @@ public sealed class GameInputReading : IDisposable
     /// <summary>
     /// 取得鍵盤按鍵狀態。
     /// </summary>
+    /// <returns>操作完成後的查詢或建立結果。</returns>
     public GameInputKeyState[] GetKeyState()
     {
         uint count = Native.GetKeyCount();
@@ -146,8 +151,8 @@ public sealed class GameInputReading : IDisposable
     /// <summary>
     /// 嘗試讀取 gamepad 狀態。
     /// </summary>
-    /// <param name="state">成功時取得 gamepad 狀態。</param>
-    /// <returns>若讀取資料包含 gamepad 狀態，傳回 <see langword="true"/>。</returns>
+    /// <param name="state">接收狀態資料的輸出欄位。</param>
+    /// <returns>操作完成後的查詢或建立結果。</returns>
     public bool TryGetGamepadState(out GameInputGamepadState state)
     {
         return Native.GetGamepadState(out state);
@@ -156,8 +161,8 @@ public sealed class GameInputReading : IDisposable
     /// <summary>
     /// 嘗試讀取滑鼠狀態。
     /// </summary>
-    /// <param name="state">成功時取得滑鼠狀態。</param>
-    /// <returns>若讀取資料包含滑鼠狀態，傳回 <see langword="true"/>。</returns>
+    /// <param name="state">接收狀態資料的輸出欄位。</param>
+    /// <returns>操作完成後的查詢或建立結果。</returns>
     public bool TryGetMouseState(out GameInputMouseState state)
     {
         return Native.GetMouseState(out state);
@@ -166,6 +171,8 @@ public sealed class GameInputReading : IDisposable
     /// <summary>
     /// 嘗試讀取感測器狀態。
     /// </summary>
+    /// <param name="state">接收狀態資料的輸出欄位。</param>
+    /// <returns>操作完成後的查詢或建立結果。</returns>
     public bool TryGetSensorsState(out GameInputSensorsState state)
     {
         return Native.GetSensorsState(out state);
@@ -174,6 +181,8 @@ public sealed class GameInputReading : IDisposable
     /// <summary>
     /// 嘗試讀取 arcade stick 狀態。
     /// </summary>
+    /// <param name="state">接收狀態資料的輸出欄位。</param>
+    /// <returns>操作完成後的查詢或建立結果。</returns>
     public bool TryGetArcadeStickState(out GameInputArcadeStickState state)
     {
         return Native.GetArcadeStickState(out state);
@@ -182,6 +191,8 @@ public sealed class GameInputReading : IDisposable
     /// <summary>
     /// 嘗試讀取 flight stick 狀態。
     /// </summary>
+    /// <param name="state">接收狀態資料的輸出欄位。</param>
+    /// <returns>操作完成後的查詢或建立結果。</returns>
     public bool TryGetFlightStickState(out GameInputFlightStickState state)
     {
         return Native.GetFlightStickState(out state);
@@ -190,6 +201,8 @@ public sealed class GameInputReading : IDisposable
     /// <summary>
     /// 嘗試讀取 racing wheel 狀態。
     /// </summary>
+    /// <param name="state">接收狀態資料的輸出欄位。</param>
+    /// <returns>操作完成後的查詢或建立結果。</returns>
     public bool TryGetRacingWheelState(out GameInputRacingWheelState state)
     {
         return Native.GetRacingWheelState(out state);
@@ -198,6 +211,8 @@ public sealed class GameInputReading : IDisposable
     /// <summary>
     /// 嘗試取得 raw report。
     /// </summary>
+    /// <param name="report">要傳送或操作的 raw device report。</param>
+    /// <returns>操作完成後的查詢或建立結果。</returns>
     public bool TryGetRawReport(out GameInputRawDeviceReport? report)
     {
         if (Native.GetRawReport(out IGameInputRawDeviceReport? nativeReport) && nativeReport is not null)
@@ -210,7 +225,9 @@ public sealed class GameInputReading : IDisposable
         return false;
     }
 
-    /// <inheritdoc />
+    /// <summary>
+    /// 釋放 reading 包裝持有的 COM 參考。
+    /// </summary>
     public void Dispose()
     {
         if (_disposed)

@@ -12,7 +12,7 @@ public sealed class GameInputException : Win32Exception
     /// <summary>
     /// 使用 HRESULT 建立 GameInput 例外狀況。
     /// </summary>
-    /// <param name="hResult">GameInput 傳回的 HRESULT。</param>
+    /// <param name="hResult">參數 hResult。</param>
     public GameInputException(int hResult)
         : base(hResult, CreateMessage(hResult))
     {

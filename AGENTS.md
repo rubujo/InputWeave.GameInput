@@ -21,7 +21,8 @@
 - 修改 interop 前先執行 `pwsh ./eng/Check-GameInputVersion.ps1 -FailOnOutdated`。
 - 更新 GameInput 時使用 `pwsh ./eng/Update-GameInputVersion.ps1`，不要手動改產生檔。
 - `eng/gameinput-baseline.json` 必須同步記錄 nupkg、`GameInput.h` 與 `GameInputRedist.msi` 的 SHA256。
-- `src/InputWeave.GameInput/Interop/Generated/` 下的 `.g.cs` 與 `gameinput-abi-manifest.json` 必須由 generator 產生，用來驗證 enum、constants、HRESULT、IID、struct、callback 與 COM interface method order。
+- `src/InputWeave.GameInput/Interop/Generated/` 下的 `.g.cs` 與 `gameinput-abi-manifest.json` 必須由 generator 產生，用來驗證 enum、constants、HRESULT、IID、struct、callback、XML 文件註解與 COM interface method order。
+- Generated interop 的 XML 文件註解來源是 `eng/gameinput-xml-docs.zh-TW.json`；不要手改 generated `.g.cs` 補文件。
 - 不要手改 generated interop；若產生檔不符合需求，修改 `tools/InputWeave.GameInput.BindingsGenerator` 後重產。
 - `docs/gameinput-api-coverage.md` 的 v0.0.1 coverage 必須維持缺口為 0，release 前需跑 `eng/Verify-GameInputCoverage.ps1`。
 - 追版或競品狀態改變時，同步更新 `docs/competitive-comparison.md`。
@@ -35,6 +36,7 @@
 - 不得新增 `#pragma warning disable` 來壓制 C# analyzer 或 VS2026 lint；若出現警告，應修正程式碼、產生器或 `.editorconfig` 規則來源。
 - P/Invoke 在 `net10.0-windows` 等現代 TFM 必須使用 `LibraryImport` source generator；`DllImport` 只可存在於 `NETFRAMEWORK` 專用相容檔。
 - Public API 名稱維持英文技術命名；公開 XML 文件註解使用正體中文台灣用語。
+- 所有 public/protected type、member、enum member、delegate、方法參數與非 void 回傳值都必須有 XML 文件註解；不得忽略 `CS1591`。
 - `InputWeave.GameInput.Interop` 保留原生 GameInput 識別字，方便對照 Microsoft `GameInput.h`。
 - 一般使用者應優先使用 managed wrapper、snapshot、manager、builder 與 safe handle API；低階 interop 是 escape hatch。
 - COM 物件與 native reading 必須有明確 `IDisposable` 生命週期。

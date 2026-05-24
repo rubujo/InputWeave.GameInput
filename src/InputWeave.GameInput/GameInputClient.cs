@@ -26,8 +26,8 @@ public sealed class GameInputClient : IDisposable
     /// <summary>
     /// 建立 GameInput v3 用戶端。
     /// </summary>
-    /// <returns>已初始化的 GameInput 用戶端。</returns>
     /// <exception cref="GameInputException">GameInput 初始化失敗。</exception>
+    /// <returns>操作完成後的查詢或建立結果。</returns>
     public static GameInputClient Create()
     {
         Guid iid = GameInputIids.IGameInput;
@@ -51,7 +51,7 @@ public sealed class GameInputClient : IDisposable
     /// <summary>
     /// 取得 GameInput 目前時間戳記。
     /// </summary>
-    /// <returns>GameInput 時間戳記。</returns>
+    /// <returns>操作完成後的查詢或建立結果。</returns>
     public ulong GetCurrentTimestamp()
     {
         return Native.GetCurrentTimestamp();
@@ -69,7 +69,8 @@ public sealed class GameInputClient : IDisposable
     /// <summary>
     /// 取得目前 gamepad 快照。
     /// </summary>
-    /// <returns>若目前沒有 gamepad 讀取資料，傳回 <see langword="null"/>。</returns>
+    /// <param name="device">選用的 GameInput 裝置篩選。</param>
+    /// <returns>操作完成後的查詢或建立結果。</returns>
     public GamepadReadingSnapshot? GetCurrentGamepad(GameInputDevice? device = null)
     {
         int hResult = Native.GetCurrentReading(GameInputKind.GameInputKindGamepad, device?.NativeInterface, out IGameInputReading? nativeReading);
@@ -93,9 +94,9 @@ public sealed class GameInputClient : IDisposable
     /// <summary>
     /// 取得目前指定種類的低階讀取資料。
     /// </summary>
-    /// <param name="inputKind">輸入種類。</param>
-    /// <param name="device">選用的裝置篩選。</param>
-    /// <returns>若目前沒有讀取資料，傳回 <see langword="null"/>。</returns>
+    /// <param name="inputKind">要查詢或篩選的 GameInput 輸入種類。</param>
+    /// <param name="device">選用的 GameInput 裝置篩選。</param>
+    /// <returns>操作完成後的查詢或建立結果。</returns>
     public GameInputReading? GetCurrentReading(GameInputKind inputKind, GameInputDevice? device = null)
     {
         int hResult = Native.GetCurrentReading(inputKind, device?.NativeInterface, out IGameInputReading? nativeReading);
@@ -111,6 +112,10 @@ public sealed class GameInputClient : IDisposable
     /// <summary>
     /// 取得指定參考 reading 之後的 reading。
     /// </summary>
+    /// <param name="referenceReading">作為查詢基準的 reading。</param>
+    /// <param name="inputKind">要查詢或篩選的 GameInput 輸入種類。</param>
+    /// <param name="device">選用的 GameInput 裝置篩選。</param>
+    /// <returns>操作完成後的查詢或建立結果。</returns>
     public GameInputReading? GetNextReading(GameInputReading referenceReading, GameInputKind inputKind, GameInputDevice? device = null)
     {
         if (referenceReading is null)
@@ -131,6 +136,10 @@ public sealed class GameInputClient : IDisposable
     /// <summary>
     /// 取得指定參考 reading 之前的 reading。
     /// </summary>
+    /// <param name="referenceReading">作為查詢基準的 reading。</param>
+    /// <param name="inputKind">要查詢或篩選的 GameInput 輸入種類。</param>
+    /// <param name="device">選用的 GameInput 裝置篩選。</param>
+    /// <returns>操作完成後的查詢或建立結果。</returns>
     public GameInputReading? GetPreviousReading(GameInputReading referenceReading, GameInputKind inputKind, GameInputDevice? device = null)
     {
         if (referenceReading is null)
@@ -151,6 +160,7 @@ public sealed class GameInputClient : IDisposable
     /// <summary>
     /// 建立 GameInput dispatcher。
     /// </summary>
+    /// <returns>操作完成後的查詢或建立結果。</returns>
     public GameInputDispatcher CreateDispatcher()
     {
         int hResult = Native.CreateDispatcher(out IGameInputDispatcher? dispatcher);
@@ -163,6 +173,8 @@ public sealed class GameInputClient : IDisposable
     /// <summary>
     /// 依裝置 ID 尋找裝置。
     /// </summary>
+    /// <param name="deviceId">GameInput 裝置識別值。</param>
+    /// <returns>操作完成後的查詢或建立結果。</returns>
     public GameInputDevice FindDeviceFromId(ref AppLocalDeviceId deviceId)
     {
         int hResult = Native.FindDeviceFromId(ref deviceId, out IGameInputDevice? device);
@@ -175,6 +187,8 @@ public sealed class GameInputClient : IDisposable
     /// <summary>
     /// 依平台字串尋找裝置。
     /// </summary>
+    /// <param name="value">要傳入的值。</param>
+    /// <returns>操作完成後的查詢或建立結果。</returns>
     public GameInputDevice FindDeviceFromPlatformString(string value)
     {
         if (string.IsNullOrWhiteSpace(value))
@@ -192,6 +206,9 @@ public sealed class GameInputClient : IDisposable
     /// <summary>
     /// 列舉目前符合條件的裝置。
     /// </summary>
+    /// <param name="inputKind">要查詢或篩選的 GameInput 輸入種類。</param>
+    /// <param name="statusFilter">要篩選的裝置狀態。</param>
+    /// <returns>操作完成後的查詢或建立結果。</returns>
     public IReadOnlyList<GameInputDevice> EnumerateDevices(GameInputKind inputKind, GameInputDeviceStatus statusFilter = GameInputDeviceStatus.GameInputDeviceConnected)
     {
         DeviceEnumerationContext context = new();
@@ -229,6 +246,8 @@ public sealed class GameInputClient : IDisposable
     /// <summary>
     /// 建立聚合裝置。
     /// </summary>
+    /// <param name="inputKind">要查詢或篩選的 GameInput 輸入種類。</param>
+    /// <returns>操作完成後的查詢或建立結果。</returns>
     public AppLocalDeviceId CreateAggregateDevice(GameInputKind inputKind)
     {
         int hResult = Native.CreateAggregateDevice(inputKind, out AppLocalDeviceId deviceId);
@@ -239,6 +258,7 @@ public sealed class GameInputClient : IDisposable
     /// <summary>
     /// 停用聚合裝置。
     /// </summary>
+    /// <param name="deviceId">GameInput 裝置識別值。</param>
     public void DisableAggregateDevice(ref AppLocalDeviceId deviceId)
     {
         int hResult = Native.DisableAggregateDevice(ref deviceId);
@@ -248,6 +268,10 @@ public sealed class GameInputClient : IDisposable
     /// <summary>
     /// 註冊 reading callback。
     /// </summary>
+    /// <param name="device">選用的 GameInput 裝置篩選。</param>
+    /// <param name="inputKind">要查詢或篩選的 GameInput 輸入種類。</param>
+    /// <param name="handler">要註冊的 managed callback handler。</param>
+    /// <returns>操作完成後的查詢或建立結果。</returns>
     public GameInputCallbackRegistration RegisterReadingCallback(GameInputDevice? device, GameInputKind inputKind, GameInputReadingHandler handler)
     {
         if (handler is null)
@@ -278,6 +302,12 @@ public sealed class GameInputClient : IDisposable
     /// <summary>
     /// 註冊裝置 callback。
     /// </summary>
+    /// <param name="device">選用的 GameInput 裝置篩選。</param>
+    /// <param name="inputKind">要查詢或篩選的 GameInput 輸入種類。</param>
+    /// <param name="statusFilter">要篩選的裝置狀態。</param>
+    /// <param name="enumerationKind">裝置列舉模式。</param>
+    /// <param name="handler">要註冊的 managed callback handler。</param>
+    /// <returns>操作完成後的查詢或建立結果。</returns>
     public GameInputCallbackRegistration RegisterDeviceCallback(
         GameInputDevice? device,
         GameInputKind inputKind,
@@ -313,6 +343,10 @@ public sealed class GameInputClient : IDisposable
     /// <summary>
     /// 註冊 system button callback。
     /// </summary>
+    /// <param name="device">選用的 GameInput 裝置篩選。</param>
+    /// <param name="buttonFilter">要篩選的 system button。</param>
+    /// <param name="handler">要註冊的 managed callback handler。</param>
+    /// <returns>操作完成後的查詢或建立結果。</returns>
     public GameInputCallbackRegistration RegisterSystemButtonCallback(GameInputDevice? device, GameInputSystemButtons buttonFilter, GameInputSystemButtonHandler handler)
     {
         if (handler is null)
@@ -343,6 +377,9 @@ public sealed class GameInputClient : IDisposable
     /// <summary>
     /// 註冊鍵盤配置 callback。
     /// </summary>
+    /// <param name="device">選用的 GameInput 裝置篩選。</param>
+    /// <param name="handler">要註冊的 managed callback handler。</param>
+    /// <returns>操作完成後的查詢或建立結果。</returns>
     public GameInputCallbackRegistration RegisterKeyboardLayoutCallback(GameInputDevice? device, GameInputKeyboardLayoutHandler handler)
     {
         if (handler is null)
@@ -370,7 +407,9 @@ public sealed class GameInputClient : IDisposable
         }
     }
 
-    /// <inheritdoc />
+    /// <summary>
+    /// 釋放 GameInput 用戶端與尚未解除註冊的 callback。
+    /// </summary>
     public void Dispose()
     {
         if (_disposed)
@@ -511,6 +550,9 @@ public sealed class GameInputClient : IDisposable
     {
         public bool IsActive { get; private set; } = true;
 
+        /// <summary>
+        /// 提供 Deactivate 公開 API。
+        /// </summary>
         public void Deactivate()
         {
             IsActive = false;
@@ -519,6 +561,10 @@ public sealed class GameInputClient : IDisposable
 
     private sealed class ReadingCallbackContext : CallbackContext
     {
+        /// <summary>
+        /// 提供 ReadingCallbackContext 公開 API。
+        /// </summary>
+        /// <param name="handler">要註冊的 managed callback handler。</param>
         public ReadingCallbackContext(GameInputReadingHandler handler)
         {
             Handler = handler;
@@ -529,6 +575,10 @@ public sealed class GameInputClient : IDisposable
 
     private sealed class DeviceCallbackContext : CallbackContext
     {
+        /// <summary>
+        /// 提供 DeviceCallbackContext 公開 API。
+        /// </summary>
+        /// <param name="handler">要註冊的 managed callback handler。</param>
         public DeviceCallbackContext(GameInputDeviceHandler handler)
         {
             Handler = handler;
@@ -539,6 +589,10 @@ public sealed class GameInputClient : IDisposable
 
     private sealed class SystemButtonCallbackContext : CallbackContext
     {
+        /// <summary>
+        /// 提供 SystemButtonCallbackContext 公開 API。
+        /// </summary>
+        /// <param name="handler">要註冊的 managed callback handler。</param>
         public SystemButtonCallbackContext(GameInputSystemButtonHandler handler)
         {
             Handler = handler;
@@ -549,6 +603,10 @@ public sealed class GameInputClient : IDisposable
 
     private sealed class KeyboardLayoutCallbackContext : CallbackContext
     {
+        /// <summary>
+        /// 提供 KeyboardLayoutCallbackContext 公開 API。
+        /// </summary>
+        /// <param name="handler">要註冊的 managed callback handler。</param>
         public KeyboardLayoutCallbackContext(GameInputKeyboardLayoutHandler handler)
         {
             Handler = handler;

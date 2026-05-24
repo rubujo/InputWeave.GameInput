@@ -5,19 +5,37 @@
 namespace InputWeave.GameInput.Interop;
 
 /// <summary>
-/// GameInput v3 繫結會用到的固定常數。
+/// 提供 GameInputConstants 對應的 GameInput 原生常數。
 /// </summary>
 public static class GameInputConstants
 {
+    /// <summary>
+    /// 表示 GameInputConstants.ApiVersion 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public const int ApiVersion = 3;
 
+    /// <summary>
+    /// 表示 GameInputConstants.DllName 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public const string DllName = "GameInput.dll";
 
+    /// <summary>
+    /// 表示 GameInputConstants.CurrentCallbackTokenValue 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public const ulong CurrentCallbackTokenValue = 0;
 
+    /// <summary>
+    /// 表示 GameInputConstants.HapticMaxLocations 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public const int HapticMaxLocations = 8;
 
+    /// <summary>
+    /// 表示 GameInputConstants.HapticMaxAudioEndpointIdSize 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public const int HapticMaxAudioEndpointIdSize = 256;
 
+    /// <summary>
+    /// 表示 GameInputConstants.MaxSwitchStates 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public const int MaxSwitchStates = 8;
 }

@@ -7,6 +7,14 @@ namespace InputWeave.GameInput;
 /// </summary>
 public static class GameInputForceFeedback
 {
+    /// <summary>
+    /// 建立 rumble 參數。
+    /// </summary>
+    /// <param name="lowFrequency">低頻馬達強度。</param>
+    /// <param name="highFrequency">高頻馬達強度。</param>
+    /// <param name="leftTrigger">左 trigger 馬達強度。</param>
+    /// <param name="rightTrigger">右 trigger 馬達強度。</param>
+    /// <returns>操作完成後的查詢或建立結果。</returns>
     public static GameInputRumbleParams Rumble(float lowFrequency, float highFrequency, float leftTrigger = 0, float rightTrigger = 0)
     {
         return new GameInputRumbleParams
@@ -18,6 +26,18 @@ public static class GameInputForceFeedback
         };
     }
 
+    /// <summary>
+    /// 建立 force feedback envelope 參數。
+    /// </summary>
+    /// <param name="attackDuration">Attack 階段持續時間。</param>
+    /// <param name="sustainDuration">Sustain 階段持續時間。</param>
+    /// <param name="releaseDuration">Release 階段持續時間。</param>
+    /// <param name="attackGain">Attack 階段 gain。</param>
+    /// <param name="sustainGain">Sustain 階段 gain。</param>
+    /// <param name="releaseGain">Release 階段 gain。</param>
+    /// <param name="playCount">播放次數。</param>
+    /// <param name="repeatDelay">重複播放前的延遲。</param>
+    /// <returns>操作完成後的查詢或建立結果。</returns>
     public static GameInputForceFeedbackEnvelope Envelope(
         ulong attackDuration = 0,
         ulong sustainDuration = 0,
@@ -41,6 +61,17 @@ public static class GameInputForceFeedback
         };
     }
 
+    /// <summary>
+    /// 建立 force feedback magnitude 參數。
+    /// </summary>
+    /// <param name="linearX">X 軸線性強度。</param>
+    /// <param name="linearY">Y 軸線性強度。</param>
+    /// <param name="linearZ">Z 軸線性強度。</param>
+    /// <param name="angularX">X 軸角向強度。</param>
+    /// <param name="angularY">Y 軸角向強度。</param>
+    /// <param name="angularZ">Z 軸角向強度。</param>
+    /// <param name="normal">一般化強度。</param>
+    /// <returns>操作完成後的查詢或建立結果。</returns>
     public static GameInputForceFeedbackMagnitude Magnitude(
         float linearX = 0,
         float linearY = 0,
@@ -62,6 +93,12 @@ public static class GameInputForceFeedback
         };
     }
 
+    /// <summary>
+    /// 建立 constant force feedback effect 參數。
+    /// </summary>
+    /// <param name="magnitude">Effect 強度。</param>
+    /// <param name="envelope">Effect envelope。</param>
+    /// <returns>操作完成後的查詢或建立結果。</returns>
     public static GameInputForceFeedbackParams Constant(GameInputForceFeedbackMagnitude magnitude, GameInputForceFeedbackEnvelope envelope)
     {
         return new GameInputForceFeedbackParams
@@ -75,6 +112,13 @@ public static class GameInputForceFeedback
         };
     }
 
+    /// <summary>
+    /// 建立 ramp force feedback effect 參數。
+    /// </summary>
+    /// <param name="startMagnitude">起始強度。</param>
+    /// <param name="endMagnitude">結束強度。</param>
+    /// <param name="envelope">Effect envelope。</param>
+    /// <returns>操作完成後的查詢或建立結果。</returns>
     public static GameInputForceFeedbackParams Ramp(GameInputForceFeedbackMagnitude startMagnitude, GameInputForceFeedbackMagnitude endMagnitude, GameInputForceFeedbackEnvelope envelope)
     {
         return new GameInputForceFeedbackParams
@@ -89,6 +133,16 @@ public static class GameInputForceFeedback
         };
     }
 
+    /// <summary>
+    /// 建立 periodic force feedback effect 參數。
+    /// </summary>
+    /// <param name="kind">Effect 類型。</param>
+    /// <param name="magnitude">Effect 強度。</param>
+    /// <param name="envelope">Effect envelope。</param>
+    /// <param name="frequency">週期頻率。</param>
+    /// <param name="phase">週期相位。</param>
+    /// <param name="bias">週期偏移。</param>
+    /// <returns>操作完成後的查詢或建立結果。</returns>
     public static GameInputForceFeedbackParams Periodic(
         GameInputForceFeedbackEffectKind kind,
         GameInputForceFeedbackMagnitude magnitude,
@@ -135,6 +189,12 @@ public static class GameInputForceFeedback
         return result;
     }
 
+    /// <summary>
+    /// 建立 condition force feedback effect 參數。
+    /// </summary>
+    /// <param name="kind">Effect 類型。</param>
+    /// <param name="condition">Condition effect 參數。</param>
+    /// <returns>操作完成後的查詢或建立結果。</returns>
     public static GameInputForceFeedbackParams Condition(GameInputForceFeedbackEffectKind kind, GameInputForceFeedbackConditionParams condition)
     {
         GameInputForceFeedbackParams result = new()

@@ -62,6 +62,7 @@ public sealed class GameInputForceFeedbackEffect : IDisposable
     /// <summary>
     /// 取得 effect 參數。
     /// </summary>
+    /// <returns>操作完成後的查詢或建立結果。</returns>
     public GameInputForceFeedbackParams GetParams()
     {
         IntPtr pointer = Marshal.AllocHGlobal(Marshal.SizeOf<GameInputForceFeedbackParams>());
@@ -79,6 +80,8 @@ public sealed class GameInputForceFeedbackEffect : IDisposable
     /// <summary>
     /// 設定 effect 參數。
     /// </summary>
+    /// <param name="parameters">GameInput 原生參數。</param>
+    /// <returns>操作完成後的查詢或建立結果。</returns>
     public bool SetParams(in GameInputForceFeedbackParams parameters)
     {
         IntPtr pointer = Marshal.AllocHGlobal(Marshal.SizeOf<GameInputForceFeedbackParams>());
@@ -96,13 +99,16 @@ public sealed class GameInputForceFeedbackEffect : IDisposable
     /// <summary>
     /// 取得此 effect 所屬裝置。
     /// </summary>
+    /// <returns>操作完成後的查詢或建立結果。</returns>
     public GameInputDevice? GetDevice()
     {
         Native.GetDevice(out IGameInputDevice? device);
         return device is null ? null : new GameInputDevice(device);
     }
 
-    /// <inheritdoc />
+    /// <summary>
+    /// 釋放 force feedback effect 包裝持有的 COM 參考。
+    /// </summary>
     public void Dispose()
     {
         if (_disposed)

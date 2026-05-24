@@ -46,7 +46,9 @@ public sealed class GameInputCallbackRegistration : IDisposable
         }
     }
 
-    /// <inheritdoc />
+    /// <summary>
+    /// 取消註冊 callback 並釋放相關 managed 狀態。
+    /// </summary>
     public void Dispose()
     {
         if (_disposed)

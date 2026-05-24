@@ -60,7 +60,8 @@ Write-Utf8PreservingBomFile -Path $propsPath -Content $propsContent
 $generatedEnumsPath = Join-Path $repoRoot 'src\InputWeave.GameInput\Interop\Generated\GameInputEnums.g.cs'
 $generatedAbiManifestPath = Join-Path $repoRoot 'src\InputWeave.GameInput\Interop\Generated\gameinput-abi-manifest.json'
 $generatedInteropOutputDir = Join-Path $repoRoot 'src\InputWeave.GameInput\Interop\Generated'
-& dotnet run --project (Join-Path $repoRoot 'tools\InputWeave.GameInput.BindingsGenerator\InputWeave.GameInput.BindingsGenerator.csproj') -- --header $headerPath --output $generatedEnumsPath --manifest $generatedAbiManifestPath --interop-output-dir $generatedInteropOutputDir
+$docsPath = Join-Path $repoRoot 'eng\gameinput-xml-docs.zh-TW.json'
+& dotnet run --project (Join-Path $repoRoot 'tools\InputWeave.GameInput.BindingsGenerator\InputWeave.GameInput.BindingsGenerator.csproj') -- --header $headerPath --output $generatedEnumsPath --manifest $generatedAbiManifestPath --interop-output-dir $generatedInteropOutputDir --docs $docsPath
 if ($LASTEXITCODE -ne 0)
 {
     throw 'GameInput 繫結產生器執行失敗。'

@@ -33,6 +33,7 @@ public sealed class GameInputDeviceManager : IDisposable
     /// <summary>
     /// 建立裝置 manager，並擁有底層 <see cref="GameInputClient"/> 生命週期。
     /// </summary>
+    /// <returns>操作完成後的查詢或建立結果。</returns>
     public static GameInputDeviceManager Create()
     {
         return new GameInputDeviceManager(GameInputClient.Create());
@@ -65,6 +66,9 @@ public sealed class GameInputDeviceManager : IDisposable
     /// <summary>
     /// 重新整理裝置快取。
     /// </summary>
+    /// <param name="inputKind">要查詢或篩選的 GameInput 輸入種類。</param>
+    /// <param name="statusFilter">要篩選的裝置狀態。</param>
+    /// <returns>操作完成後的查詢或建立結果。</returns>
     public IReadOnlyList<GameInputDeviceInfoSnapshot> RefreshDevices(GameInputKind inputKind, GameInputDeviceStatus statusFilter = GameInputDeviceStatus.GameInputDeviceConnected)
     {
         ThrowIfDisposed();
@@ -83,6 +87,7 @@ public sealed class GameInputDeviceManager : IDisposable
     /// <summary>
     /// 使用預設 GameInput v3 主要輸入種類重新整理裝置快取。
     /// </summary>
+    /// <returns>操作完成後的查詢或建立結果。</returns>
     public IReadOnlyList<GameInputDeviceInfoSnapshot> RefreshDevices()
     {
         return RefreshDevices(s_defaultInputKinds);
@@ -91,6 +96,8 @@ public sealed class GameInputDeviceManager : IDisposable
     /// <summary>
     /// 開始監看裝置狀態事件，事件會進入 manager 佇列。
     /// </summary>
+    /// <param name="inputKind">要查詢或篩選的 GameInput 輸入種類。</param>
+    /// <param name="statusFilter">要篩選的裝置狀態。</param>
     public void StartDeviceEvents(GameInputKind inputKind, GameInputDeviceStatus statusFilter = GameInputDeviceStatus.GameInputDeviceAnyStatus)
     {
         ThrowIfDisposed();
@@ -124,6 +131,8 @@ public sealed class GameInputDeviceManager : IDisposable
     /// <summary>
     /// 嘗試從事件佇列取出下一筆裝置事件。
     /// </summary>
+    /// <param name="managerEvent">參數 managerEvent。</param>
+    /// <returns>操作完成後的查詢或建立結果。</returns>
     public bool TryDequeueEvent(out GameInputDeviceManagerEvent managerEvent)
     {
         ThrowIfDisposed();
@@ -143,6 +152,9 @@ public sealed class GameInputDeviceManager : IDisposable
     /// <summary>
     /// 取得目前指定種類的 reading。
     /// </summary>
+    /// <param name="inputKind">要查詢或篩選的 GameInput 輸入種類。</param>
+    /// <param name="device">選用的 GameInput 裝置篩選。</param>
+    /// <returns>操作完成後的查詢或建立結果。</returns>
     public GameInputReading? GetCurrentReading(GameInputKind inputKind, GameInputDevice? device = null)
     {
         ThrowIfDisposed();
@@ -152,13 +164,17 @@ public sealed class GameInputDeviceManager : IDisposable
     /// <summary>
     /// 取得目前 gamepad 快照。
     /// </summary>
+    /// <param name="device">選用的 GameInput 裝置篩選。</param>
+    /// <returns>操作完成後的查詢或建立結果。</returns>
     public GamepadReadingSnapshot? GetCurrentGamepad(GameInputDevice? device = null)
     {
         ThrowIfDisposed();
         return _client.GetCurrentGamepad(device);
     }
 
-    /// <inheritdoc />
+    /// <summary>
+    /// 停止裝置事件並釋放 manager 持有的 GameInput 資源。
+    /// </summary>
     public void Dispose()
     {
         if (_disposed)
@@ -207,6 +223,13 @@ public sealed class GameInputDeviceManager : IDisposable
 /// </summary>
 public sealed class GameInputDeviceManagerEvent
 {
+    /// <summary>
+    /// 建立 GameInput manager 裝置事件。
+    /// </summary>
+    /// <param name="timestamp">GameInput 時間戳記。</param>
+    /// <param name="currentStatus">目前裝置狀態。</param>
+    /// <param name="previousStatus">先前裝置狀態。</param>
+    /// <param name="device">選用的 GameInput 裝置篩選。</param>
     public GameInputDeviceManagerEvent(ulong timestamp, GameInputDeviceStatus currentStatus, GameInputDeviceStatus previousStatus, GameInputDeviceInfoSnapshot device)
     {
         Timestamp = timestamp;
@@ -215,11 +238,23 @@ public sealed class GameInputDeviceManagerEvent
         Device = device;
     }
 
+    /// <summary>
+    /// 事件對應的 GameInput 時間戳記。
+    /// </summary>
     public ulong Timestamp { get; }
 
+    /// <summary>
+    /// 事件發生後的裝置狀態。
+    /// </summary>
     public GameInputDeviceStatus CurrentStatus { get; }
 
+    /// <summary>
+    /// 事件發生前的裝置狀態。
+    /// </summary>
     public GameInputDeviceStatus PreviousStatus { get; }
 
+    /// <summary>
+    /// 事件對應的裝置資訊快照。
+    /// </summary>
     public GameInputDeviceInfoSnapshot Device { get; }
 }

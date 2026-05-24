@@ -11,8 +11,9 @@ try
     string headerText = File.ReadAllText(options.HeaderPath, Encoding.UTF8);
     IReadOnlyList<EnumDefinition> enums = GameInputHeaderParser.ParseEnums(headerText);
     AbiManifest manifest = GameInputHeaderParser.ParseAbiManifest(headerText, enums);
+    GameInputXmlDocsCatalog docs = GameInputXmlDocsCatalog.Load(options.DocsPath);
 
-    WriteUtf8NoBom(options.OutputPath, GameInputEnumWriter.Write(enums, options.Namespace));
+    WriteUtf8NoBom(options.OutputPath, GameInputEnumWriter.Write(enums, options.Namespace, docs));
 
     if (!string.IsNullOrWhiteSpace(options.ManifestPath))
     {
@@ -22,7 +23,7 @@ try
 
     if (!string.IsNullOrWhiteSpace(options.InteropOutputDir))
     {
-        GameInputInteropWriter.WriteAll(manifest, options.Namespace, options.InteropOutputDir);
+        GameInputInteropWriter.WriteAll(manifest, options.Namespace, options.InteropOutputDir, docs);
     }
 
     string headerHash = Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(options.HeaderPath)));
@@ -63,7 +64,7 @@ static string NormalizeToCrlf(string value)
     return normalized.Replace("\n", "\r\n", StringComparison.Ordinal);
 }
 
-internal sealed record GeneratorOptions(string HeaderPath, string OutputPath, string? ManifestPath, string? InteropOutputDir, string Namespace)
+internal sealed record GeneratorOptions(string HeaderPath, string OutputPath, string? ManifestPath, string? InteropOutputDir, string Namespace, string DocsPath)
 {
     public static GeneratorOptions Parse(string[] args)
     {
@@ -71,6 +72,7 @@ internal sealed record GeneratorOptions(string HeaderPath, string OutputPath, st
         string? output = null;
         string? manifest = null;
         string? interopOutputDir = null;
+        string? docs = null;
         string ns = GeneratorDefaults.Namespace;
 
         for (int index = 0; index < args.Length; index++)
@@ -101,13 +103,16 @@ internal sealed record GeneratorOptions(string HeaderPath, string OutputPath, st
                 case "--interop-output-dir":
                     interopOutputDir = ReadValue();
                     break;
+                case "--docs":
+                    docs = ReadValue();
+                    break;
                 case "--namespace":
                     ns = ReadValue();
                     break;
                 case "--help":
                 case "-h":
                 case "/?":
-                    throw new ArgumentException("用法：--header <GameInput.h> --output <GameInputEnums.g.cs> [--manifest <gameinput-abi-manifest.json>] [--interop-output-dir <Generated 目錄>] [--namespace <命名空間>]");
+                    throw new ArgumentException("用法：--header <GameInput.h> --output <GameInputEnums.g.cs> --docs <gameinput-xml-docs.zh-TW.json> [--manifest <gameinput-abi-manifest.json>] [--interop-output-dir <Generated 目錄>] [--namespace <命名空間>]");
                 default:
                     throw new ArgumentException($"未知參數：{current}");
             }
@@ -123,6 +128,11 @@ internal sealed record GeneratorOptions(string HeaderPath, string OutputPath, st
             throw new ArgumentException("必須指定 --output。");
         }
 
+        if (string.IsNullOrWhiteSpace(docs))
+        {
+            throw new ArgumentException("必須指定 --docs。");
+        }
+
         return !File.Exists(header)
             ? throw new FileNotFoundException("找不到 GameInput.h。", header)
             : new GeneratorOptions(
@@ -130,13 +140,125 @@ internal sealed record GeneratorOptions(string HeaderPath, string OutputPath, st
             Path.GetFullPath(output),
             string.IsNullOrWhiteSpace(manifest) ? null : Path.GetFullPath(manifest),
             string.IsNullOrWhiteSpace(interopOutputDir) ? null : Path.GetFullPath(interopOutputDir),
-            ns);
+            ns,
+            Path.GetFullPath(docs));
     }
 }
 
 internal static class GeneratorDefaults
 {
     public const string Namespace = "InputWeave.GameInput.Interop";
+}
+
+internal sealed class GameInputXmlDocsCatalog
+{
+    public Dictionary<string, string> Summaries { get; set; } = new(StringComparer.Ordinal);
+
+    public Dictionary<string, Dictionary<string, string>> Parameters { get; set; } = new(StringComparer.Ordinal);
+
+    public Dictionary<string, string> Returns { get; set; } = new(StringComparer.Ordinal);
+
+    public static GameInputXmlDocsCatalog Load(string path)
+    {
+        if (!File.Exists(path))
+        {
+            throw new FileNotFoundException("找不到 GameInput XML 文件目錄。", path);
+        }
+
+        GameInputXmlDocsCatalog? catalog = JsonSerializer.Deserialize<GameInputXmlDocsCatalog>(
+            File.ReadAllText(path, Encoding.UTF8),
+            new JsonSerializerOptions(JsonSerializerDefaults.Web)
+            {
+                PropertyNameCaseInsensitive = true
+            });
+
+        if (catalog is null)
+        {
+            throw new InvalidOperationException("GameInput XML 文件目錄格式無效。");
+        }
+
+        catalog.Summaries = new Dictionary<string, string>(catalog.Summaries, StringComparer.Ordinal);
+        catalog.Parameters = catalog.Parameters.ToDictionary(
+            item => item.Key,
+            item => new Dictionary<string, string>(item.Value, StringComparer.Ordinal),
+            StringComparer.Ordinal);
+        catalog.Returns = new Dictionary<string, string>(catalog.Returns, StringComparer.Ordinal);
+        return catalog;
+    }
+
+    public string GetSummary(string id)
+    {
+        if (!Summaries.TryGetValue(id, out string? value) || string.IsNullOrWhiteSpace(value))
+        {
+            throw new InvalidOperationException($"XML 文件目錄缺少 {id} 的 summary。");
+        }
+
+        return value;
+    }
+
+    public string GetParameter(string id, string name)
+    {
+        if (!Parameters.TryGetValue(id, out Dictionary<string, string>? parameters) ||
+            !parameters.TryGetValue(name, out string? value) ||
+            string.IsNullOrWhiteSpace(value))
+        {
+            throw new InvalidOperationException($"XML 文件目錄缺少 {id} 參數 {name} 的說明。");
+        }
+
+        return value;
+    }
+
+    public string GetReturns(string id)
+    {
+        if (!Returns.TryGetValue(id, out string? value) || string.IsNullOrWhiteSpace(value))
+        {
+            throw new InvalidOperationException($"XML 文件目錄缺少 {id} 的 returns。");
+        }
+
+        return value;
+    }
+}
+
+internal static class XmlDocWriter
+{
+    public static void AppendDocumentation(
+        StringBuilder builder,
+        GameInputXmlDocsCatalog docs,
+        string id,
+        string indent,
+        IReadOnlyList<string>? parameters = null,
+        bool hasReturn = false)
+    {
+        AppendSummary(builder, docs.GetSummary(id), indent);
+
+        if (parameters is not null)
+        {
+            foreach (string parameter in parameters)
+            {
+                builder.AppendLine($"{indent}/// <param name=\"{parameter}\">{Escape(docs.GetParameter(id, parameter))}</param>");
+            }
+        }
+
+        if (hasReturn)
+        {
+            builder.AppendLine($"{indent}/// <returns>{Escape(docs.GetReturns(id))}</returns>");
+        }
+    }
+
+    private static void AppendSummary(StringBuilder builder, string summary, string indent)
+    {
+        builder.AppendLine($"{indent}/// <summary>");
+        builder.AppendLine($"{indent}/// {Escape(summary)}");
+        builder.AppendLine($"{indent}/// </summary>");
+    }
+
+    private static string Escape(string value)
+    {
+        return value
+            .Replace("&", "&amp;", StringComparison.Ordinal)
+            .Replace("<", "&lt;", StringComparison.Ordinal)
+            .Replace(">", "&gt;", StringComparison.Ordinal);
+    }
 }
 
 internal static partial class GameInputHeaderParser
@@ -357,13 +479,14 @@ internal static partial class GameInputHeaderParser
 
 internal static class GameInputEnumWriter
 {
-    public static string Write(IReadOnlyList<EnumDefinition> enums, string ns)
+    public static string Write(IReadOnlyList<EnumDefinition> enums, string ns, GameInputXmlDocsCatalog docs)
     {
         StringBuilder builder = CreateGeneratedBuilder();
         AppendFileScopedNamespace(builder, ns);
 
         foreach (EnumDefinition enumDefinition in enums)
         {
+            XmlDocWriter.AppendDocumentation(builder, docs, enumDefinition.Name, string.Empty);
             if (enumDefinition.IsFlags)
             {
                 builder.AppendLine("[System.Flags]");
@@ -376,6 +499,7 @@ internal static class GameInputEnumWriter
             {
                 EnumMemberDefinition member = enumDefinition.Members[index];
                 string separator = index == enumDefinition.Members.Count - 1 ? string.Empty : ",";
+                XmlDocWriter.AppendDocumentation(builder, docs, $"{enumDefinition.Name}.{member.Name}", "    ");
                 builder.AppendLine($"    {member.Name} = {FormatValue(member.Value)}{separator}");
             }
 
@@ -438,15 +562,15 @@ internal static class GameInputInteropWriter
         ["size_t"] = "UIntPtr"
     };
 
-    public static void WriteAll(AbiManifest manifest, string ns, string outputDir)
+    public static void WriteAll(AbiManifest manifest, string ns, string outputDir, GameInputXmlDocsCatalog docs)
     {
         Directory.CreateDirectory(outputDir);
-        WriteFile(outputDir, "GameInputConstants.g.cs", WriteConstants(manifest, ns));
-        WriteFile(outputDir, "GameInputHResult.g.cs", WriteHResults(manifest, ns));
-        WriteFile(outputDir, "GameInputIids.g.cs", WriteIids(manifest, ns));
-        WriteFile(outputDir, "GameInputCallbacks.g.cs", WriteCallbacks(manifest, ns));
-        WriteFile(outputDir, "GameInputStructs.g.cs", WriteStructs(manifest, ns));
-        WriteFile(outputDir, "GameInputNativeInterfaces.g.cs", WriteInterfaces(manifest, ns));
+        WriteFile(outputDir, "GameInputConstants.g.cs", WriteConstants(manifest, ns, docs));
+        WriteFile(outputDir, "GameInputHResult.g.cs", WriteHResults(manifest, ns, docs));
+        WriteFile(outputDir, "GameInputIids.g.cs", WriteIids(manifest, ns, docs));
+        WriteFile(outputDir, "GameInputCallbacks.g.cs", WriteCallbacks(manifest, ns, docs));
+        WriteFile(outputDir, "GameInputStructs.g.cs", WriteStructs(manifest, ns, docs));
+        WriteFile(outputDir, "GameInputNativeInterfaces.g.cs", WriteInterfaces(manifest, ns, docs));
     }
 
     private static void WriteFile(string outputDir, string fileName, string content)
@@ -461,7 +585,7 @@ internal static class GameInputInteropWriter
         return normalized.Replace("\n", "\r\n", StringComparison.Ordinal);
     }
 
-    private static string WriteConstants(AbiManifest manifest, string ns)
+    private static string WriteConstants(AbiManifest manifest, string ns, GameInputXmlDocsCatalog docs)
     {
         int hapticLocations = GetConstant(manifest, "GAMEINPUT_HAPTIC_MAX_LOCATIONS");
         int hapticAudioEndpoint = GetConstant(manifest, "GAMEINPUT_HAPTIC_MAX_AUDIO_ENDPOINT_ID_SIZE");
@@ -469,38 +593,42 @@ internal static class GameInputInteropWriter
 
         StringBuilder builder = GameInputEnumWriter.CreateGeneratedBuilder();
         GameInputEnumWriter.AppendFileScopedNamespace(builder, ns);
-        builder.AppendLine("/// <summary>");
-        builder.AppendLine("/// GameInput v3 繫結會用到的固定常數。");
-        builder.AppendLine("/// </summary>");
+        XmlDocWriter.AppendDocumentation(builder, docs, "GameInputConstants", string.Empty);
         builder.AppendLine("public static class GameInputConstants");
         builder.AppendLine("{");
+        XmlDocWriter.AppendDocumentation(builder, docs, "GameInputConstants.ApiVersion", "    ");
         builder.AppendLine("    public const int ApiVersion = 3;");
         builder.AppendLine();
+        XmlDocWriter.AppendDocumentation(builder, docs, "GameInputConstants.DllName", "    ");
         builder.AppendLine("    public const string DllName = \"GameInput.dll\";");
         builder.AppendLine();
+        XmlDocWriter.AppendDocumentation(builder, docs, "GameInputConstants.CurrentCallbackTokenValue", "    ");
         builder.AppendLine("    public const ulong CurrentCallbackTokenValue = 0;");
         builder.AppendLine();
+        XmlDocWriter.AppendDocumentation(builder, docs, "GameInputConstants.HapticMaxLocations", "    ");
         builder.AppendLine($"    public const int HapticMaxLocations = {hapticLocations};");
         builder.AppendLine();
+        XmlDocWriter.AppendDocumentation(builder, docs, "GameInputConstants.HapticMaxAudioEndpointIdSize", "    ");
         builder.AppendLine($"    public const int HapticMaxAudioEndpointIdSize = {hapticAudioEndpoint};");
         builder.AppendLine();
+        XmlDocWriter.AppendDocumentation(builder, docs, "GameInputConstants.MaxSwitchStates", "    ");
         builder.AppendLine($"    public const int MaxSwitchStates = {maxSwitchStates};");
         builder.AppendLine("}");
         return builder.ToString();
     }
 
-    private static string WriteHResults(AbiManifest manifest, string ns)
+    private static string WriteHResults(AbiManifest manifest, string ns, GameInputXmlDocsCatalog docs)
     {
         StringBuilder builder = GameInputEnumWriter.CreateGeneratedBuilder();
         GameInputEnumWriter.AppendFileScopedNamespace(builder, ns);
-        builder.AppendLine("/// <summary>");
-        builder.AppendLine("/// GameInput 原生 HRESULT 值。");
-        builder.AppendLine("/// </summary>");
+        XmlDocWriter.AppendDocumentation(builder, docs, "GameInputHResult", string.Empty);
         builder.AppendLine("public static class GameInputHResult");
         builder.AppendLine("{");
         foreach (HResultDefinition hresult in manifest.HResults)
         {
-            builder.AppendLine($"    public const int {ToHResultName(hresult.Name)} = unchecked((int)0x{hresult.Value});");
+            string managedName = ToHResultName(hresult.Name);
+            XmlDocWriter.AppendDocumentation(builder, docs, $"GameInputHResult.{managedName}", "    ");
+            builder.AppendLine($"    public const int {managedName} = unchecked((int)0x{hresult.Value});");
             builder.AppendLine();
         }
 
@@ -509,19 +637,18 @@ internal static class GameInputInteropWriter
         return builder.ToString();
     }
 
-    private static string WriteIids(AbiManifest manifest, string ns)
+    private static string WriteIids(AbiManifest manifest, string ns, GameInputXmlDocsCatalog docs)
     {
         StringBuilder builder = GameInputEnumWriter.CreateGeneratedBuilder();
         builder.AppendLine("using System;");
         builder.AppendLine();
         GameInputEnumWriter.AppendFileScopedNamespace(builder, ns);
-        builder.AppendLine("/// <summary>");
-        builder.AppendLine("/// GameInput v3 COM 介面的 IID。");
-        builder.AppendLine("/// </summary>");
+        XmlDocWriter.AppendDocumentation(builder, docs, "GameInputIids", string.Empty);
         builder.AppendLine("public static class GameInputIids");
         builder.AppendLine("{");
         foreach (InterfaceDefinition interfaceDefinition in manifest.Interfaces)
         {
+            XmlDocWriter.AppendDocumentation(builder, docs, $"GameInputIids.{interfaceDefinition.Name}", "    ");
             builder.AppendLine($"    public static readonly Guid {interfaceDefinition.Name} = new(\"{interfaceDefinition.Iid}\");");
             builder.AppendLine();
         }
@@ -531,7 +658,7 @@ internal static class GameInputInteropWriter
         return builder.ToString();
     }
 
-    private static string WriteCallbacks(AbiManifest manifest, string ns)
+    private static string WriteCallbacks(AbiManifest manifest, string ns, GameInputXmlDocsCatalog docs)
     {
         StringBuilder builder = GameInputEnumWriter.CreateGeneratedBuilder();
         builder.AppendLine("using System;");
@@ -540,8 +667,11 @@ internal static class GameInputInteropWriter
         GameInputEnumWriter.AppendFileScopedNamespace(builder, ns);
         foreach (CallbackDefinition callback in manifest.Callbacks)
         {
+            string declaration = GetCallbackDeclaration(callback.Name);
+            DeclarationInfo declarationInfo = DeclarationInfo.Parse(declaration);
+            XmlDocWriter.AppendDocumentation(builder, docs, callback.Name, string.Empty, declarationInfo.Parameters, declarationInfo.HasReturn);
             builder.AppendLine("[UnmanagedFunctionPointer(CallingConvention.Winapi)]");
-            builder.AppendLine(GetCallbackDeclaration(callback.Name));
+            builder.AppendLine(declaration);
             builder.AppendLine();
         }
 
@@ -549,37 +679,40 @@ internal static class GameInputInteropWriter
         return builder.ToString();
     }
 
-    private static string WriteStructs(AbiManifest manifest, string ns)
+    private static string WriteStructs(AbiManifest manifest, string ns, GameInputXmlDocsCatalog docs)
     {
         StringBuilder builder = GameInputEnumWriter.CreateGeneratedBuilder();
         builder.AppendLine("using System;");
         builder.AppendLine("using System.Runtime.InteropServices;");
         builder.AppendLine();
         GameInputEnumWriter.AppendFileScopedNamespace(builder, ns);
-        WriteAppLocalDeviceId(builder);
+        WriteAppLocalDeviceId(builder, docs);
 
         foreach (StructDefinition structDefinition in manifest.Structs)
         {
-            WriteStruct(builder, structDefinition);
+            WriteStruct(builder, docs, structDefinition);
         }
 
         TrimLastBlankLine(builder);
         return builder.ToString();
     }
 
-    private static void WriteAppLocalDeviceId(StringBuilder builder)
+    private static void WriteAppLocalDeviceId(StringBuilder builder, GameInputXmlDocsCatalog docs)
     {
+        XmlDocWriter.AppendDocumentation(builder, docs, "AppLocalDeviceId", string.Empty);
         builder.AppendLine("[StructLayout(LayoutKind.Sequential)]");
         builder.AppendLine("public unsafe struct AppLocalDeviceId");
         builder.AppendLine("{");
+        XmlDocWriter.AppendDocumentation(builder, docs, "AppLocalDeviceId.Size", "    ");
         builder.AppendLine("    public const int Size = 32;");
         builder.AppendLine();
+        XmlDocWriter.AppendDocumentation(builder, docs, "AppLocalDeviceId.Value", "    ");
         builder.AppendLine("    public fixed byte Value[Size];");
         builder.AppendLine("}");
         builder.AppendLine();
     }
 
-    private static string WriteInterfaces(AbiManifest manifest, string ns)
+    private static string WriteInterfaces(AbiManifest manifest, string ns, GameInputXmlDocsCatalog docs)
     {
         StringBuilder builder = GameInputEnumWriter.CreateGeneratedBuilder();
         builder.AppendLine("using System;");
@@ -588,6 +721,7 @@ internal static class GameInputInteropWriter
         GameInputEnumWriter.AppendFileScopedNamespace(builder, ns);
         foreach (InterfaceDefinition interfaceDefinition in manifest.Interfaces)
         {
+            XmlDocWriter.AppendDocumentation(builder, docs, interfaceDefinition.Name, string.Empty);
             builder.AppendLine("[ComImport]");
             builder.AppendLine($"[Guid(\"{interfaceDefinition.Iid}\")]");
             builder.AppendLine("[InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]");
@@ -595,7 +729,7 @@ internal static class GameInputInteropWriter
             builder.AppendLine("{");
             foreach (InterfaceMethodDefinition method in interfaceDefinition.Methods)
             {
-                WriteInterfaceMethod(builder, interfaceDefinition.Name, method.Name);
+                WriteInterfaceMethod(builder, docs, interfaceDefinition.Name, method.Name);
             }
 
             TrimLastBlankLine(builder);
@@ -627,11 +761,11 @@ internal static class GameInputInteropWriter
         };
     }
 
-    private static void WriteStruct(StringBuilder builder, StructDefinition structDefinition)
+    private static void WriteStruct(StringBuilder builder, GameInputXmlDocsCatalog docs, StructDefinition structDefinition)
     {
         if (structDefinition.Name == "GameInputForceFeedbackParams")
         {
-            WriteForceFeedbackParams(builder, structDefinition);
+            WriteForceFeedbackParams(builder, docs, structDefinition);
             return;
         }
 
@@ -640,6 +774,7 @@ internal static class GameInputInteropWriter
             ? $"public unsafe struct {structDefinition.Name}"
             : $"public struct {structDefinition.Name}";
 
+        XmlDocWriter.AppendDocumentation(builder, docs, structDefinition.Name, string.Empty);
         if (structDefinition.Name == "GameInputHapticInfo")
         {
             builder.AppendLine("[StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]");
@@ -654,7 +789,7 @@ internal static class GameInputInteropWriter
 
         foreach (string member in structDefinition.Members)
         {
-            WriteStructMember(builder, member);
+            WriteStructMember(builder, docs, structDefinition.Name, member);
         }
 
         TrimLastBlankLine(builder);
@@ -662,7 +797,7 @@ internal static class GameInputInteropWriter
         builder.AppendLine();
     }
 
-    private static void WriteForceFeedbackParams(StringBuilder builder, StructDefinition structDefinition)
+    private static void WriteForceFeedbackParams(StringBuilder builder, GameInputXmlDocsCatalog docs, StructDefinition structDefinition)
     {
         string[] expectedMembers =
         [
@@ -685,17 +820,21 @@ internal static class GameInputInteropWriter
             throw new InvalidOperationException("GameInputForceFeedbackParams union 結構與 generator 預期不一致。");
         }
 
+        XmlDocWriter.AppendDocumentation(builder, docs, "GameInputForceFeedbackParams", string.Empty);
         builder.AppendLine("[StructLayout(LayoutKind.Explicit)]");
         builder.AppendLine("public struct GameInputForceFeedbackParams");
         builder.AppendLine("{");
+        XmlDocWriter.AppendDocumentation(builder, docs, "GameInputForceFeedbackParams.Kind", "    ");
         builder.AppendLine("    [FieldOffset(0)]");
         builder.AppendLine("    public GameInputForceFeedbackEffectKind Kind;");
         builder.AppendLine();
         foreach (string member in expectedMembers.Skip(1))
         {
             NativeMember parsed = ParseNativeMember(member);
+            string managedName = ToPascalCase(parsed.Name);
+            XmlDocWriter.AppendDocumentation(builder, docs, $"GameInputForceFeedbackParams.{managedName}", "    ");
             builder.AppendLine("    [FieldOffset(8)]");
-            builder.AppendLine($"    public {ToManagedType(parsed.NativeType)} {ToPascalCase(parsed.Name)};");
+            builder.AppendLine($"    public {ToManagedType(parsed.NativeType)} {managedName};");
             builder.AppendLine();
         }
 
@@ -704,12 +843,13 @@ internal static class GameInputInteropWriter
         builder.AppendLine();
     }
 
-    private static void WriteStructMember(StringBuilder builder, string member)
+    private static void WriteStructMember(StringBuilder builder, GameInputXmlDocsCatalog docs, string structName, string member)
     {
         NativeMember parsed = ParseNativeMember(member);
 
         if (parsed.Name == "labels" && parsed.NativeType == "GameInputLabel" && parsed.ArraySize == "GAMEINPUT_MAX_SWITCH_STATES")
         {
+            XmlDocWriter.AppendDocumentation(builder, docs, $"{structName}.Labels", "    ");
             builder.AppendLine("    public fixed int Labels[GameInputConstants.MaxSwitchStates];");
             builder.AppendLine();
             return;
@@ -717,6 +857,7 @@ internal static class GameInputInteropWriter
 
         if (parsed.Name == "audioEndpointId" && parsed.NativeType == "wchar_t" && parsed.ArraySize == "GAMEINPUT_HAPTIC_MAX_AUDIO_ENDPOINT_ID_SIZE")
         {
+            XmlDocWriter.AppendDocumentation(builder, docs, $"{structName}.AudioEndpointId", "    ");
             builder.AppendLine("    [MarshalAs(UnmanagedType.ByValTStr, SizeConst = GameInputConstants.HapticMaxAudioEndpointIdSize)]");
             builder.AppendLine("    public string AudioEndpointId;");
             builder.AppendLine();
@@ -725,6 +866,7 @@ internal static class GameInputInteropWriter
 
         if (parsed.Name == "locations" && parsed.NativeType == "GUID" && parsed.ArraySize == "GAMEINPUT_HAPTIC_MAX_LOCATIONS")
         {
+            XmlDocWriter.AppendDocumentation(builder, docs, $"{structName}.Locations", "    ");
             builder.AppendLine("    [MarshalAs(UnmanagedType.ByValArray, SizeConst = GameInputConstants.HapticMaxLocations)]");
             builder.AppendLine("    public Guid[] Locations;");
             builder.AppendLine();
@@ -733,6 +875,7 @@ internal static class GameInputInteropWriter
 
         string managedType = ToManagedType(parsed.NativeType);
         string managedName = ToPascalCase(parsed.Name);
+        XmlDocWriter.AppendDocumentation(builder, docs, $"{structName}.{managedName}", "    ");
         if (managedType == "bool")
         {
             builder.AppendLine("    [MarshalAs(UnmanagedType.I1)]");
@@ -816,10 +959,10 @@ internal static class GameInputInteropWriter
             .Replace("Id", "Id", StringComparison.Ordinal);
     }
 
-    private static void WriteInterfaceMethod(StringBuilder builder, string interfaceName, string methodName)
+    private static void WriteInterfaceMethod(StringBuilder builder, GameInputXmlDocsCatalog docs, string interfaceName, string methodName)
     {
         string key = interfaceName + "." + methodName;
-        string[] lines = key switch
+        MethodDeclaration method = key switch
         {
             "IGameInput.GetCurrentTimestamp" => Method("ulong GetCurrentTimestamp();"),
             "IGameInput.GetCurrentReading" => Method("int GetCurrentReading(GameInputKind inputKind, IGameInputDevice? device, out IGameInputReading? reading);"),
@@ -895,31 +1038,26 @@ internal static class GameInputInteropWriter
             _ => throw new InvalidOperationException($"未支援的 COM 方法：{key}。")
         };
 
-        foreach (string line in lines)
+        DeclarationInfo declarationInfo = DeclarationInfo.Parse(method.Declaration);
+        XmlDocWriter.AppendDocumentation(builder, docs, key, "    ", declarationInfo.Parameters, declarationInfo.HasReturn);
+        builder.AppendLine("    [PreserveSig]");
+        if (method.MarshalBoolReturn)
         {
-            builder.AppendLine(line);
+            builder.AppendLine("    [return: MarshalAs(UnmanagedType.I1)]");
         }
 
+        builder.AppendLine("    " + method.Declaration);
         builder.AppendLine();
     }
 
-    private static string[] Method(string declaration)
+    private static MethodDeclaration Method(string declaration)
     {
-        return
-        [
-            "    [PreserveSig]",
-            "    " + declaration
-        ];
+        return new MethodDeclaration(declaration, MarshalBoolReturn: false);
     }
 
-    private static string[] BoolMethod(string declaration)
+    private static MethodDeclaration BoolMethod(string declaration)
     {
-        return
-        [
-            "    [PreserveSig]",
-            "    [return: MarshalAs(UnmanagedType.I1)]",
-            "    " + declaration
-        ];
+        return new MethodDeclaration(declaration, MarshalBoolReturn: true);
     }
 
     private static void TrimLastBlankLine(StringBuilder builder)
@@ -934,6 +1072,85 @@ internal static class GameInputInteropWriter
 }
 
 internal sealed record NativeMember(string NativeType, string Name, string? ArraySize);
+
+internal sealed record MethodDeclaration(string Declaration, bool MarshalBoolReturn);
+
+internal sealed record DeclarationInfo(string ReturnType, IReadOnlyList<string> Parameters)
+{
+    public bool HasReturn => ReturnType != "void";
+
+    public static DeclarationInfo Parse(string declaration)
+    {
+        string normalized = declaration.Trim().TrimEnd(';');
+        normalized = normalized.StartsWith("public delegate ", StringComparison.Ordinal)
+            ? normalized["public delegate ".Length..]
+            : normalized;
+
+        Match match = Regex.Match(normalized, @"^(?<return>[^\s]+)\s+(?<name>\w+)\((?<parameters>.*)\)$");
+        if (!match.Success)
+        {
+            throw new InvalidOperationException($"無法解析 C# 宣告以產生 XML 文件：{declaration}");
+        }
+
+        return new DeclarationInfo(
+            match.Groups["return"].Value,
+            ParseParameters(match.Groups["parameters"].Value));
+    }
+
+    private static IReadOnlyList<string> ParseParameters(string parameters)
+    {
+        if (string.IsNullOrWhiteSpace(parameters))
+        {
+            return [];
+        }
+
+        List<string> names = [];
+        foreach (string rawParameter in SplitParameters(parameters))
+        {
+            string parameter = Regex.Replace(rawParameter, @"\[[^\]]+\]\s*", string.Empty).Trim();
+            string[] parts = parameter.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+            if (parts.Length == 0)
+            {
+                continue;
+            }
+
+            names.Add(parts[^1].TrimEnd('?'));
+        }
+
+        return names;
+    }
+
+    private static IReadOnlyList<string> SplitParameters(string parameters)
+    {
+        List<string> values = [];
+        StringBuilder current = new();
+        int attributeDepth = 0;
+
+        foreach (char character in parameters)
+        {
+            if (character == '[')
+            {
+                attributeDepth++;
+            }
+            else if (character == ']')
+            {
+                attributeDepth--;
+            }
+
+            if (character == ',' && attributeDepth == 0)
+            {
+                values.Add(current.ToString());
+                current.Clear();
+                continue;
+            }
+
+            current.Append(character);
+        }
+
+        values.Add(current.ToString());
+        return values;
+    }
+}
 
 internal sealed record EnumDefinition(string Name, bool IsFlags, IReadOnlyList<EnumMemberDefinition> Members);
 

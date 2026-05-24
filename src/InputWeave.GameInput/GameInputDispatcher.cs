@@ -19,8 +19,8 @@ public sealed class GameInputDispatcher : IDisposable
     /// <summary>
     /// 依指定 quota dispatch callback。
     /// </summary>
-    /// <param name="quotaInMicroseconds">可用時間，單位為微秒。</param>
-    /// <returns>若還有工作待處理，傳回 <see langword="true"/>。</returns>
+    /// <param name="quotaInMicroseconds">dispatcher 可使用的時間配額，單位為微秒。</param>
+    /// <returns>操作完成後的查詢或建立結果。</returns>
     public bool Dispatch(ulong quotaInMicroseconds)
     {
         return Native.Dispatch(quotaInMicroseconds);
@@ -29,7 +29,7 @@ public sealed class GameInputDispatcher : IDisposable
     /// <summary>
     /// 開啟 dispatcher wait handle。
     /// </summary>
-    /// <returns>GameInput 傳回的 native wait handle。</returns>
+    /// <returns>操作完成後的查詢或建立結果。</returns>
     public IntPtr OpenWaitHandle()
     {
         int hResult = Native.OpenWaitHandle(out IntPtr waitHandle);
@@ -40,13 +40,16 @@ public sealed class GameInputDispatcher : IDisposable
     /// <summary>
     /// 開啟 dispatcher wait handle，並由 managed wrapper 負責關閉 handle。
     /// </summary>
+    /// <returns>操作完成後的查詢或建立結果。</returns>
     public GameInputDispatcherWaitHandle OpenSafeWaitHandle()
     {
         IntPtr waitHandle = OpenWaitHandle();
         return new GameInputDispatcherWaitHandle(waitHandle);
     }
 
-    /// <inheritdoc />
+    /// <summary>
+    /// 釋放 dispatcher 包裝持有的 COM 參考。
+    /// </summary>
     public void Dispose()
     {
         if (_disposed)

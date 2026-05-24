@@ -19,6 +19,9 @@ public sealed class GameInputMapper : IDisposable
     /// <summary>
     /// 嘗試取得 gamepad 軸對應資訊。
     /// </summary>
+    /// <param name="axisElement">要查詢 mapping 的 axis 元素。</param>
+    /// <param name="mapping">接收 mapping 資訊的輸出欄位。</param>
+    /// <returns>操作完成後的查詢或建立結果。</returns>
     public bool TryGetGamepadAxisMappingInfo(GameInputGamepadAxes axisElement, out GameInputAxisMapping mapping)
     {
         return TryReadMapping(size: Marshal.SizeOf<GameInputAxisMapping>(), NativeMapping, out mapping);
@@ -32,6 +35,9 @@ public sealed class GameInputMapper : IDisposable
     /// <summary>
     /// 嘗試取得 gamepad 按鈕對應資訊。
     /// </summary>
+    /// <param name="buttonElement">要查詢 mapping 的 button 元素。</param>
+    /// <param name="mapping">接收 mapping 資訊的輸出欄位。</param>
+    /// <returns>操作完成後的查詢或建立結果。</returns>
     public bool TryGetGamepadButtonMappingInfo(GameInputGamepadButtons buttonElement, out GameInputButtonMapping mapping)
     {
         return TryReadMapping(size: Marshal.SizeOf<GameInputButtonMapping>(), NativeMapping, out mapping);
@@ -45,6 +51,9 @@ public sealed class GameInputMapper : IDisposable
     /// <summary>
     /// 嘗試取得 flight stick 軸對應資訊。
     /// </summary>
+    /// <param name="axisElement">要查詢 mapping 的 axis 元素。</param>
+    /// <param name="mapping">接收 mapping 資訊的輸出欄位。</param>
+    /// <returns>操作完成後的查詢或建立結果。</returns>
     public bool TryGetFlightStickAxisMappingInfo(GameInputFlightStickAxes axisElement, out GameInputAxisMapping mapping)
     {
         return TryReadMapping(size: Marshal.SizeOf<GameInputAxisMapping>(), NativeMapping, out mapping);
@@ -58,6 +67,9 @@ public sealed class GameInputMapper : IDisposable
     /// <summary>
     /// 嘗試取得 flight stick 按鈕對應資訊。
     /// </summary>
+    /// <param name="buttonElement">要查詢 mapping 的 button 元素。</param>
+    /// <param name="mapping">接收 mapping 資訊的輸出欄位。</param>
+    /// <returns>操作完成後的查詢或建立結果。</returns>
     public bool TryGetFlightStickButtonMappingInfo(GameInputFlightStickButtons buttonElement, out GameInputButtonMapping mapping)
     {
         return TryReadMapping(size: Marshal.SizeOf<GameInputButtonMapping>(), NativeMapping, out mapping);
@@ -71,6 +83,9 @@ public sealed class GameInputMapper : IDisposable
     /// <summary>
     /// 嘗試取得 racing wheel 軸對應資訊。
     /// </summary>
+    /// <param name="axisElement">要查詢 mapping 的 axis 元素。</param>
+    /// <param name="mapping">接收 mapping 資訊的輸出欄位。</param>
+    /// <returns>操作完成後的查詢或建立結果。</returns>
     public bool TryGetRacingWheelAxisMappingInfo(GameInputRacingWheelAxes axisElement, out GameInputAxisMapping mapping)
     {
         return TryReadMapping(size: Marshal.SizeOf<GameInputAxisMapping>(), NativeMapping, out mapping);
@@ -84,6 +99,9 @@ public sealed class GameInputMapper : IDisposable
     /// <summary>
     /// 嘗試取得 racing wheel 按鈕對應資訊。
     /// </summary>
+    /// <param name="buttonElement">要查詢 mapping 的 button 元素。</param>
+    /// <param name="mapping">接收 mapping 資訊的輸出欄位。</param>
+    /// <returns>操作完成後的查詢或建立結果。</returns>
     public bool TryGetRacingWheelButtonMappingInfo(GameInputRacingWheelButtons buttonElement, out GameInputButtonMapping mapping)
     {
         return TryReadMapping(size: Marshal.SizeOf<GameInputButtonMapping>(), NativeMapping, out mapping);
@@ -97,6 +115,9 @@ public sealed class GameInputMapper : IDisposable
     /// <summary>
     /// 嘗試取得 arcade stick 按鈕對應資訊。
     /// </summary>
+    /// <param name="buttonElement">要查詢 mapping 的 button 元素。</param>
+    /// <param name="mapping">接收 mapping 資訊的輸出欄位。</param>
+    /// <returns>操作完成後的查詢或建立結果。</returns>
     public bool TryGetArcadeStickButtonMappingInfo(GameInputArcadeStickButtons buttonElement, out GameInputButtonMapping mapping)
     {
         return TryReadMapping(size: Marshal.SizeOf<GameInputButtonMapping>(), NativeMapping, out mapping);
@@ -107,7 +128,9 @@ public sealed class GameInputMapper : IDisposable
         }
     }
 
-    /// <inheritdoc />
+    /// <summary>
+    /// 釋放 input mapper 包裝持有的 COM 參考。
+    /// </summary>
     public void Dispose()
     {
         if (_disposed)

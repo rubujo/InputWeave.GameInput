@@ -4,455 +4,1523 @@
 
 namespace InputWeave.GameInput.Interop;
 
+/// <summary>
+/// 定義 GameInputKind 對應的 GameInput 原生列舉值。
+/// </summary>
 [System.Flags]
 public enum GameInputKind
 {
+    /// <summary>
+    /// 代表 GameInputKindUnknown 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputKindUnknown = 0,
+    /// <summary>
+    /// 代表 GameInputKindRawDeviceReport 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputKindRawDeviceReport = 1,
+    /// <summary>
+    /// 代表 GameInputKindControllerAxis 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputKindControllerAxis = 2,
+    /// <summary>
+    /// 代表 GameInputKindControllerButton 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputKindControllerButton = 4,
+    /// <summary>
+    /// 代表 GameInputKindControllerSwitch 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputKindControllerSwitch = 8,
+    /// <summary>
+    /// 代表 GameInputKindController 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputKindController = 14,
+    /// <summary>
+    /// 代表 GameInputKindKeyboard 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputKindKeyboard = 16,
+    /// <summary>
+    /// 代表 GameInputKindMouse 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputKindMouse = 32,
+    /// <summary>
+    /// 代表 GameInputKindSensors 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputKindSensors = 64,
+    /// <summary>
+    /// 代表 GameInputKindArcadeStick 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputKindArcadeStick = 65536,
+    /// <summary>
+    /// 代表 GameInputKindFlightStick 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputKindFlightStick = 131072,
+    /// <summary>
+    /// 代表 GameInputKindGamepad 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputKindGamepad = 262144,
+    /// <summary>
+    /// 代表 GameInputKindRacingWheel 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputKindRacingWheel = 524288
 }
 
+/// <summary>
+/// 定義 GameInputEnumerationKind 對應的 GameInput 原生列舉值。
+/// </summary>
 public enum GameInputEnumerationKind
 {
+    /// <summary>
+    /// 代表 GameInputNoEnumeration 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputNoEnumeration = 0,
+    /// <summary>
+    /// 代表 GameInputAsyncEnumeration 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputAsyncEnumeration = 1,
+    /// <summary>
+    /// 代表 GameInputBlockingEnumeration 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputBlockingEnumeration = 2
 }
 
+/// <summary>
+/// 定義 GameInputFocusPolicy 對應的 GameInput 原生列舉值。
+/// </summary>
 [System.Flags]
 public enum GameInputFocusPolicy
 {
+    /// <summary>
+    /// 代表 GameInputDefaultFocusPolicy 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputDefaultFocusPolicy = 0,
+    /// <summary>
+    /// 代表 GameInputExclusiveForegroundInput 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputExclusiveForegroundInput = 2,
+    /// <summary>
+    /// 代表 GameInputExclusiveForegroundGuideButton 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputExclusiveForegroundGuideButton = 8,
+    /// <summary>
+    /// 代表 GameInputExclusiveForegroundShareButton 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputExclusiveForegroundShareButton = 32,
+    /// <summary>
+    /// 代表 GameInputEnableBackgroundInput 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputEnableBackgroundInput = 64,
+    /// <summary>
+    /// 代表 GameInputEnableBackgroundGuideButton 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputEnableBackgroundGuideButton = 128,
+    /// <summary>
+    /// 代表 GameInputEnableBackgroundShareButton 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputEnableBackgroundShareButton = 256
 }
 
+/// <summary>
+/// 定義 GameInputSwitchKind 對應的 GameInput 原生列舉值。
+/// </summary>
 public enum GameInputSwitchKind
 {
+    /// <summary>
+    /// 代表 GameInputUnknownSwitchKind 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputUnknownSwitchKind = -1,
+    /// <summary>
+    /// 代表 GameInput2WaySwitch 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInput2WaySwitch = 0,
+    /// <summary>
+    /// 代表 GameInput4WaySwitch 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInput4WaySwitch = 1,
+    /// <summary>
+    /// 代表 GameInput8WaySwitch 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInput8WaySwitch = 2
 }
 
+/// <summary>
+/// 定義 GameInputSwitchPosition 對應的 GameInput 原生列舉值。
+/// </summary>
 public enum GameInputSwitchPosition
 {
+    /// <summary>
+    /// 代表 GameInputSwitchCenter 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputSwitchCenter = 0,
+    /// <summary>
+    /// 代表 GameInputSwitchUp 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputSwitchUp = 1,
+    /// <summary>
+    /// 代表 GameInputSwitchUpRight 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputSwitchUpRight = 2,
+    /// <summary>
+    /// 代表 GameInputSwitchRight 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputSwitchRight = 3,
+    /// <summary>
+    /// 代表 GameInputSwitchDownRight 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputSwitchDownRight = 4,
+    /// <summary>
+    /// 代表 GameInputSwitchDown 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputSwitchDown = 5,
+    /// <summary>
+    /// 代表 GameInputSwitchDownLeft 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputSwitchDownLeft = 6,
+    /// <summary>
+    /// 代表 GameInputSwitchLeft 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputSwitchLeft = 7,
+    /// <summary>
+    /// 代表 GameInputSwitchUpLeft 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputSwitchUpLeft = 8
 }
 
+/// <summary>
+/// 定義 GameInputKeyboardKind 對應的 GameInput 原生列舉值。
+/// </summary>
 public enum GameInputKeyboardKind
 {
+    /// <summary>
+    /// 代表 GameInputUnknownKeyboard 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputUnknownKeyboard = -1,
+    /// <summary>
+    /// 代表 GameInputAnsiKeyboard 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputAnsiKeyboard = 0,
+    /// <summary>
+    /// 代表 GameInputIsoKeyboard 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputIsoKeyboard = 1,
+    /// <summary>
+    /// 代表 GameInputKsKeyboard 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputKsKeyboard = 2,
+    /// <summary>
+    /// 代表 GameInputAbntKeyboard 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputAbntKeyboard = 3,
+    /// <summary>
+    /// 代表 GameInputJisKeyboard 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputJisKeyboard = 4
 }
 
+/// <summary>
+/// 定義 GameInputMouseButtons 對應的 GameInput 原生列舉值。
+/// </summary>
 [System.Flags]
 public enum GameInputMouseButtons
 {
+    /// <summary>
+    /// 代表 GameInputMouseNone 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputMouseNone = 0,
+    /// <summary>
+    /// 代表 GameInputMouseLeftButton 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputMouseLeftButton = 1,
+    /// <summary>
+    /// 代表 GameInputMouseRightButton 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputMouseRightButton = 2,
+    /// <summary>
+    /// 代表 GameInputMouseMiddleButton 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputMouseMiddleButton = 4,
+    /// <summary>
+    /// 代表 GameInputMouseButton4 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputMouseButton4 = 8,
+    /// <summary>
+    /// 代表 GameInputMouseButton5 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputMouseButton5 = 16,
+    /// <summary>
+    /// 代表 GameInputMouseWheelTiltLeft 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputMouseWheelTiltLeft = 32,
+    /// <summary>
+    /// 代表 GameInputMouseWheelTiltRight 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputMouseWheelTiltRight = 64
 }
 
+/// <summary>
+/// 定義 GameInputMousePositions 對應的 GameInput 原生列舉值。
+/// </summary>
 [System.Flags]
 public enum GameInputMousePositions
 {
+    /// <summary>
+    /// 代表 GameInputMouseNoPosition 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputMouseNoPosition = 0,
+    /// <summary>
+    /// 代表 GameInputMouseAbsolutePosition 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputMouseAbsolutePosition = 1,
+    /// <summary>
+    /// 代表 GameInputMouseRelativePosition 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputMouseRelativePosition = 2
 }
 
+/// <summary>
+/// 定義 GameInputSensorsKind 對應的 GameInput 原生列舉值。
+/// </summary>
 [System.Flags]
 public enum GameInputSensorsKind
 {
+    /// <summary>
+    /// 代表 GameInputSensorsNone 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputSensorsNone = 0,
+    /// <summary>
+    /// 代表 GameInputSensorsAccelerometer 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputSensorsAccelerometer = 1,
+    /// <summary>
+    /// 代表 GameInputSensorsGyrometer 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputSensorsGyrometer = 2,
+    /// <summary>
+    /// 代表 GameInputSensorsCompass 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputSensorsCompass = 4,
+    /// <summary>
+    /// 代表 GameInputSensorsOrientation 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputSensorsOrientation = 8
 }
 
+/// <summary>
+/// 定義 GameInputSensorAccuracy 對應的 GameInput 原生列舉值。
+/// </summary>
 public enum GameInputSensorAccuracy
 {
+    /// <summary>
+    /// 代表 GameInputSensorAccuracyUnknown 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputSensorAccuracyUnknown = 0,
+    /// <summary>
+    /// 代表 GameInputSensorAccuracyUnreliable 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputSensorAccuracyUnreliable = 1,
+    /// <summary>
+    /// 代表 GameInputSensorAccuracyApproximate 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputSensorAccuracyApproximate = 2,
+    /// <summary>
+    /// 代表 GameInputSensorAccuracyHigh 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputSensorAccuracyHigh = 3
 }
 
+/// <summary>
+/// 定義 GameInputArcadeStickButtons 對應的 GameInput 原生列舉值。
+/// </summary>
 [System.Flags]
 public enum GameInputArcadeStickButtons
 {
+    /// <summary>
+    /// 代表 GameInputArcadeStickNone 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputArcadeStickNone = 0,
+    /// <summary>
+    /// 代表 GameInputArcadeStickMenu 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputArcadeStickMenu = 1,
+    /// <summary>
+    /// 代表 GameInputArcadeStickView 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputArcadeStickView = 2,
+    /// <summary>
+    /// 代表 GameInputArcadeStickUp 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputArcadeStickUp = 4,
+    /// <summary>
+    /// 代表 GameInputArcadeStickDown 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputArcadeStickDown = 8,
+    /// <summary>
+    /// 代表 GameInputArcadeStickLeft 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputArcadeStickLeft = 16,
+    /// <summary>
+    /// 代表 GameInputArcadeStickRight 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputArcadeStickRight = 32,
+    /// <summary>
+    /// 代表 GameInputArcadeStickAction1 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputArcadeStickAction1 = 64,
+    /// <summary>
+    /// 代表 GameInputArcadeStickAction2 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputArcadeStickAction2 = 128,
+    /// <summary>
+    /// 代表 GameInputArcadeStickAction3 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputArcadeStickAction3 = 256,
+    /// <summary>
+    /// 代表 GameInputArcadeStickAction4 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputArcadeStickAction4 = 512,
+    /// <summary>
+    /// 代表 GameInputArcadeStickAction5 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputArcadeStickAction5 = 1024,
+    /// <summary>
+    /// 代表 GameInputArcadeStickAction6 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputArcadeStickAction6 = 2048,
+    /// <summary>
+    /// 代表 GameInputArcadeStickSpecial1 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputArcadeStickSpecial1 = 4096,
+    /// <summary>
+    /// 代表 GameInputArcadeStickSpecial2 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputArcadeStickSpecial2 = 8192
 }
 
+/// <summary>
+/// 定義 GameInputFlightStickButtons 對應的 GameInput 原生列舉值。
+/// </summary>
 [System.Flags]
 public enum GameInputFlightStickButtons
 {
+    /// <summary>
+    /// 代表 GameInputFlightStickNone 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputFlightStickNone = 0,
+    /// <summary>
+    /// 代表 GameInputFlightStickMenu 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputFlightStickMenu = 1,
+    /// <summary>
+    /// 代表 GameInputFlightStickView 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputFlightStickView = 2,
+    /// <summary>
+    /// 代表 GameInputFlightStickFirePrimary 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputFlightStickFirePrimary = 4,
+    /// <summary>
+    /// 代表 GameInputFlightStickFireSecondary 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputFlightStickFireSecondary = 8,
+    /// <summary>
+    /// 代表 GameInputFlightStickHatSwitchUp 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputFlightStickHatSwitchUp = 16,
+    /// <summary>
+    /// 代表 GameInputFlightStickHatSwitchDown 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputFlightStickHatSwitchDown = 32,
+    /// <summary>
+    /// 代表 GameInputFlightStickHatSwitchLeft 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputFlightStickHatSwitchLeft = 64,
+    /// <summary>
+    /// 代表 GameInputFlightStickHatSwitchRight 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputFlightStickHatSwitchRight = 128,
+    /// <summary>
+    /// 代表 GameInputFlightStickA 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputFlightStickA = 256,
+    /// <summary>
+    /// 代表 GameInputFlightStickB 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputFlightStickB = 512,
+    /// <summary>
+    /// 代表 GameInputFlightStickX 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputFlightStickX = 1024,
+    /// <summary>
+    /// 代表 GameInputFlightStickY 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputFlightStickY = 2048,
+    /// <summary>
+    /// 代表 GameInputFlightStickLeftShoulder 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputFlightStickLeftShoulder = 4096,
+    /// <summary>
+    /// 代表 GameInputFlightStickRightShoulder 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputFlightStickRightShoulder = 8192
 }
 
+/// <summary>
+/// 定義 GameInputGamepadButtons 對應的 GameInput 原生列舉值。
+/// </summary>
 [System.Flags]
 public enum GameInputGamepadButtons
 {
+    /// <summary>
+    /// 代表 GameInputGamepadNone 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputGamepadNone = 0,
+    /// <summary>
+    /// 代表 GameInputGamepadMenu 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputGamepadMenu = 1,
+    /// <summary>
+    /// 代表 GameInputGamepadView 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputGamepadView = 2,
+    /// <summary>
+    /// 代表 GameInputGamepadA 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputGamepadA = 4,
+    /// <summary>
+    /// 代表 GameInputGamepadB 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputGamepadB = 8,
+    /// <summary>
+    /// 代表 GameInputGamepadC 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputGamepadC = 16384,
+    /// <summary>
+    /// 代表 GameInputGamepadX 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputGamepadX = 16,
+    /// <summary>
+    /// 代表 GameInputGamepadY 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputGamepadY = 32,
+    /// <summary>
+    /// 代表 GameInputGamepadZ 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputGamepadZ = 32768,
+    /// <summary>
+    /// 代表 GameInputGamepadDPadUp 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputGamepadDPadUp = 64,
+    /// <summary>
+    /// 代表 GameInputGamepadDPadDown 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputGamepadDPadDown = 128,
+    /// <summary>
+    /// 代表 GameInputGamepadDPadLeft 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputGamepadDPadLeft = 256,
+    /// <summary>
+    /// 代表 GameInputGamepadDPadRight 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputGamepadDPadRight = 512,
+    /// <summary>
+    /// 代表 GameInputGamepadLeftShoulder 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputGamepadLeftShoulder = 1024,
+    /// <summary>
+    /// 代表 GameInputGamepadRightShoulder 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputGamepadRightShoulder = 2048,
+    /// <summary>
+    /// 代表 GameInputGamepadLeftTriggerButton 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputGamepadLeftTriggerButton = 65536,
+    /// <summary>
+    /// 代表 GameInputGamepadRightTriggerButton 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputGamepadRightTriggerButton = 131072,
+    /// <summary>
+    /// 代表 GameInputGamepadLeftThumbstick 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputGamepadLeftThumbstick = 4096,
+    /// <summary>
+    /// 代表 GameInputGamepadLeftThumbstickUp 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputGamepadLeftThumbstickUp = 262144,
+    /// <summary>
+    /// 代表 GameInputGamepadLeftThumbstickDown 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputGamepadLeftThumbstickDown = 524288,
+    /// <summary>
+    /// 代表 GameInputGamepadLeftThumbstickLeft 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputGamepadLeftThumbstickLeft = 1048576,
+    /// <summary>
+    /// 代表 GameInputGamepadLeftThumbstickRight 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputGamepadLeftThumbstickRight = 2097152,
+    /// <summary>
+    /// 代表 GameInputGamepadRightThumbstick 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputGamepadRightThumbstick = 8192,
+    /// <summary>
+    /// 代表 GameInputGamepadRightThumbstickUp 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputGamepadRightThumbstickUp = 4194304,
+    /// <summary>
+    /// 代表 GameInputGamepadRightThumbstickDown 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputGamepadRightThumbstickDown = 8388608,
+    /// <summary>
+    /// 代表 GameInputGamepadRightThumbstickLeft 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputGamepadRightThumbstickLeft = 16777216,
+    /// <summary>
+    /// 代表 GameInputGamepadRightThumbstickRight 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputGamepadRightThumbstickRight = 33554432,
+    /// <summary>
+    /// 代表 GameInputGamepadPaddleLeft1 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputGamepadPaddleLeft1 = 67108864,
+    /// <summary>
+    /// 代表 GameInputGamepadPaddleLeft2 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputGamepadPaddleLeft2 = 134217728,
+    /// <summary>
+    /// 代表 GameInputGamepadPaddleRight1 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputGamepadPaddleRight1 = 268435456,
+    /// <summary>
+    /// 代表 GameInputGamepadPaddleRight2 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputGamepadPaddleRight2 = 536870912
 }
 
+/// <summary>
+/// 定義 GameInputRawDeviceReportKind 對應的 GameInput 原生列舉值。
+/// </summary>
 public enum GameInputRawDeviceReportKind
 {
+    /// <summary>
+    /// 代表 GameInputRawInputReport 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputRawInputReport = 0,
+    /// <summary>
+    /// 代表 GameInputRawOutputReport 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputRawOutputReport = 1
 }
 
+/// <summary>
+/// 定義 GameInputRacingWheelButtons 對應的 GameInput 原生列舉值。
+/// </summary>
 [System.Flags]
 public enum GameInputRacingWheelButtons
 {
+    /// <summary>
+    /// 代表 GameInputRacingWheelNone 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputRacingWheelNone = 0,
+    /// <summary>
+    /// 代表 GameInputRacingWheelMenu 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputRacingWheelMenu = 1,
+    /// <summary>
+    /// 代表 GameInputRacingWheelView 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputRacingWheelView = 2,
+    /// <summary>
+    /// 代表 GameInputRacingWheelPreviousGear 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputRacingWheelPreviousGear = 4,
+    /// <summary>
+    /// 代表 GameInputRacingWheelNextGear 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputRacingWheelNextGear = 8,
+    /// <summary>
+    /// 代表 GameInputRacingWheelA 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputRacingWheelA = 256,
+    /// <summary>
+    /// 代表 GameInputRacingWheelB 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputRacingWheelB = 512,
+    /// <summary>
+    /// 代表 GameInputRacingWheelX 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputRacingWheelX = 1024,
+    /// <summary>
+    /// 代表 GameInputRacingWheelY 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputRacingWheelY = 2048,
+    /// <summary>
+    /// 代表 GameInputRacingWheelDpadUp 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputRacingWheelDpadUp = 16,
+    /// <summary>
+    /// 代表 GameInputRacingWheelDpadDown 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputRacingWheelDpadDown = 32,
+    /// <summary>
+    /// 代表 GameInputRacingWheelDpadLeft 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputRacingWheelDpadLeft = 64,
+    /// <summary>
+    /// 代表 GameInputRacingWheelDpadRight 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputRacingWheelDpadRight = 128,
+    /// <summary>
+    /// 代表 GameInputRacingWheelLeftThumbstick 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputRacingWheelLeftThumbstick = 4096,
+    /// <summary>
+    /// 代表 GameInputRacingWheelRightThumbstick 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputRacingWheelRightThumbstick = 8192
 }
 
+/// <summary>
+/// 定義 GameInputSystemButtons 對應的 GameInput 原生列舉值。
+/// </summary>
 [System.Flags]
 public enum GameInputSystemButtons
 {
+    /// <summary>
+    /// 代表 GameInputSystemButtonNone 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputSystemButtonNone = 0,
+    /// <summary>
+    /// 代表 GameInputSystemButtonGuide 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputSystemButtonGuide = 1,
+    /// <summary>
+    /// 代表 GameInputSystemButtonShare 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputSystemButtonShare = 2
 }
 
+/// <summary>
+/// 定義 GameInputFlightStickAxes 對應的 GameInput 原生列舉值。
+/// </summary>
 [System.Flags]
 public enum GameInputFlightStickAxes
 {
+    /// <summary>
+    /// 代表 GameInputFlightStickAxesNone 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputFlightStickAxesNone = 0,
+    /// <summary>
+    /// 代表 GameInputFlightStickRoll 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputFlightStickRoll = 16,
+    /// <summary>
+    /// 代表 GameInputFlightStickPitch 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputFlightStickPitch = 32,
+    /// <summary>
+    /// 代表 GameInputFlightStickYaw 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputFlightStickYaw = 64,
+    /// <summary>
+    /// 代表 GameInputFlightStickThrottle 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputFlightStickThrottle = 128
 }
 
+/// <summary>
+/// 定義 GameInputGamepadAxes 對應的 GameInput 原生列舉值。
+/// </summary>
 [System.Flags]
 public enum GameInputGamepadAxes
 {
+    /// <summary>
+    /// 代表 GameInputGamepadAxesNone 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputGamepadAxesNone = 0,
+    /// <summary>
+    /// 代表 GameInputGamepadLeftTrigger 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputGamepadLeftTrigger = 1,
+    /// <summary>
+    /// 代表 GameInputGamepadRightTrigger 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputGamepadRightTrigger = 2,
+    /// <summary>
+    /// 代表 GameInputGamepadLeftThumbstickX 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputGamepadLeftThumbstickX = 4,
+    /// <summary>
+    /// 代表 GameInputGamepadLeftThumbstickY 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputGamepadLeftThumbstickY = 8,
+    /// <summary>
+    /// 代表 GameInputGamepadRightThumbstickX 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputGamepadRightThumbstickX = 16,
+    /// <summary>
+    /// 代表 GameInputGamepadRightThumbstickY 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputGamepadRightThumbstickY = 32
 }
 
+/// <summary>
+/// 定義 GameInputRacingWheelAxes 對應的 GameInput 原生列舉值。
+/// </summary>
 [System.Flags]
 public enum GameInputRacingWheelAxes
 {
+    /// <summary>
+    /// 代表 GameInputRacingWheelAxesNone 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputRacingWheelAxesNone = 0,
+    /// <summary>
+    /// 代表 GameInputRacingWheelSteering 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputRacingWheelSteering = 256,
+    /// <summary>
+    /// 代表 GameInputRacingWheelThrottle 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputRacingWheelThrottle = 512,
+    /// <summary>
+    /// 代表 GameInputRacingWheelBrake 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputRacingWheelBrake = 1024,
+    /// <summary>
+    /// 代表 GameInputRacingWheelClutch 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputRacingWheelClutch = 2048,
+    /// <summary>
+    /// 代表 GameInputRacingWheelHandbrake 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputRacingWheelHandbrake = 4096,
+    /// <summary>
+    /// 代表 GameInputRacingWheelPatternShifter 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputRacingWheelPatternShifter = 8192
 }
 
+/// <summary>
+/// 定義 GameInputDeviceStatus 對應的 GameInput 原生列舉值。
+/// </summary>
 [System.Flags]
 public enum GameInputDeviceStatus
 {
+    /// <summary>
+    /// 代表 GameInputDeviceNoStatus 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputDeviceNoStatus = 0,
+    /// <summary>
+    /// 代表 GameInputDeviceConnected 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputDeviceConnected = 1,
+    /// <summary>
+    /// 代表 GameInputDeviceHapticInfoReady 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputDeviceHapticInfoReady = 2097152,
+    /// <summary>
+    /// 代表 GameInputDeviceAnyStatus 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputDeviceAnyStatus = -1
 }
 
+/// <summary>
+/// 定義 GameInputDeviceFamily 對應的 GameInput 原生列舉值。
+/// </summary>
 public enum GameInputDeviceFamily
 {
+    /// <summary>
+    /// 代表 GameInputFamilyVirtual 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputFamilyVirtual = -1,
+    /// <summary>
+    /// 代表 GameInputFamilyUnknown 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputFamilyUnknown = 0,
+    /// <summary>
+    /// 代表 GameInputFamilyXboxOne 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputFamilyXboxOne = 1,
+    /// <summary>
+    /// 代表 GameInputFamilyXbox360 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputFamilyXbox360 = 2,
+    /// <summary>
+    /// 代表 GameInputFamilyHid 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputFamilyHid = 3,
+    /// <summary>
+    /// 代表 GameInputFamilyI8042 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputFamilyI8042 = 4,
+    /// <summary>
+    /// 代表 GameInputFamilyAggregate 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputFamilyAggregate = 5
 }
 
+/// <summary>
+/// 定義 GameInputLabel 對應的 GameInput 原生列舉值。
+/// </summary>
 public enum GameInputLabel
 {
+    /// <summary>
+    /// 代表 GameInputLabelUnknown 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputLabelUnknown = -1,
+    /// <summary>
+    /// 代表 GameInputLabelNone 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputLabelNone = 0,
+    /// <summary>
+    /// 代表 GameInputLabelXboxGuide 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputLabelXboxGuide = 1,
+    /// <summary>
+    /// 代表 GameInputLabelXboxBack 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputLabelXboxBack = 2,
+    /// <summary>
+    /// 代表 GameInputLabelXboxStart 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputLabelXboxStart = 3,
+    /// <summary>
+    /// 代表 GameInputLabelXboxMenu 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputLabelXboxMenu = 4,
+    /// <summary>
+    /// 代表 GameInputLabelXboxView 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputLabelXboxView = 5,
+    /// <summary>
+    /// 代表 GameInputLabelXboxA 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputLabelXboxA = 7,
+    /// <summary>
+    /// 代表 GameInputLabelXboxB 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputLabelXboxB = 8,
+    /// <summary>
+    /// 代表 GameInputLabelXboxX 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputLabelXboxX = 9,
+    /// <summary>
+    /// 代表 GameInputLabelXboxY 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputLabelXboxY = 10,
+    /// <summary>
+    /// 代表 GameInputLabelXboxDPadUp 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputLabelXboxDPadUp = 11,
+    /// <summary>
+    /// 代表 GameInputLabelXboxDPadDown 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputLabelXboxDPadDown = 12,
+    /// <summary>
+    /// 代表 GameInputLabelXboxDPadLeft 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputLabelXboxDPadLeft = 13,
+    /// <summary>
+    /// 代表 GameInputLabelXboxDPadRight 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputLabelXboxDPadRight = 14,
+    /// <summary>
+    /// 代表 GameInputLabelXboxLeftShoulder 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputLabelXboxLeftShoulder = 15,
+    /// <summary>
+    /// 代表 GameInputLabelXboxLeftTrigger 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputLabelXboxLeftTrigger = 16,
+    /// <summary>
+    /// 代表 GameInputLabelXboxLeftStickButton 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputLabelXboxLeftStickButton = 17,
+    /// <summary>
+    /// 代表 GameInputLabelXboxRightShoulder 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputLabelXboxRightShoulder = 18,
+    /// <summary>
+    /// 代表 GameInputLabelXboxRightTrigger 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputLabelXboxRightTrigger = 19,
+    /// <summary>
+    /// 代表 GameInputLabelXboxRightStickButton 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputLabelXboxRightStickButton = 20,
+    /// <summary>
+    /// 代表 GameInputLabelXboxPaddle1 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputLabelXboxPaddle1 = 21,
+    /// <summary>
+    /// 代表 GameInputLabelXboxPaddle2 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputLabelXboxPaddle2 = 22,
+    /// <summary>
+    /// 代表 GameInputLabelXboxPaddle3 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputLabelXboxPaddle3 = 23,
+    /// <summary>
+    /// 代表 GameInputLabelXboxPaddle4 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputLabelXboxPaddle4 = 24,
+    /// <summary>
+    /// 代表 GameInputLabelLetterA 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputLabelLetterA = 25,
+    /// <summary>
+    /// 代表 GameInputLabelLetterB 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputLabelLetterB = 26,
+    /// <summary>
+    /// 代表 GameInputLabelLetterC 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputLabelLetterC = 27,
+    /// <summary>
+    /// 代表 GameInputLabelLetterD 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputLabelLetterD = 28,
+    /// <summary>
+    /// 代表 GameInputLabelLetterE 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputLabelLetterE = 29,
+    /// <summary>
+    /// 代表 GameInputLabelLetterF 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputLabelLetterF = 30,
+    /// <summary>
+    /// 代表 GameInputLabelLetterG 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputLabelLetterG = 31,
+    /// <summary>
+    /// 代表 GameInputLabelLetterH 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputLabelLetterH = 32,
+    /// <summary>
+    /// 代表 GameInputLabelLetterI 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputLabelLetterI = 33,
+    /// <summary>
+    /// 代表 GameInputLabelLetterJ 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputLabelLetterJ = 34,
+    /// <summary>
+    /// 代表 GameInputLabelLetterK 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputLabelLetterK = 35,
+    /// <summary>
+    /// 代表 GameInputLabelLetterL 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputLabelLetterL = 36,
+    /// <summary>
+    /// 代表 GameInputLabelLetterM 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputLabelLetterM = 37,
+    /// <summary>
+    /// 代表 GameInputLabelLetterN 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputLabelLetterN = 38,
+    /// <summary>
+    /// 代表 GameInputLabelLetterO 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputLabelLetterO = 39,
+    /// <summary>
+    /// 代表 GameInputLabelLetterP 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputLabelLetterP = 40,
+    /// <summary>
+    /// 代表 GameInputLabelLetterQ 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputLabelLetterQ = 41,
+    /// <summary>
+    /// 代表 GameInputLabelLetterR 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputLabelLetterR = 42,
+    /// <summary>
+    /// 代表 GameInputLabelLetterS 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputLabelLetterS = 43,
+    /// <summary>
+    /// 代表 GameInputLabelLetterT 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputLabelLetterT = 44,
+    /// <summary>
+    /// 代表 GameInputLabelLetterU 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputLabelLetterU = 45,
+    /// <summary>
+    /// 代表 GameInputLabelLetterV 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputLabelLetterV = 46,
+    /// <summary>
+    /// 代表 GameInputLabelLetterW 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputLabelLetterW = 47,
+    /// <summary>
+    /// 代表 GameInputLabelLetterX 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputLabelLetterX = 48,
+    /// <summary>
+    /// 代表 GameInputLabelLetterY 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputLabelLetterY = 49,
+    /// <summary>
+    /// 代表 GameInputLabelLetterZ 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputLabelLetterZ = 50,
+    /// <summary>
+    /// 代表 GameInputLabelNumber0 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputLabelNumber0 = 51,
+    /// <summary>
+    /// 代表 GameInputLabelNumber1 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputLabelNumber1 = 52,
+    /// <summary>
+    /// 代表 GameInputLabelNumber2 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputLabelNumber2 = 53,
+    /// <summary>
+    /// 代表 GameInputLabelNumber3 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputLabelNumber3 = 54,
+    /// <summary>
+    /// 代表 GameInputLabelNumber4 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputLabelNumber4 = 55,
+    /// <summary>
+    /// 代表 GameInputLabelNumber5 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputLabelNumber5 = 56,
+    /// <summary>
+    /// 代表 GameInputLabelNumber6 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputLabelNumber6 = 57,
+    /// <summary>
+    /// 代表 GameInputLabelNumber7 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputLabelNumber7 = 58,
+    /// <summary>
+    /// 代表 GameInputLabelNumber8 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputLabelNumber8 = 59,
+    /// <summary>
+    /// 代表 GameInputLabelNumber9 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputLabelNumber9 = 60,
+    /// <summary>
+    /// 代表 GameInputLabelArrowUp 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputLabelArrowUp = 61,
+    /// <summary>
+    /// 代表 GameInputLabelArrowUpRight 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputLabelArrowUpRight = 62,
+    /// <summary>
+    /// 代表 GameInputLabelArrowRight 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputLabelArrowRight = 63,
+    /// <summary>
+    /// 代表 GameInputLabelArrowDownRight 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputLabelArrowDownRight = 64,
+    /// <summary>
+    /// 代表 GameInputLabelArrowDown 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputLabelArrowDown = 65,
+    /// <summary>
+    /// 代表 GameInputLabelArrowDownLLeft 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputLabelArrowDownLLeft = 66,
+    /// <summary>
+    /// 代表 GameInputLabelArrowLeft 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputLabelArrowLeft = 67,
+    /// <summary>
+    /// 代表 GameInputLabelArrowUpLeft 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputLabelArrowUpLeft = 68,
+    /// <summary>
+    /// 代表 GameInputLabelArrowUpDown 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputLabelArrowUpDown = 69,
+    /// <summary>
+    /// 代表 GameInputLabelArrowLeftRight 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputLabelArrowLeftRight = 70,
+    /// <summary>
+    /// 代表 GameInputLabelArrowUpDownLeftRight 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputLabelArrowUpDownLeftRight = 71,
+    /// <summary>
+    /// 代表 GameInputLabelArrowClockwise 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputLabelArrowClockwise = 72,
+    /// <summary>
+    /// 代表 GameInputLabelArrowCounterClockwise 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputLabelArrowCounterClockwise = 73,
+    /// <summary>
+    /// 代表 GameInputLabelArrowReturn 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputLabelArrowReturn = 74,
+    /// <summary>
+    /// 代表 GameInputLabelIconBranding 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputLabelIconBranding = 75,
+    /// <summary>
+    /// 代表 GameInputLabelIconHome 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputLabelIconHome = 76,
+    /// <summary>
+    /// 代表 GameInputLabelIconMenu 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputLabelIconMenu = 77,
+    /// <summary>
+    /// 代表 GameInputLabelIconCross 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputLabelIconCross = 78,
+    /// <summary>
+    /// 代表 GameInputLabelIconCircle 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputLabelIconCircle = 79,
+    /// <summary>
+    /// 代表 GameInputLabelIconSquare 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputLabelIconSquare = 80,
+    /// <summary>
+    /// 代表 GameInputLabelIconTriangle 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputLabelIconTriangle = 81,
+    /// <summary>
+    /// 代表 GameInputLabelIconStar 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputLabelIconStar = 82,
+    /// <summary>
+    /// 代表 GameInputLabelIconDPadUp 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputLabelIconDPadUp = 83,
+    /// <summary>
+    /// 代表 GameInputLabelIconDPadDown 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputLabelIconDPadDown = 84,
+    /// <summary>
+    /// 代表 GameInputLabelIconDPadLeft 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputLabelIconDPadLeft = 85,
+    /// <summary>
+    /// 代表 GameInputLabelIconDPadRight 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputLabelIconDPadRight = 86,
+    /// <summary>
+    /// 代表 GameInputLabelIconDialClockwise 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputLabelIconDialClockwise = 87,
+    /// <summary>
+    /// 代表 GameInputLabelIconDialCounterClockwise 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputLabelIconDialCounterClockwise = 88,
+    /// <summary>
+    /// 代表 GameInputLabelIconSliderLeftRight 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputLabelIconSliderLeftRight = 89,
+    /// <summary>
+    /// 代表 GameInputLabelIconSliderUpDown 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputLabelIconSliderUpDown = 90,
+    /// <summary>
+    /// 代表 GameInputLabelIconWheelUpDown 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputLabelIconWheelUpDown = 91,
+    /// <summary>
+    /// 代表 GameInputLabelIconPlus 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputLabelIconPlus = 92,
+    /// <summary>
+    /// 代表 GameInputLabelIconMinus 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputLabelIconMinus = 93,
+    /// <summary>
+    /// 代表 GameInputLabelIconSuspension 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputLabelIconSuspension = 94,
+    /// <summary>
+    /// 代表 GameInputLabelHome 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputLabelHome = 95,
+    /// <summary>
+    /// 代表 GameInputLabelGuide 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputLabelGuide = 96,
+    /// <summary>
+    /// 代表 GameInputLabelMode 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputLabelMode = 97,
+    /// <summary>
+    /// 代表 GameInputLabelSelect 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputLabelSelect = 98,
+    /// <summary>
+    /// 代表 GameInputLabelMenu 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputLabelMenu = 99,
+    /// <summary>
+    /// 代表 GameInputLabelView 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputLabelView = 100,
+    /// <summary>
+    /// 代表 GameInputLabelBack 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputLabelBack = 101,
+    /// <summary>
+    /// 代表 GameInputLabelStart 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputLabelStart = 102,
+    /// <summary>
+    /// 代表 GameInputLabelOptions 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputLabelOptions = 103,
+    /// <summary>
+    /// 代表 GameInputLabelShare 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputLabelShare = 104,
+    /// <summary>
+    /// 代表 GameInputLabelUp 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputLabelUp = 105,
+    /// <summary>
+    /// 代表 GameInputLabelDown 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputLabelDown = 106,
+    /// <summary>
+    /// 代表 GameInputLabelLeft 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputLabelLeft = 107,
+    /// <summary>
+    /// 代表 GameInputLabelRight 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputLabelRight = 108,
+    /// <summary>
+    /// 代表 GameInputLabelLB 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputLabelLB = 109,
+    /// <summary>
+    /// 代表 GameInputLabelLT 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputLabelLT = 110,
+    /// <summary>
+    /// 代表 GameInputLabelLSB 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputLabelLSB = 111,
+    /// <summary>
+    /// 代表 GameInputLabelL1 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputLabelL1 = 112,
+    /// <summary>
+    /// 代表 GameInputLabelL2 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputLabelL2 = 113,
+    /// <summary>
+    /// 代表 GameInputLabelL3 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputLabelL3 = 114,
+    /// <summary>
+    /// 代表 GameInputLabelRB 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputLabelRB = 115,
+    /// <summary>
+    /// 代表 GameInputLabelRT 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputLabelRT = 116,
+    /// <summary>
+    /// 代表 GameInputLabelRSB 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputLabelRSB = 117,
+    /// <summary>
+    /// 代表 GameInputLabelR1 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputLabelR1 = 118,
+    /// <summary>
+    /// 代表 GameInputLabelR2 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputLabelR2 = 119,
+    /// <summary>
+    /// 代表 GameInputLabelR3 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputLabelR3 = 120,
+    /// <summary>
+    /// 代表 GameInputLabelPaddleLeft1 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputLabelPaddleLeft1 = 121,
+    /// <summary>
+    /// 代表 GameInputLabelPaddleLeft2 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputLabelPaddleLeft2 = 122,
+    /// <summary>
+    /// 代表 GameInputLabelPaddleRight1 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputLabelPaddleRight1 = 123,
+    /// <summary>
+    /// 代表 GameInputLabelPaddleRight2 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputLabelPaddleRight2 = 124
 }
 
+/// <summary>
+/// 定義 GameInputFeedbackAxes 對應的 GameInput 原生列舉值。
+/// </summary>
 [System.Flags]
 public enum GameInputFeedbackAxes
 {
+    /// <summary>
+    /// 代表 GameInputFeedbackAxisNone 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputFeedbackAxisNone = 0,
+    /// <summary>
+    /// 代表 GameInputFeedbackAxisLinearX 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputFeedbackAxisLinearX = 1,
+    /// <summary>
+    /// 代表 GameInputFeedbackAxisLinearY 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputFeedbackAxisLinearY = 2,
+    /// <summary>
+    /// 代表 GameInputFeedbackAxisLinearZ 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputFeedbackAxisLinearZ = 4,
+    /// <summary>
+    /// 代表 GameInputFeedbackAxisAngularX 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputFeedbackAxisAngularX = 8,
+    /// <summary>
+    /// 代表 GameInputFeedbackAxisAngularY 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputFeedbackAxisAngularY = 16,
+    /// <summary>
+    /// 代表 GameInputFeedbackAxisAngularZ 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputFeedbackAxisAngularZ = 32,
+    /// <summary>
+    /// 代表 GameInputFeedbackAxisNormal 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputFeedbackAxisNormal = 64
 }
 
+/// <summary>
+/// 定義 GameInputFeedbackEffectState 對應的 GameInput 原生列舉值。
+/// </summary>
 public enum GameInputFeedbackEffectState
 {
+    /// <summary>
+    /// 代表 GameInputFeedbackStopped 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputFeedbackStopped = 0,
+    /// <summary>
+    /// 代表 GameInputFeedbackRunning 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputFeedbackRunning = 1,
+    /// <summary>
+    /// 代表 GameInputFeedbackPaused 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputFeedbackPaused = 2
 }
 
+/// <summary>
+/// 定義 GameInputForceFeedbackEffectKind 對應的 GameInput 原生列舉值。
+/// </summary>
 public enum GameInputForceFeedbackEffectKind
 {
+    /// <summary>
+    /// 代表 GameInputForceFeedbackConstant 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputForceFeedbackConstant = 0,
+    /// <summary>
+    /// 代表 GameInputForceFeedbackRamp 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputForceFeedbackRamp = 1,
+    /// <summary>
+    /// 代表 GameInputForceFeedbackSineWave 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputForceFeedbackSineWave = 2,
+    /// <summary>
+    /// 代表 GameInputForceFeedbackSquareWave 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputForceFeedbackSquareWave = 3,
+    /// <summary>
+    /// 代表 GameInputForceFeedbackTriangleWave 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputForceFeedbackTriangleWave = 4,
+    /// <summary>
+    /// 代表 GameInputForceFeedbackSawtoothUpWave 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputForceFeedbackSawtoothUpWave = 5,
+    /// <summary>
+    /// 代表 GameInputForceFeedbackSawtoothDownWave 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputForceFeedbackSawtoothDownWave = 6,
+    /// <summary>
+    /// 代表 GameInputForceFeedbackSpring 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputForceFeedbackSpring = 7,
+    /// <summary>
+    /// 代表 GameInputForceFeedbackFriction 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputForceFeedbackFriction = 8,
+    /// <summary>
+    /// 代表 GameInputForceFeedbackDamper 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputForceFeedbackDamper = 9,
+    /// <summary>
+    /// 代表 GameInputForceFeedbackInertia 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputForceFeedbackInertia = 10
 }
 
+/// <summary>
+/// 定義 GameInputRumbleMotors 對應的 GameInput 原生列舉值。
+/// </summary>
 [System.Flags]
 public enum GameInputRumbleMotors
 {
+    /// <summary>
+    /// 代表 GameInputRumbleNone 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputRumbleNone = 0,
+    /// <summary>
+    /// 代表 GameInputRumbleLowFrequency 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputRumbleLowFrequency = 1,
+    /// <summary>
+    /// 代表 GameInputRumbleHighFrequency 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputRumbleHighFrequency = 2,
+    /// <summary>
+    /// 代表 GameInputRumbleLeftTrigger 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputRumbleLeftTrigger = 4,
+    /// <summary>
+    /// 代表 GameInputRumbleRightTrigger 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputRumbleRightTrigger = 8
 }
 
+/// <summary>
+/// 定義 GameInputElementKind 對應的 GameInput 原生列舉值。
+/// </summary>
 public enum GameInputElementKind
 {
+    /// <summary>
+    /// 代表 GameInputElementKindNone 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputElementKindNone = 0,
+    /// <summary>
+    /// 代表 GameInputElementKindAxis 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputElementKindAxis = 1,
+    /// <summary>
+    /// 代表 GameInputElementKindButton 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputElementKindButton = 2,
+    /// <summary>
+    /// 代表 GameInputElementKindSwitch 對應的 GameInput 原生列舉值。
+    /// </summary>
     GameInputElementKindSwitch = 3
 }

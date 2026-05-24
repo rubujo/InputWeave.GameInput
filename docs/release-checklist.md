@@ -23,6 +23,7 @@ dotnet pack src/InputWeave.GameInput/InputWeave.GameInput.csproj -c Release -o .
 - nupkg 不得包含 `GameInputRedist.msi`。
 - `README.md` 必須包含 redist 安裝責任說明。
 - `docs/gameinput-api-coverage.md` 必須標示缺口為 0。
+- `InputWeave.GameInput.xml` 必須包含 public/protected API 的 summary、param 與 returns；`dotnet test` 會驗證 XML 文件完整性。
 
 ## 硬體 Smoke
 

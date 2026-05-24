@@ -45,6 +45,9 @@ public sealed class GameInputDeviceInfoSnapshot
     /// </summary>
     public GameInputDeviceInfo Native { get; }
 
+    /// <summary>
+    /// USB 或 HID vendor id。
+    /// </summary>
     public ushort VendorId
     {
         get
@@ -53,6 +56,9 @@ public sealed class GameInputDeviceInfoSnapshot
         }
     }
 
+    /// <summary>
+    /// USB 或 HID product id。
+    /// </summary>
     public ushort ProductId
     {
         get
@@ -61,6 +67,9 @@ public sealed class GameInputDeviceInfoSnapshot
         }
     }
 
+    /// <summary>
+    /// 裝置修訂版本號。
+    /// </summary>
     public ushort RevisionNumber
     {
         get
@@ -69,6 +78,9 @@ public sealed class GameInputDeviceInfoSnapshot
         }
     }
 
+    /// <summary>
+    /// 裝置的 HID usage 資訊。
+    /// </summary>
     public GameInputUsage Usage
     {
         get
@@ -77,6 +89,9 @@ public sealed class GameInputDeviceInfoSnapshot
         }
     }
 
+    /// <summary>
+    /// 裝置所屬的 GameInput device family。
+    /// </summary>
     public GameInputDeviceFamily DeviceFamily
     {
         get
@@ -85,6 +100,9 @@ public sealed class GameInputDeviceInfoSnapshot
         }
     }
 
+    /// <summary>
+    /// 裝置支援的輸入種類集合。
+    /// </summary>
     public GameInputKind SupportedInput
     {
         get
@@ -93,6 +111,9 @@ public sealed class GameInputDeviceInfoSnapshot
         }
     }
 
+    /// <summary>
+    /// 裝置支援的 rumble motor 集合。
+    /// </summary>
     public GameInputRumbleMotors SupportedRumbleMotors
     {
         get
@@ -101,6 +122,9 @@ public sealed class GameInputDeviceInfoSnapshot
         }
     }
 
+    /// <summary>
+    /// 裝置支援的 system button 集合。
+    /// </summary>
     public GameInputSystemButtons SupportedSystemButtons
     {
         get
@@ -109,6 +133,9 @@ public sealed class GameInputDeviceInfoSnapshot
         }
     }
 
+    /// <summary>
+    /// 裝置容器識別碼。
+    /// </summary>
     public Guid ContainerId
     {
         get
@@ -117,30 +144,69 @@ public sealed class GameInputDeviceInfoSnapshot
         }
     }
 
+    /// <summary>
+    /// 使用者可讀的裝置顯示名稱。
+    /// </summary>
     public string? DisplayName { get; }
 
+    /// <summary>
+    /// 裝置的 Plug and Play 路徑。
+    /// </summary>
     public string? PnpPath { get; }
 
+    /// <summary>
+    /// 鍵盤子資訊；裝置不支援鍵盤時為 null。
+    /// </summary>
     public GameInputKeyboardInfo? Keyboard { get; }
 
+    /// <summary>
+    /// 滑鼠子資訊；裝置不支援滑鼠時為 null。
+    /// </summary>
     public GameInputMouseInfo? Mouse { get; }
 
+    /// <summary>
+    /// 感測器子資訊；裝置不支援感測器時為 null。
+    /// </summary>
     public GameInputSensorsInfo? Sensors { get; }
 
+    /// <summary>
+    /// 一般 controller 子資訊；裝置不支援 controller 時為 null。
+    /// </summary>
     public GameInputControllerInfoSnapshot? Controller { get; }
 
+    /// <summary>
+    /// Arcade stick 子資訊；裝置不支援 arcade stick 時為 null。
+    /// </summary>
     public GameInputArcadeStickInfo? ArcadeStick { get; }
 
+    /// <summary>
+    /// Flight stick 子資訊；裝置不支援 flight stick 時為 null。
+    /// </summary>
     public GameInputFlightStickInfo? FlightStick { get; }
 
+    /// <summary>
+    /// Gamepad 子資訊；裝置不支援 gamepad 時為 null。
+    /// </summary>
     public GameInputGamepadInfo? Gamepad { get; }
 
+    /// <summary>
+    /// Racing wheel 子資訊；裝置不支援 racing wheel 時為 null。
+    /// </summary>
     public GameInputRacingWheelInfo? RacingWheel { get; }
 
+    /// <summary>
+    /// Force feedback motor 能力資訊快照。
+    /// </summary>
     public IReadOnlyList<GameInputForceFeedbackMotorInfo> ForceFeedbackMotors { get; }
 
+    /// <summary>
+    /// 裝置可提供的 raw input report 資訊。
+    /// </summary>
     public IReadOnlyList<GameInputRawDeviceReportInfo> InputReports { get; }
 
+    /// <summary>
+    /// 裝置可接受的 raw output report 資訊。
+    /// </summary>
     public IReadOnlyList<GameInputRawDeviceReportInfo> OutputReports { get; }
 
     internal static GameInputDeviceInfoSnapshot FromNative(GameInputDeviceInfo native)
@@ -209,12 +275,24 @@ public sealed class GameInputControllerInfoSnapshot
         Switches = switches;
     }
 
+    /// <summary>
+    /// 原生 controller 固定欄位快照；指標欄位只供診斷。
+    /// </summary>
     public GameInputControllerInfo Native { get; }
 
+    /// <summary>
+    /// Controller axis label 清單。
+    /// </summary>
     public IReadOnlyList<GameInputLabel> AxisLabels { get; }
 
+    /// <summary>
+    /// Controller button label 清單。
+    /// </summary>
     public IReadOnlyList<GameInputLabel> ButtonLabels { get; }
 
+    /// <summary>
+    /// Controller switch 資訊快照清單。
+    /// </summary>
     public IReadOnlyList<GameInputControllerSwitchInfoSnapshot> Switches { get; }
 
     internal static GameInputControllerInfoSnapshot? FromPointer(IntPtr pointer)
@@ -262,8 +340,14 @@ public sealed class GameInputControllerSwitchInfoSnapshot
         Kind = kind;
     }
 
+    /// <summary>
+    /// Switch 每個位置對應的 label 清單。
+    /// </summary>
     public IReadOnlyList<GameInputLabel> Labels { get; }
 
+    /// <summary>
+    /// Switch 的原生種類。
+    /// </summary>
     public GameInputSwitchKind Kind { get; }
 
     internal static unsafe GameInputControllerSwitchInfoSnapshot FromNative(GameInputControllerSwitchInfo native)
@@ -289,8 +373,14 @@ public sealed class GameInputHapticInfoSnapshot
         Locations = locations;
     }
 
+    /// <summary>
+    /// Haptic 音訊端點識別碼。
+    /// </summary>
     public string AudioEndpointId { get; }
 
+    /// <summary>
+    /// Haptic 位置識別碼清單。
+    /// </summary>
     public IReadOnlyList<Guid> Locations { get; }
 
     internal static GameInputHapticInfoSnapshot FromNative(GameInputHapticInfo native)

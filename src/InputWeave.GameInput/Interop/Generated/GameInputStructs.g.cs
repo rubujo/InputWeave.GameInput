@@ -7,670 +7,1522 @@ using System.Runtime.InteropServices;
 
 namespace InputWeave.GameInput.Interop;
 
+/// <summary>
+/// 表示 AppLocalDeviceId 對應的 GameInput 原生結構。
+/// </summary>
 [StructLayout(LayoutKind.Sequential)]
 public unsafe struct AppLocalDeviceId
 {
+    /// <summary>
+    /// 表示 AppLocalDeviceId.Size 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public const int Size = 32;
 
+    /// <summary>
+    /// 表示 AppLocalDeviceId.Value 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public fixed byte Value[Size];
 }
 
+/// <summary>
+/// 表示 GameInputKeyState 對應的 GameInput 原生結構。
+/// </summary>
 [StructLayout(LayoutKind.Sequential)]
 public struct GameInputKeyState
 {
+    /// <summary>
+    /// 表示 GameInputKeyState.ScanCode 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public uint ScanCode;
 
+    /// <summary>
+    /// 表示 GameInputKeyState.CodePoint 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public uint CodePoint;
 
+    /// <summary>
+    /// 表示 GameInputKeyState.VirtualKey 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public byte VirtualKey;
 
+    /// <summary>
+    /// 表示 GameInputKeyState.IsDeadKey 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     [MarshalAs(UnmanagedType.I1)]
     public bool IsDeadKey;
 }
 
+/// <summary>
+/// 表示 GameInputMouseState 對應的 GameInput 原生結構。
+/// </summary>
 [StructLayout(LayoutKind.Sequential)]
 public struct GameInputMouseState
 {
+    /// <summary>
+    /// 表示 GameInputMouseState.Buttons 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public GameInputMouseButtons Buttons;
 
+    /// <summary>
+    /// 表示 GameInputMouseState.Positions 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public GameInputMousePositions Positions;
 
+    /// <summary>
+    /// 表示 GameInputMouseState.PositionX 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public long PositionX;
 
+    /// <summary>
+    /// 表示 GameInputMouseState.PositionY 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public long PositionY;
 
+    /// <summary>
+    /// 表示 GameInputMouseState.AbsolutePositionX 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public long AbsolutePositionX;
 
+    /// <summary>
+    /// 表示 GameInputMouseState.AbsolutePositionY 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public long AbsolutePositionY;
 
+    /// <summary>
+    /// 表示 GameInputMouseState.WheelX 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public long WheelX;
 
+    /// <summary>
+    /// 表示 GameInputMouseState.WheelY 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public long WheelY;
 }
 
+/// <summary>
+/// 表示 GameInputVersion 對應的 GameInput 原生結構。
+/// </summary>
 [StructLayout(LayoutKind.Sequential)]
 public struct GameInputVersion
 {
+    /// <summary>
+    /// 表示 GameInputVersion.Major 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public ushort Major;
 
+    /// <summary>
+    /// 表示 GameInputVersion.Minor 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public ushort Minor;
 
+    /// <summary>
+    /// 表示 GameInputVersion.Build 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public ushort Build;
 
+    /// <summary>
+    /// 表示 GameInputVersion.Revision 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public ushort Revision;
 }
 
+/// <summary>
+/// 表示 GameInputSensorsState 對應的 GameInput 原生結構。
+/// </summary>
 [StructLayout(LayoutKind.Sequential)]
 public struct GameInputSensorsState
 {
+    /// <summary>
+    /// 表示 GameInputSensorsState.AccelerationInGX 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public float AccelerationInGX;
 
+    /// <summary>
+    /// 表示 GameInputSensorsState.AccelerationInGY 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public float AccelerationInGY;
 
+    /// <summary>
+    /// 表示 GameInputSensorsState.AccelerationInGZ 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public float AccelerationInGZ;
 
+    /// <summary>
+    /// 表示 GameInputSensorsState.AngularVelocityInRadPerSecX 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public float AngularVelocityInRadPerSecX;
 
+    /// <summary>
+    /// 表示 GameInputSensorsState.AngularVelocityInRadPerSecY 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public float AngularVelocityInRadPerSecY;
 
+    /// <summary>
+    /// 表示 GameInputSensorsState.AngularVelocityInRadPerSecZ 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public float AngularVelocityInRadPerSecZ;
 
+    /// <summary>
+    /// 表示 GameInputSensorsState.HeadingInDegreesFromMagneticNorth 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public float HeadingInDegreesFromMagneticNorth;
 
+    /// <summary>
+    /// 表示 GameInputSensorsState.HeadingAccuracy 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public GameInputSensorAccuracy HeadingAccuracy;
 
+    /// <summary>
+    /// 表示 GameInputSensorsState.OrientationW 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public float OrientationW;
 
+    /// <summary>
+    /// 表示 GameInputSensorsState.OrientationX 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public float OrientationX;
 
+    /// <summary>
+    /// 表示 GameInputSensorsState.OrientationY 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public float OrientationY;
 
+    /// <summary>
+    /// 表示 GameInputSensorsState.OrientationZ 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public float OrientationZ;
 }
 
+/// <summary>
+/// 表示 GameInputArcadeStickState 對應的 GameInput 原生結構。
+/// </summary>
 [StructLayout(LayoutKind.Sequential)]
 public struct GameInputArcadeStickState
 {
+    /// <summary>
+    /// 表示 GameInputArcadeStickState.Buttons 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public GameInputArcadeStickButtons Buttons;
 }
 
+/// <summary>
+/// 表示 GameInputFlightStickState 對應的 GameInput 原生結構。
+/// </summary>
 [StructLayout(LayoutKind.Sequential)]
 public struct GameInputFlightStickState
 {
+    /// <summary>
+    /// 表示 GameInputFlightStickState.Buttons 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public GameInputFlightStickButtons Buttons;
 
+    /// <summary>
+    /// 表示 GameInputFlightStickState.HatSwitch 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public GameInputSwitchPosition HatSwitch;
 
+    /// <summary>
+    /// 表示 GameInputFlightStickState.Roll 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public float Roll;
 
+    /// <summary>
+    /// 表示 GameInputFlightStickState.Pitch 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public float Pitch;
 
+    /// <summary>
+    /// 表示 GameInputFlightStickState.Yaw 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public float Yaw;
 
+    /// <summary>
+    /// 表示 GameInputFlightStickState.Throttle 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public float Throttle;
 }
 
+/// <summary>
+/// 表示 GameInputGamepadState 對應的 GameInput 原生結構。
+/// </summary>
 [StructLayout(LayoutKind.Sequential)]
 public struct GameInputGamepadState
 {
+    /// <summary>
+    /// 表示 GameInputGamepadState.Buttons 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public GameInputGamepadButtons Buttons;
 
+    /// <summary>
+    /// 表示 GameInputGamepadState.LeftTrigger 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public float LeftTrigger;
 
+    /// <summary>
+    /// 表示 GameInputGamepadState.RightTrigger 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public float RightTrigger;
 
+    /// <summary>
+    /// 表示 GameInputGamepadState.LeftThumbstickX 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public float LeftThumbstickX;
 
+    /// <summary>
+    /// 表示 GameInputGamepadState.LeftThumbstickY 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public float LeftThumbstickY;
 
+    /// <summary>
+    /// 表示 GameInputGamepadState.RightThumbstickX 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public float RightThumbstickX;
 
+    /// <summary>
+    /// 表示 GameInputGamepadState.RightThumbstickY 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public float RightThumbstickY;
 }
 
+/// <summary>
+/// 表示 GameInputRacingWheelState 對應的 GameInput 原生結構。
+/// </summary>
 [StructLayout(LayoutKind.Sequential)]
 public struct GameInputRacingWheelState
 {
+    /// <summary>
+    /// 表示 GameInputRacingWheelState.Buttons 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public GameInputRacingWheelButtons Buttons;
 
+    /// <summary>
+    /// 表示 GameInputRacingWheelState.PatternShifterGear 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public int PatternShifterGear;
 
+    /// <summary>
+    /// 表示 GameInputRacingWheelState.Wheel 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public float Wheel;
 
+    /// <summary>
+    /// 表示 GameInputRacingWheelState.Throttle 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public float Throttle;
 
+    /// <summary>
+    /// 表示 GameInputRacingWheelState.Brake 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public float Brake;
 
+    /// <summary>
+    /// 表示 GameInputRacingWheelState.Clutch 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public float Clutch;
 
+    /// <summary>
+    /// 表示 GameInputRacingWheelState.Handbrake 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public float Handbrake;
 }
 
+/// <summary>
+/// 表示 GameInputUsage 對應的 GameInput 原生結構。
+/// </summary>
 [StructLayout(LayoutKind.Sequential)]
 public struct GameInputUsage
 {
+    /// <summary>
+    /// 表示 GameInputUsage.Page 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public ushort Page;
 
+    /// <summary>
+    /// 表示 GameInputUsage.Id 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public ushort Id;
 }
 
+/// <summary>
+/// 表示 GameInputControllerSwitchInfo 對應的 GameInput 原生結構。
+/// </summary>
 [StructLayout(LayoutKind.Sequential)]
 public unsafe struct GameInputControllerSwitchInfo
 {
+    /// <summary>
+    /// 表示 GameInputControllerSwitchInfo.Labels 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public fixed int Labels[GameInputConstants.MaxSwitchStates];
 
+    /// <summary>
+    /// 表示 GameInputControllerSwitchInfo.Kind 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public GameInputSwitchKind Kind;
 }
 
+/// <summary>
+/// 表示 GameInputControllerInfo 對應的 GameInput 原生結構。
+/// </summary>
 [StructLayout(LayoutKind.Sequential)]
 public struct GameInputControllerInfo
 {
+    /// <summary>
+    /// 表示 GameInputControllerInfo.ControllerAxisCount 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public uint ControllerAxisCount;
 
+    /// <summary>
+    /// 表示 GameInputControllerInfo.ControllerAxisLabels 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public IntPtr ControllerAxisLabels;
 
+    /// <summary>
+    /// 表示 GameInputControllerInfo.ControllerButtonCount 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public uint ControllerButtonCount;
 
+    /// <summary>
+    /// 表示 GameInputControllerInfo.ControllerButtonLabels 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public IntPtr ControllerButtonLabels;
 
+    /// <summary>
+    /// 表示 GameInputControllerInfo.ControllerSwitchCount 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public uint ControllerSwitchCount;
 
+    /// <summary>
+    /// 表示 GameInputControllerInfo.ControllerSwitchInfo 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public IntPtr ControllerSwitchInfo;
 }
 
+/// <summary>
+/// 表示 GameInputKeyboardInfo 對應的 GameInput 原生結構。
+/// </summary>
 [StructLayout(LayoutKind.Sequential)]
 public struct GameInputKeyboardInfo
 {
+    /// <summary>
+    /// 表示 GameInputKeyboardInfo.Kind 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public GameInputKeyboardKind Kind;
 
+    /// <summary>
+    /// 表示 GameInputKeyboardInfo.Layout 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public uint Layout;
 
+    /// <summary>
+    /// 表示 GameInputKeyboardInfo.KeyCount 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public uint KeyCount;
 
+    /// <summary>
+    /// 表示 GameInputKeyboardInfo.FunctionKeyCount 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public uint FunctionKeyCount;
 
+    /// <summary>
+    /// 表示 GameInputKeyboardInfo.MaxSimultaneousKeys 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public uint MaxSimultaneousKeys;
 
+    /// <summary>
+    /// 表示 GameInputKeyboardInfo.PlatformType 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public uint PlatformType;
 
+    /// <summary>
+    /// 表示 GameInputKeyboardInfo.PlatformSubtype 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public uint PlatformSubtype;
 }
 
+/// <summary>
+/// 表示 GameInputMouseInfo 對應的 GameInput 原生結構。
+/// </summary>
 [StructLayout(LayoutKind.Sequential)]
 public struct GameInputMouseInfo
 {
+    /// <summary>
+    /// 表示 GameInputMouseInfo.SupportedButtons 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public GameInputMouseButtons SupportedButtons;
 
+    /// <summary>
+    /// 表示 GameInputMouseInfo.SampleRate 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public uint SampleRate;
 
+    /// <summary>
+    /// 表示 GameInputMouseInfo.HasWheelX 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     [MarshalAs(UnmanagedType.I1)]
     public bool HasWheelX;
 
+    /// <summary>
+    /// 表示 GameInputMouseInfo.HasWheelY 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     [MarshalAs(UnmanagedType.I1)]
     public bool HasWheelY;
 }
 
+/// <summary>
+/// 表示 GameInputSensorsInfo 對應的 GameInput 原生結構。
+/// </summary>
 [StructLayout(LayoutKind.Sequential)]
 public struct GameInputSensorsInfo
 {
+    /// <summary>
+    /// 表示 GameInputSensorsInfo.SupportedSensors 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public GameInputSensorsKind SupportedSensors;
 }
 
+/// <summary>
+/// 表示 GameInputArcadeStickInfo 對應的 GameInput 原生結構。
+/// </summary>
 [StructLayout(LayoutKind.Sequential)]
 public struct GameInputArcadeStickInfo
 {
+    /// <summary>
+    /// 表示 GameInputArcadeStickInfo.MenuButtonLabel 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public GameInputLabel MenuButtonLabel;
 
+    /// <summary>
+    /// 表示 GameInputArcadeStickInfo.ViewButtonLabel 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public GameInputLabel ViewButtonLabel;
 
+    /// <summary>
+    /// 表示 GameInputArcadeStickInfo.StickUpLabel 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public GameInputLabel StickUpLabel;
 
+    /// <summary>
+    /// 表示 GameInputArcadeStickInfo.StickDownLabel 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public GameInputLabel StickDownLabel;
 
+    /// <summary>
+    /// 表示 GameInputArcadeStickInfo.StickLeftLabel 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public GameInputLabel StickLeftLabel;
 
+    /// <summary>
+    /// 表示 GameInputArcadeStickInfo.StickRightLabel 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public GameInputLabel StickRightLabel;
 
+    /// <summary>
+    /// 表示 GameInputArcadeStickInfo.ActionButton1Label 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public GameInputLabel ActionButton1Label;
 
+    /// <summary>
+    /// 表示 GameInputArcadeStickInfo.ActionButton2Label 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public GameInputLabel ActionButton2Label;
 
+    /// <summary>
+    /// 表示 GameInputArcadeStickInfo.ActionButton3Label 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public GameInputLabel ActionButton3Label;
 
+    /// <summary>
+    /// 表示 GameInputArcadeStickInfo.ActionButton4Label 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public GameInputLabel ActionButton4Label;
 
+    /// <summary>
+    /// 表示 GameInputArcadeStickInfo.ActionButton5Label 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public GameInputLabel ActionButton5Label;
 
+    /// <summary>
+    /// 表示 GameInputArcadeStickInfo.ActionButton6Label 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public GameInputLabel ActionButton6Label;
 
+    /// <summary>
+    /// 表示 GameInputArcadeStickInfo.SpecialButton1Label 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public GameInputLabel SpecialButton1Label;
 
+    /// <summary>
+    /// 表示 GameInputArcadeStickInfo.SpecialButton2Label 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public GameInputLabel SpecialButton2Label;
 
+    /// <summary>
+    /// 表示 GameInputArcadeStickInfo.ExtraButtonCount 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public uint ExtraButtonCount;
 
+    /// <summary>
+    /// 表示 GameInputArcadeStickInfo.ExtraAxisCount 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public uint ExtraAxisCount;
 }
 
+/// <summary>
+/// 表示 GameInputFlightStickInfo 對應的 GameInput 原生結構。
+/// </summary>
 [StructLayout(LayoutKind.Sequential)]
 public struct GameInputFlightStickInfo
 {
+    /// <summary>
+    /// 表示 GameInputFlightStickInfo.MenuButtonLabel 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public GameInputLabel MenuButtonLabel;
 
+    /// <summary>
+    /// 表示 GameInputFlightStickInfo.ViewButtonLabel 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public GameInputLabel ViewButtonLabel;
 
+    /// <summary>
+    /// 表示 GameInputFlightStickInfo.FirePrimaryButtonLabel 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public GameInputLabel FirePrimaryButtonLabel;
 
+    /// <summary>
+    /// 表示 GameInputFlightStickInfo.FireSecondaryButtonLabel 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public GameInputLabel FireSecondaryButtonLabel;
 
+    /// <summary>
+    /// 表示 GameInputFlightStickInfo.HatSwitchUpLabel 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public GameInputLabel HatSwitchUpLabel;
 
+    /// <summary>
+    /// 表示 GameInputFlightStickInfo.HatSwitchDownLabel 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public GameInputLabel HatSwitchDownLabel;
 
+    /// <summary>
+    /// 表示 GameInputFlightStickInfo.HatSwitchLeftLabel 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public GameInputLabel HatSwitchLeftLabel;
 
+    /// <summary>
+    /// 表示 GameInputFlightStickInfo.HatSwitchRightLabel 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public GameInputLabel HatSwitchRightLabel;
 
+    /// <summary>
+    /// 表示 GameInputFlightStickInfo.AButtonLabel 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public GameInputLabel AButtonLabel;
 
+    /// <summary>
+    /// 表示 GameInputFlightStickInfo.BButtonLabel 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public GameInputLabel BButtonLabel;
 
+    /// <summary>
+    /// 表示 GameInputFlightStickInfo.XButtonLabel 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public GameInputLabel XButtonLabel;
 
+    /// <summary>
+    /// 表示 GameInputFlightStickInfo.YButtonLabel 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public GameInputLabel YButtonLabel;
 
+    /// <summary>
+    /// 表示 GameInputFlightStickInfo.LeftShoulderButtonLabel 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public GameInputLabel LeftShoulderButtonLabel;
 
+    /// <summary>
+    /// 表示 GameInputFlightStickInfo.RightShoulderButtonLabel 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public GameInputLabel RightShoulderButtonLabel;
 
+    /// <summary>
+    /// 表示 GameInputFlightStickInfo.ExtraButtonCount 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public uint ExtraButtonCount;
 
+    /// <summary>
+    /// 表示 GameInputFlightStickInfo.ExtraAxisCount 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public uint ExtraAxisCount;
 }
 
+/// <summary>
+/// 表示 GameInputGamepadInfo 對應的 GameInput 原生結構。
+/// </summary>
 [StructLayout(LayoutKind.Sequential)]
 public struct GameInputGamepadInfo
 {
+    /// <summary>
+    /// 表示 GameInputGamepadInfo.SupportedLayout 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public GameInputGamepadButtons SupportedLayout;
 
+    /// <summary>
+    /// 表示 GameInputGamepadInfo.MenuButtonLabel 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public GameInputLabel MenuButtonLabel;
 
+    /// <summary>
+    /// 表示 GameInputGamepadInfo.ViewButtonLabel 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public GameInputLabel ViewButtonLabel;
 
+    /// <summary>
+    /// 表示 GameInputGamepadInfo.AButtonLabel 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public GameInputLabel AButtonLabel;
 
+    /// <summary>
+    /// 表示 GameInputGamepadInfo.BButtonLabel 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public GameInputLabel BButtonLabel;
 
+    /// <summary>
+    /// 表示 GameInputGamepadInfo.CButtonLabel 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public GameInputLabel CButtonLabel;
 
+    /// <summary>
+    /// 表示 GameInputGamepadInfo.XButtonLabel 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public GameInputLabel XButtonLabel;
 
+    /// <summary>
+    /// 表示 GameInputGamepadInfo.YButtonLabel 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public GameInputLabel YButtonLabel;
 
+    /// <summary>
+    /// 表示 GameInputGamepadInfo.ZButtonLabel 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public GameInputLabel ZButtonLabel;
 
+    /// <summary>
+    /// 表示 GameInputGamepadInfo.DPadUpLabel 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public GameInputLabel DPadUpLabel;
 
+    /// <summary>
+    /// 表示 GameInputGamepadInfo.DPadDownLabel 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public GameInputLabel DPadDownLabel;
 
+    /// <summary>
+    /// 表示 GameInputGamepadInfo.DPadLeftLabel 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public GameInputLabel DPadLeftLabel;
 
+    /// <summary>
+    /// 表示 GameInputGamepadInfo.DPadRightLabel 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public GameInputLabel DPadRightLabel;
 
+    /// <summary>
+    /// 表示 GameInputGamepadInfo.LeftShoulderButtonLabel 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public GameInputLabel LeftShoulderButtonLabel;
 
+    /// <summary>
+    /// 表示 GameInputGamepadInfo.RightShoulderButtonLabel 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public GameInputLabel RightShoulderButtonLabel;
 
+    /// <summary>
+    /// 表示 GameInputGamepadInfo.LeftThumbstickButtonLabel 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public GameInputLabel LeftThumbstickButtonLabel;
 
+    /// <summary>
+    /// 表示 GameInputGamepadInfo.RightThumbstickButtonLabel 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public GameInputLabel RightThumbstickButtonLabel;
 
+    /// <summary>
+    /// 表示 GameInputGamepadInfo.ExtraButtonCount 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public uint ExtraButtonCount;
 
+    /// <summary>
+    /// 表示 GameInputGamepadInfo.ExtraAxisCount 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public uint ExtraAxisCount;
 }
 
+/// <summary>
+/// 表示 GameInputRacingWheelInfo 對應的 GameInput 原生結構。
+/// </summary>
 [StructLayout(LayoutKind.Sequential)]
 public struct GameInputRacingWheelInfo
 {
+    /// <summary>
+    /// 表示 GameInputRacingWheelInfo.MenuButtonLabel 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public GameInputLabel MenuButtonLabel;
 
+    /// <summary>
+    /// 表示 GameInputRacingWheelInfo.ViewButtonLabel 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public GameInputLabel ViewButtonLabel;
 
+    /// <summary>
+    /// 表示 GameInputRacingWheelInfo.PreviousGearButtonLabel 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public GameInputLabel PreviousGearButtonLabel;
 
+    /// <summary>
+    /// 表示 GameInputRacingWheelInfo.NextGearButtonLabel 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public GameInputLabel NextGearButtonLabel;
 
+    /// <summary>
+    /// 表示 GameInputRacingWheelInfo.DPadUpLabel 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public GameInputLabel DPadUpLabel;
 
+    /// <summary>
+    /// 表示 GameInputRacingWheelInfo.DPadDownLabel 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public GameInputLabel DPadDownLabel;
 
+    /// <summary>
+    /// 表示 GameInputRacingWheelInfo.DPadLeftLabel 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public GameInputLabel DPadLeftLabel;
 
+    /// <summary>
+    /// 表示 GameInputRacingWheelInfo.DPadRightLabel 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public GameInputLabel DPadRightLabel;
 
+    /// <summary>
+    /// 表示 GameInputRacingWheelInfo.AButtonLabel 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public GameInputLabel AButtonLabel;
 
+    /// <summary>
+    /// 表示 GameInputRacingWheelInfo.BButtonLabel 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public GameInputLabel BButtonLabel;
 
+    /// <summary>
+    /// 表示 GameInputRacingWheelInfo.XButtonLabel 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public GameInputLabel XButtonLabel;
 
+    /// <summary>
+    /// 表示 GameInputRacingWheelInfo.YButtonLabel 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public GameInputLabel YButtonLabel;
 
+    /// <summary>
+    /// 表示 GameInputRacingWheelInfo.LeftThumbstickButtonLabel 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public GameInputLabel LeftThumbstickButtonLabel;
 
+    /// <summary>
+    /// 表示 GameInputRacingWheelInfo.RightThumbstickButtonLabel 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public GameInputLabel RightThumbstickButtonLabel;
 
+    /// <summary>
+    /// 表示 GameInputRacingWheelInfo.HasClutch 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     [MarshalAs(UnmanagedType.I1)]
     public bool HasClutch;
 
+    /// <summary>
+    /// 表示 GameInputRacingWheelInfo.HasHandbrake 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     [MarshalAs(UnmanagedType.I1)]
     public bool HasHandbrake;
 
+    /// <summary>
+    /// 表示 GameInputRacingWheelInfo.HasPatternShifter 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     [MarshalAs(UnmanagedType.I1)]
     public bool HasPatternShifter;
 
+    /// <summary>
+    /// 表示 GameInputRacingWheelInfo.MinPatternShifterGear 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public int MinPatternShifterGear;
 
+    /// <summary>
+    /// 表示 GameInputRacingWheelInfo.MaxPatternShifterGear 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public int MaxPatternShifterGear;
 
+    /// <summary>
+    /// 表示 GameInputRacingWheelInfo.MaxWheelAngle 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public float MaxWheelAngle;
 
+    /// <summary>
+    /// 表示 GameInputRacingWheelInfo.ExtraButtonCount 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public uint ExtraButtonCount;
 
+    /// <summary>
+    /// 表示 GameInputRacingWheelInfo.ExtraAxisCount 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public uint ExtraAxisCount;
 }
 
+/// <summary>
+/// 表示 GameInputForceFeedbackMotorInfo 對應的 GameInput 原生結構。
+/// </summary>
 [StructLayout(LayoutKind.Sequential)]
 public struct GameInputForceFeedbackMotorInfo
 {
+    /// <summary>
+    /// 表示 GameInputForceFeedbackMotorInfo.SupportedAxes 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public GameInputFeedbackAxes SupportedAxes;
 
+    /// <summary>
+    /// 表示 GameInputForceFeedbackMotorInfo.IsConstantEffectSupported 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     [MarshalAs(UnmanagedType.I1)]
     public bool IsConstantEffectSupported;
 
+    /// <summary>
+    /// 表示 GameInputForceFeedbackMotorInfo.IsRampEffectSupported 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     [MarshalAs(UnmanagedType.I1)]
     public bool IsRampEffectSupported;
 
+    /// <summary>
+    /// 表示 GameInputForceFeedbackMotorInfo.IsSineWaveEffectSupported 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     [MarshalAs(UnmanagedType.I1)]
     public bool IsSineWaveEffectSupported;
 
+    /// <summary>
+    /// 表示 GameInputForceFeedbackMotorInfo.IsSquareWaveEffectSupported 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     [MarshalAs(UnmanagedType.I1)]
     public bool IsSquareWaveEffectSupported;
 
+    /// <summary>
+    /// 表示 GameInputForceFeedbackMotorInfo.IsTriangleWaveEffectSupported 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     [MarshalAs(UnmanagedType.I1)]
     public bool IsTriangleWaveEffectSupported;
 
+    /// <summary>
+    /// 表示 GameInputForceFeedbackMotorInfo.IsSawtoothUpWaveEffectSupported 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     [MarshalAs(UnmanagedType.I1)]
     public bool IsSawtoothUpWaveEffectSupported;
 
+    /// <summary>
+    /// 表示 GameInputForceFeedbackMotorInfo.IsSawtoothDownWaveEffectSupported 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     [MarshalAs(UnmanagedType.I1)]
     public bool IsSawtoothDownWaveEffectSupported;
 
+    /// <summary>
+    /// 表示 GameInputForceFeedbackMotorInfo.IsSpringEffectSupported 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     [MarshalAs(UnmanagedType.I1)]
     public bool IsSpringEffectSupported;
 
+    /// <summary>
+    /// 表示 GameInputForceFeedbackMotorInfo.IsFrictionEffectSupported 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     [MarshalAs(UnmanagedType.I1)]
     public bool IsFrictionEffectSupported;
 
+    /// <summary>
+    /// 表示 GameInputForceFeedbackMotorInfo.IsDamperEffectSupported 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     [MarshalAs(UnmanagedType.I1)]
     public bool IsDamperEffectSupported;
 
+    /// <summary>
+    /// 表示 GameInputForceFeedbackMotorInfo.IsInertiaEffectSupported 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     [MarshalAs(UnmanagedType.I1)]
     public bool IsInertiaEffectSupported;
 }
 
+/// <summary>
+/// 表示 GameInputRawDeviceReportInfo 對應的 GameInput 原生結構。
+/// </summary>
 [StructLayout(LayoutKind.Sequential)]
 public struct GameInputRawDeviceReportInfo
 {
+    /// <summary>
+    /// 表示 GameInputRawDeviceReportInfo.Kind 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public GameInputRawDeviceReportKind Kind;
 
+    /// <summary>
+    /// 表示 GameInputRawDeviceReportInfo.Id 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public uint Id;
 
+    /// <summary>
+    /// 表示 GameInputRawDeviceReportInfo.Size 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public uint Size;
 }
 
+/// <summary>
+/// 表示 GameInputDeviceInfo 對應的 GameInput 原生結構。
+/// </summary>
 [StructLayout(LayoutKind.Sequential)]
 public struct GameInputDeviceInfo
 {
+    /// <summary>
+    /// 表示 GameInputDeviceInfo.VendorId 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public ushort VendorId;
 
+    /// <summary>
+    /// 表示 GameInputDeviceInfo.ProductId 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public ushort ProductId;
 
+    /// <summary>
+    /// 表示 GameInputDeviceInfo.RevisionNumber 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public ushort RevisionNumber;
 
+    /// <summary>
+    /// 表示 GameInputDeviceInfo.Usage 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public GameInputUsage Usage;
 
+    /// <summary>
+    /// 表示 GameInputDeviceInfo.HardwareVersion 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public GameInputVersion HardwareVersion;
 
+    /// <summary>
+    /// 表示 GameInputDeviceInfo.FirmwareVersion 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public GameInputVersion FirmwareVersion;
 
+    /// <summary>
+    /// 表示 GameInputDeviceInfo.DeviceId 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public AppLocalDeviceId DeviceId;
 
+    /// <summary>
+    /// 表示 GameInputDeviceInfo.DeviceRootId 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public AppLocalDeviceId DeviceRootId;
 
+    /// <summary>
+    /// 表示 GameInputDeviceInfo.DeviceFamily 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public GameInputDeviceFamily DeviceFamily;
 
+    /// <summary>
+    /// 表示 GameInputDeviceInfo.SupportedInput 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public GameInputKind SupportedInput;
 
+    /// <summary>
+    /// 表示 GameInputDeviceInfo.SupportedRumbleMotors 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public GameInputRumbleMotors SupportedRumbleMotors;
 
+    /// <summary>
+    /// 表示 GameInputDeviceInfo.SupportedSystemButtons 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public GameInputSystemButtons SupportedSystemButtons;
 
+    /// <summary>
+    /// 表示 GameInputDeviceInfo.ContainerId 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public Guid ContainerId;
 
+    /// <summary>
+    /// 表示 GameInputDeviceInfo.DisplayName 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public IntPtr DisplayName;
 
+    /// <summary>
+    /// 表示 GameInputDeviceInfo.PnpPath 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public IntPtr PnpPath;
 
+    /// <summary>
+    /// 表示 GameInputDeviceInfo.KeyboardInfo 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public IntPtr KeyboardInfo;
 
+    /// <summary>
+    /// 表示 GameInputDeviceInfo.MouseInfo 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public IntPtr MouseInfo;
 
+    /// <summary>
+    /// 表示 GameInputDeviceInfo.SensorsInfo 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public IntPtr SensorsInfo;
 
+    /// <summary>
+    /// 表示 GameInputDeviceInfo.ControllerInfo 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public IntPtr ControllerInfo;
 
+    /// <summary>
+    /// 表示 GameInputDeviceInfo.ArcadeStickInfo 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public IntPtr ArcadeStickInfo;
 
+    /// <summary>
+    /// 表示 GameInputDeviceInfo.FlightStickInfo 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public IntPtr FlightStickInfo;
 
+    /// <summary>
+    /// 表示 GameInputDeviceInfo.GamepadInfo 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public IntPtr GamepadInfo;
 
+    /// <summary>
+    /// 表示 GameInputDeviceInfo.RacingWheelInfo 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public IntPtr RacingWheelInfo;
 
+    /// <summary>
+    /// 表示 GameInputDeviceInfo.ForceFeedbackMotorCount 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public uint ForceFeedbackMotorCount;
 
+    /// <summary>
+    /// 表示 GameInputDeviceInfo.ForceFeedbackMotorInfo 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public IntPtr ForceFeedbackMotorInfo;
 
+    /// <summary>
+    /// 表示 GameInputDeviceInfo.InputReportCount 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public uint InputReportCount;
 
+    /// <summary>
+    /// 表示 GameInputDeviceInfo.InputReportInfo 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public IntPtr InputReportInfo;
 
+    /// <summary>
+    /// 表示 GameInputDeviceInfo.OutputReportCount 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public uint OutputReportCount;
 
+    /// <summary>
+    /// 表示 GameInputDeviceInfo.OutputReportInfo 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public IntPtr OutputReportInfo;
 }
 
+/// <summary>
+/// 表示 GameInputHapticInfo 對應的 GameInput 原生結構。
+/// </summary>
 [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
 public struct GameInputHapticInfo
 {
+    /// <summary>
+    /// 表示 GameInputHapticInfo.AudioEndpointId 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     [MarshalAs(UnmanagedType.ByValTStr, SizeConst = GameInputConstants.HapticMaxAudioEndpointIdSize)]
     public string AudioEndpointId;
 
+    /// <summary>
+    /// 表示 GameInputHapticInfo.LocationCount 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public uint LocationCount;
 
+    /// <summary>
+    /// 表示 GameInputHapticInfo.Locations 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     [MarshalAs(UnmanagedType.ByValArray, SizeConst = GameInputConstants.HapticMaxLocations)]
     public Guid[] Locations;
 }
 
+/// <summary>
+/// 表示 GameInputForceFeedbackEnvelope 對應的 GameInput 原生結構。
+/// </summary>
 [StructLayout(LayoutKind.Sequential)]
 public struct GameInputForceFeedbackEnvelope
 {
+    /// <summary>
+    /// 表示 GameInputForceFeedbackEnvelope.AttackDuration 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public ulong AttackDuration;
 
+    /// <summary>
+    /// 表示 GameInputForceFeedbackEnvelope.SustainDuration 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public ulong SustainDuration;
 
+    /// <summary>
+    /// 表示 GameInputForceFeedbackEnvelope.ReleaseDuration 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public ulong ReleaseDuration;
 
+    /// <summary>
+    /// 表示 GameInputForceFeedbackEnvelope.AttackGain 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public float AttackGain;
 
+    /// <summary>
+    /// 表示 GameInputForceFeedbackEnvelope.SustainGain 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public float SustainGain;
 
+    /// <summary>
+    /// 表示 GameInputForceFeedbackEnvelope.ReleaseGain 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public float ReleaseGain;
 
+    /// <summary>
+    /// 表示 GameInputForceFeedbackEnvelope.PlayCount 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public uint PlayCount;
 
+    /// <summary>
+    /// 表示 GameInputForceFeedbackEnvelope.RepeatDelay 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public ulong RepeatDelay;
 }
 
+/// <summary>
+/// 表示 GameInputForceFeedbackMagnitude 對應的 GameInput 原生結構。
+/// </summary>
 [StructLayout(LayoutKind.Sequential)]
 public struct GameInputForceFeedbackMagnitude
 {
+    /// <summary>
+    /// 表示 GameInputForceFeedbackMagnitude.LinearX 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public float LinearX;
 
+    /// <summary>
+    /// 表示 GameInputForceFeedbackMagnitude.LinearY 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public float LinearY;
 
+    /// <summary>
+    /// 表示 GameInputForceFeedbackMagnitude.LinearZ 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public float LinearZ;
 
+    /// <summary>
+    /// 表示 GameInputForceFeedbackMagnitude.AngularX 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public float AngularX;
 
+    /// <summary>
+    /// 表示 GameInputForceFeedbackMagnitude.AngularY 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public float AngularY;
 
+    /// <summary>
+    /// 表示 GameInputForceFeedbackMagnitude.AngularZ 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public float AngularZ;
 
+    /// <summary>
+    /// 表示 GameInputForceFeedbackMagnitude.Normal 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public float Normal;
 }
 
+/// <summary>
+/// 表示 GameInputForceFeedbackConditionParams 對應的 GameInput 原生結構。
+/// </summary>
 [StructLayout(LayoutKind.Sequential)]
 public struct GameInputForceFeedbackConditionParams
 {
+    /// <summary>
+    /// 表示 GameInputForceFeedbackConditionParams.Magnitude 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public GameInputForceFeedbackMagnitude Magnitude;
 
+    /// <summary>
+    /// 表示 GameInputForceFeedbackConditionParams.PositiveCoefficient 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public float PositiveCoefficient;
 
+    /// <summary>
+    /// 表示 GameInputForceFeedbackConditionParams.NegativeCoefficient 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public float NegativeCoefficient;
 
+    /// <summary>
+    /// 表示 GameInputForceFeedbackConditionParams.MaxPositiveMagnitude 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public float MaxPositiveMagnitude;
 
+    /// <summary>
+    /// 表示 GameInputForceFeedbackConditionParams.MaxNegativeMagnitude 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public float MaxNegativeMagnitude;
 
+    /// <summary>
+    /// 表示 GameInputForceFeedbackConditionParams.DeadZone 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public float DeadZone;
 
+    /// <summary>
+    /// 表示 GameInputForceFeedbackConditionParams.Bias 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public float Bias;
 }
 
+/// <summary>
+/// 表示 GameInputForceFeedbackConstantParams 對應的 GameInput 原生結構。
+/// </summary>
 [StructLayout(LayoutKind.Sequential)]
 public struct GameInputForceFeedbackConstantParams
 {
+    /// <summary>
+    /// 表示 GameInputForceFeedbackConstantParams.Envelope 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public GameInputForceFeedbackEnvelope Envelope;
 
+    /// <summary>
+    /// 表示 GameInputForceFeedbackConstantParams.Magnitude 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public GameInputForceFeedbackMagnitude Magnitude;
 }
 
+/// <summary>
+/// 表示 GameInputForceFeedbackPeriodicParams 對應的 GameInput 原生結構。
+/// </summary>
 [StructLayout(LayoutKind.Sequential)]
 public struct GameInputForceFeedbackPeriodicParams
 {
+    /// <summary>
+    /// 表示 GameInputForceFeedbackPeriodicParams.Envelope 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public GameInputForceFeedbackEnvelope Envelope;
 
+    /// <summary>
+    /// 表示 GameInputForceFeedbackPeriodicParams.Magnitude 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public GameInputForceFeedbackMagnitude Magnitude;
 
+    /// <summary>
+    /// 表示 GameInputForceFeedbackPeriodicParams.Frequency 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public float Frequency;
 
+    /// <summary>
+    /// 表示 GameInputForceFeedbackPeriodicParams.Phase 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public float Phase;
 
+    /// <summary>
+    /// 表示 GameInputForceFeedbackPeriodicParams.Bias 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public float Bias;
 }
 
+/// <summary>
+/// 表示 GameInputForceFeedbackRampParams 對應的 GameInput 原生結構。
+/// </summary>
 [StructLayout(LayoutKind.Sequential)]
 public struct GameInputForceFeedbackRampParams
 {
+    /// <summary>
+    /// 表示 GameInputForceFeedbackRampParams.Envelope 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public GameInputForceFeedbackEnvelope Envelope;
 
+    /// <summary>
+    /// 表示 GameInputForceFeedbackRampParams.StartMagnitude 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public GameInputForceFeedbackMagnitude StartMagnitude;
 
+    /// <summary>
+    /// 表示 GameInputForceFeedbackRampParams.EndMagnitude 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public GameInputForceFeedbackMagnitude EndMagnitude;
 }
 
+/// <summary>
+/// 表示 GameInputForceFeedbackParams 對應的 GameInput 原生結構。
+/// </summary>
 [StructLayout(LayoutKind.Explicit)]
 public struct GameInputForceFeedbackParams
 {
+    /// <summary>
+    /// 表示 GameInputForceFeedbackParams.Kind 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     [FieldOffset(0)]
     public GameInputForceFeedbackEffectKind Kind;
 
+    /// <summary>
+    /// 表示 GameInputForceFeedbackParams.Constant 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     [FieldOffset(8)]
     public GameInputForceFeedbackConstantParams Constant;
 
+    /// <summary>
+    /// 表示 GameInputForceFeedbackParams.Ramp 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     [FieldOffset(8)]
     public GameInputForceFeedbackRampParams Ramp;
 
+    /// <summary>
+    /// 表示 GameInputForceFeedbackParams.SineWave 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     [FieldOffset(8)]
     public GameInputForceFeedbackPeriodicParams SineWave;
 
+    /// <summary>
+    /// 表示 GameInputForceFeedbackParams.SquareWave 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     [FieldOffset(8)]
     public GameInputForceFeedbackPeriodicParams SquareWave;
 
+    /// <summary>
+    /// 表示 GameInputForceFeedbackParams.TriangleWave 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     [FieldOffset(8)]
     public GameInputForceFeedbackPeriodicParams TriangleWave;
 
+    /// <summary>
+    /// 表示 GameInputForceFeedbackParams.SawtoothUpWave 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     [FieldOffset(8)]
     public GameInputForceFeedbackPeriodicParams SawtoothUpWave;
 
+    /// <summary>
+    /// 表示 GameInputForceFeedbackParams.SawtoothDownWave 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     [FieldOffset(8)]
     public GameInputForceFeedbackPeriodicParams SawtoothDownWave;
 
+    /// <summary>
+    /// 表示 GameInputForceFeedbackParams.Spring 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     [FieldOffset(8)]
     public GameInputForceFeedbackConditionParams Spring;
 
+    /// <summary>
+    /// 表示 GameInputForceFeedbackParams.Friction 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     [FieldOffset(8)]
     public GameInputForceFeedbackConditionParams Friction;
 
+    /// <summary>
+    /// 表示 GameInputForceFeedbackParams.Damper 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     [FieldOffset(8)]
     public GameInputForceFeedbackConditionParams Damper;
 
+    /// <summary>
+    /// 表示 GameInputForceFeedbackParams.Inertia 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     [FieldOffset(8)]
     public GameInputForceFeedbackConditionParams Inertia;
 }
 
+/// <summary>
+/// 表示 GameInputRumbleParams 對應的 GameInput 原生結構。
+/// </summary>
 [StructLayout(LayoutKind.Sequential)]
 public struct GameInputRumbleParams
 {
+    /// <summary>
+    /// 表示 GameInputRumbleParams.LowFrequency 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public float LowFrequency;
 
+    /// <summary>
+    /// 表示 GameInputRumbleParams.HighFrequency 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public float HighFrequency;
 
+    /// <summary>
+    /// 表示 GameInputRumbleParams.LeftTrigger 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public float LeftTrigger;
 
+    /// <summary>
+    /// 表示 GameInputRumbleParams.RightTrigger 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public float RightTrigger;
 }
 
+/// <summary>
+/// 表示 GameInputAxisMapping 對應的 GameInput 原生結構。
+/// </summary>
 [StructLayout(LayoutKind.Sequential)]
 public struct GameInputAxisMapping
 {
+    /// <summary>
+    /// 表示 GameInputAxisMapping.ControllerElementKind 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public GameInputElementKind ControllerElementKind;
 
+    /// <summary>
+    /// 表示 GameInputAxisMapping.ControllerIndex 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public uint ControllerIndex;
 
+    /// <summary>
+    /// 表示 GameInputAxisMapping.IsInverted 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     [MarshalAs(UnmanagedType.I1)]
     public bool IsInverted;
 
+    /// <summary>
+    /// 表示 GameInputAxisMapping.FromTwoButtons 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     [MarshalAs(UnmanagedType.I1)]
     public bool FromTwoButtons;
 
+    /// <summary>
+    /// 表示 GameInputAxisMapping.ButtonMinIndexValue 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public uint ButtonMinIndexValue;
 
+    /// <summary>
+    /// 表示 GameInputAxisMapping.ReferenceDirection 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public GameInputSwitchPosition ReferenceDirection;
 }
 
+/// <summary>
+/// 表示 GameInputButtonMapping 對應的 GameInput 原生結構。
+/// </summary>
 [StructLayout(LayoutKind.Sequential)]
 public struct GameInputButtonMapping
 {
+    /// <summary>
+    /// 表示 GameInputButtonMapping.ControllerElementKind 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public GameInputElementKind ControllerElementKind;
 
+    /// <summary>
+    /// 表示 GameInputButtonMapping.ControllerIndex 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public uint ControllerIndex;
 
+    /// <summary>
+    /// 表示 GameInputButtonMapping.IsInverted 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     [MarshalAs(UnmanagedType.I1)]
     public bool IsInverted;
 
+    /// <summary>
+    /// 表示 GameInputButtonMapping.SwitchPosition 對應的 GameInput 原生欄位或常數。
+    /// </summary>
     public GameInputSwitchPosition SwitchPosition;
 }

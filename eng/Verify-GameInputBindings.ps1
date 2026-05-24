@@ -39,7 +39,8 @@ $expectedGeneratedDir = Join-Path $verifyRoot 'Generated'
 
 $expectedGenerated = Join-Path $expectedGeneratedDir 'GameInputEnums.g.cs'
 $expectedManifest = Join-Path $expectedGeneratedDir 'gameinput-abi-manifest.json'
-& dotnet run --project (Join-Path $repoRoot 'tools\InputWeave.GameInput.BindingsGenerator\InputWeave.GameInput.BindingsGenerator.csproj') -- --header $headerPath --output $expectedGenerated --manifest $expectedManifest --interop-output-dir $expectedGeneratedDir
+$docsPath = Join-Path $repoRoot 'eng\gameinput-xml-docs.zh-TW.json'
+& dotnet run --project (Join-Path $repoRoot 'tools\InputWeave.GameInput.BindingsGenerator\InputWeave.GameInput.BindingsGenerator.csproj') -- --header $headerPath --output $expectedGenerated --manifest $expectedManifest --interop-output-dir $expectedGeneratedDir --docs $docsPath
 if ($LASTEXITCODE -ne 0)
 {
     throw 'GameInput 繫結產生器執行失敗。'

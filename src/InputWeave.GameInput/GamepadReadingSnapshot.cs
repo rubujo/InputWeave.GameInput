@@ -10,6 +10,7 @@ namespace InputWeave.GameInput;
 /// </remarks>
 /// <param name="timestamp">GameInput 時間戳記。</param>
 /// <param name="state">Gamepad 狀態。</param>
+/// <returns>操作完成後的查詢或建立結果。</returns>
 public sealed class GamepadReadingSnapshot(ulong timestamp, GameInputGamepadState state)
 {
     /// <summary>
