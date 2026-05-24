@@ -211,50 +211,47 @@ public sealed class GameInputDeviceManager : IDisposable
 
     private void ThrowIfDisposed()
     {
+#if NET10_0_OR_GREATER
+        ObjectDisposedException.ThrowIf(_disposed, this);
+#else
         if (_disposed)
         {
             throw new ObjectDisposedException(nameof(GameInputDeviceManager));
         }
+#endif
     }
 }
 
 /// <summary>
 /// GameInput manager 佇列中的裝置事件。
 /// </summary>
-public sealed class GameInputDeviceManagerEvent
+/// <param name="timestamp">GameInput 時間戳記。</param>
+/// <param name="currentStatus">目前裝置狀態。</param>
+/// <param name="previousStatus">先前裝置狀態。</param>
+/// <param name="device">選用的 GameInput 裝置篩選。</param>
+public sealed class GameInputDeviceManagerEvent(
+    ulong timestamp,
+    GameInputDeviceStatus currentStatus,
+    GameInputDeviceStatus previousStatus,
+    GameInputDeviceInfoSnapshot device)
 {
-    /// <summary>
-    /// 建立 GameInput manager 裝置事件。
-    /// </summary>
-    /// <param name="timestamp">GameInput 時間戳記。</param>
-    /// <param name="currentStatus">目前裝置狀態。</param>
-    /// <param name="previousStatus">先前裝置狀態。</param>
-    /// <param name="device">選用的 GameInput 裝置篩選。</param>
-    public GameInputDeviceManagerEvent(ulong timestamp, GameInputDeviceStatus currentStatus, GameInputDeviceStatus previousStatus, GameInputDeviceInfoSnapshot device)
-    {
-        Timestamp = timestamp;
-        CurrentStatus = currentStatus;
-        PreviousStatus = previousStatus;
-        Device = device;
-    }
-
     /// <summary>
     /// 事件對應的 GameInput 時間戳記。
     /// </summary>
-    public ulong Timestamp { get; }
+    public ulong Timestamp { get; } = timestamp;
 
     /// <summary>
     /// 事件發生後的裝置狀態。
     /// </summary>
-    public GameInputDeviceStatus CurrentStatus { get; }
+    public GameInputDeviceStatus CurrentStatus { get; } = currentStatus;
 
     /// <summary>
     /// 事件發生前的裝置狀態。
     /// </summary>
-    public GameInputDeviceStatus PreviousStatus { get; }
+    public GameInputDeviceStatus PreviousStatus { get; } = previousStatus;
 
     /// <summary>
     /// 事件對應的裝置資訊快照。
     /// </summary>
-    public GameInputDeviceInfoSnapshot Device { get; }
+    public GameInputDeviceInfoSnapshot Device { get; } = device;
 }

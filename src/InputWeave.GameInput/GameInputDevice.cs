@@ -199,6 +199,10 @@ public sealed class GameInputDevice : IDisposable
     /// <returns>操作完成後的查詢或建立結果。</returns>
     public int DirectInputEscape(uint command, byte[] input, byte[] output)
     {
+#if NET10_0_OR_GREATER
+        ArgumentNullException.ThrowIfNull(input);
+        ArgumentNullException.ThrowIfNull(output);
+#else
         if (input is null)
         {
             throw new ArgumentNullException(nameof(input));
@@ -208,6 +212,7 @@ public sealed class GameInputDevice : IDisposable
         {
             throw new ArgumentNullException(nameof(output));
         }
+#endif
 
         IntPtr inputPointer = Marshal.AllocHGlobal(input.Length);
         IntPtr outputPointer = Marshal.AllocHGlobal(output.Length);
@@ -301,10 +306,14 @@ public sealed class GameInputDevice : IDisposable
     /// <param name="report">要傳送或操作的 raw device report。</param>
     public void SendRawDeviceOutput(GameInputRawDeviceReport report)
     {
+#if NET10_0_OR_GREATER
+        ArgumentNullException.ThrowIfNull(report);
+#else
         if (report is null)
         {
             throw new ArgumentNullException(nameof(report));
         }
+#endif
 
         int hResult = Native.SendRawDeviceOutput(report.NativeInterface);
         GameInputException.ThrowIfFailed(hResult);

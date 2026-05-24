@@ -152,6 +152,11 @@ internal static class GeneratorDefaults
 
 internal sealed class GameInputXmlDocsCatalog
 {
+    private static readonly JsonSerializerOptions s_jsonOptions = new(JsonSerializerDefaults.Web)
+    {
+        PropertyNameCaseInsensitive = true
+    };
+
     public Dictionary<string, string> Summaries { get; set; } = new(StringComparer.Ordinal);
 
     public Dictionary<string, Dictionary<string, string>> Parameters { get; set; } = new(StringComparer.Ordinal);
@@ -167,16 +172,7 @@ internal sealed class GameInputXmlDocsCatalog
 
         GameInputXmlDocsCatalog? catalog = JsonSerializer.Deserialize<GameInputXmlDocsCatalog>(
             File.ReadAllText(path, Encoding.UTF8),
-            new JsonSerializerOptions(JsonSerializerDefaults.Web)
-            {
-                PropertyNameCaseInsensitive = true
-            });
-
-        if (catalog is null)
-        {
-            throw new InvalidOperationException("GameInput XML 文件目錄格式無效。");
-        }
-
+            s_jsonOptions) ?? throw new InvalidOperationException("GameInput XML 文件目錄格式無效。");
         catalog.Summaries = new Dictionary<string, string>(catalog.Summaries, StringComparer.Ordinal);
         catalog.Parameters = catalog.Parameters.ToDictionary(
             item => item.Key,
@@ -449,12 +445,12 @@ internal static partial class GameInputHeaderParser
 
     private static string NormalizeWhitespace(string value)
     {
-        return Regex.Replace(value, @"\s+", " ").Trim();
+        return WhitespaceRegex().Replace(value, " ").Trim();
     }
 
     private static string ExtractMethodName(string signature)
     {
-        Match method = Regex.Match(signature, @"IFACEMETHOD(?:_\([^,]+,\s*(?<name>\w+)\)|\((?<name>\w+)\))");
+        Match method = InterfaceMethodNameRegex().Match(signature);
         return !method.Success ? throw new InvalidOperationException($"無法解析 COM 方法名稱：{signature}") : method.Groups["name"].Value;
     }
 
@@ -475,6 +471,12 @@ internal static partial class GameInputHeaderParser
 
     [GeneratedRegex(@"const\s+uint32_t\s+(?<name>GAMEINPUT_\w+)\s*=\s*(?<value>\d+);")]
     private static partial Regex ConstantRegex();
+
+    [GeneratedRegex(@"\s+")]
+    private static partial Regex WhitespaceRegex();
+
+    [GeneratedRegex(@"IFACEMETHOD(?:_\([^,]+,\s*(?<name>\w+)\)|\((?<name>\w+)\))")]
+    private static partial Regex InterfaceMethodNameRegex();
 }
 
 internal static class GameInputEnumWriter
@@ -545,9 +547,9 @@ internal static class GameInputEnumWriter
     }
 }
 
-internal static class GameInputInteropWriter
+internal static partial class GameInputInteropWriter
 {
-    private static readonly Dictionary<string, string> s_knownTypeAliases = new Dictionary<string, string>(StringComparer.Ordinal)
+    private static readonly Dictionary<string, string> s_knownTypeAliases = new(StringComparer.Ordinal)
     {
         ["APP_LOCAL_DEVICE_ID"] = "AppLocalDeviceId",
         ["GUID"] = "Guid",
@@ -888,7 +890,7 @@ internal static class GameInputInteropWriter
     private static NativeMember ParseNativeMember(string member)
     {
         string cleaned = StripAnnotations(member).Trim().TrimEnd(';');
-        Match arrayMatch = Regex.Match(cleaned, @"^(?<type>.+?)\s+(?<name>\w+)\[(?<size>\w+)\]$");
+        Match arrayMatch = NativeArrayMemberRegex().Match(cleaned);
         if (arrayMatch.Success)
         {
             return new NativeMember(
@@ -897,7 +899,7 @@ internal static class GameInputInteropWriter
                 arrayMatch.Groups["size"].Value.Trim());
         }
 
-        Match fieldMatch = Regex.Match(cleaned, @"^(?<type>.+?)\s+(?<name>\w+)$");
+        Match fieldMatch = NativeFieldMemberRegex().Match(cleaned);
         return !fieldMatch.Success
             ? throw new InvalidOperationException($"無法解析 struct 欄位：{member}")
             : new NativeMember(fieldMatch.Groups["type"].Value.Trim(), fieldMatch.Groups["name"].Value.Trim(), null);
@@ -908,7 +910,7 @@ internal static class GameInputInteropWriter
         string current = value.Trim();
         while (true)
         {
-            string next = Regex.Replace(current, @"^_\w+(?:_\w+)*_(?:\([^)]*\))?\s+", string.Empty);
+            string next = LeadingAnnotationRegex().Replace(current, string.Empty);
             if (next == current)
             {
                 return current.Replace("const ", string.Empty, StringComparison.Ordinal).Trim();
@@ -1069,13 +1071,22 @@ internal static class GameInputInteropWriter
             builder.Length -= Environment.NewLine.Length;
         }
     }
+
+    [GeneratedRegex(@"^(?<type>.+?)\s+(?<name>\w+)\[(?<size>\w+)\]$")]
+    private static partial Regex NativeArrayMemberRegex();
+
+    [GeneratedRegex(@"^(?<type>.+?)\s+(?<name>\w+)$")]
+    private static partial Regex NativeFieldMemberRegex();
+
+    [GeneratedRegex(@"^_\w+(?:_\w+)*_(?:\([^)]*\))?\s+")]
+    private static partial Regex LeadingAnnotationRegex();
 }
 
 internal sealed record NativeMember(string NativeType, string Name, string? ArraySize);
 
 internal sealed record MethodDeclaration(string Declaration, bool MarshalBoolReturn);
 
-internal sealed record DeclarationInfo(string ReturnType, IReadOnlyList<string> Parameters)
+internal sealed partial record DeclarationInfo(string ReturnType, IReadOnlyList<string> Parameters)
 {
     public bool HasReturn => ReturnType != "void";
 
@@ -1086,7 +1097,7 @@ internal sealed record DeclarationInfo(string ReturnType, IReadOnlyList<string> 
             ? normalized["public delegate ".Length..]
             : normalized;
 
-        Match match = Regex.Match(normalized, @"^(?<return>[^\s]+)\s+(?<name>\w+)\((?<parameters>.*)\)$");
+        Match match = DeclarationRegex().Match(normalized);
         if (!match.Success)
         {
             throw new InvalidOperationException($"無法解析 C# 宣告以產生 XML 文件：{declaration}");
@@ -1097,7 +1108,7 @@ internal sealed record DeclarationInfo(string ReturnType, IReadOnlyList<string> 
             ParseParameters(match.Groups["parameters"].Value));
     }
 
-    private static IReadOnlyList<string> ParseParameters(string parameters)
+    private static List<string> ParseParameters(string parameters)
     {
         if (string.IsNullOrWhiteSpace(parameters))
         {
@@ -1107,7 +1118,7 @@ internal sealed record DeclarationInfo(string ReturnType, IReadOnlyList<string> 
         List<string> names = [];
         foreach (string rawParameter in SplitParameters(parameters))
         {
-            string parameter = Regex.Replace(rawParameter, @"\[[^\]]+\]\s*", string.Empty).Trim();
+            string parameter = ParameterAttributeRegex().Replace(rawParameter, string.Empty).Trim();
             string[] parts = parameter.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
             if (parts.Length == 0)
             {
@@ -1120,7 +1131,7 @@ internal sealed record DeclarationInfo(string ReturnType, IReadOnlyList<string> 
         return names;
     }
 
-    private static IReadOnlyList<string> SplitParameters(string parameters)
+    private static List<string> SplitParameters(string parameters)
     {
         List<string> values = [];
         StringBuilder current = new();
@@ -1150,6 +1161,12 @@ internal sealed record DeclarationInfo(string ReturnType, IReadOnlyList<string> 
         values.Add(current.ToString());
         return values;
     }
+
+    [GeneratedRegex(@"^(?<return>[^\s]+)\s+(?<name>\w+)\((?<parameters>.*)\)$")]
+    private static partial Regex DeclarationRegex();
+
+    [GeneratedRegex(@"\[[^\]]+\]\s*")]
+    private static partial Regex ParameterAttributeRegex();
 }
 
 internal sealed record EnumDefinition(string Name, bool IsFlags, IReadOnlyList<EnumMemberDefinition> Members);

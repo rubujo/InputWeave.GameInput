@@ -310,11 +310,11 @@ public sealed class GameInputControllerInfoSnapshot
             ReadSwitchInfo(native.ControllerSwitchInfo, native.ControllerSwitchCount));
     }
 
-    private static IReadOnlyList<GameInputControllerSwitchInfoSnapshot> ReadSwitchInfo(IntPtr pointer, uint count)
+    private static GameInputControllerSwitchInfoSnapshot[] ReadSwitchInfo(IntPtr pointer, uint count)
     {
         if (pointer == IntPtr.Zero || count == 0)
         {
-            return Array.Empty<GameInputControllerSwitchInfoSnapshot>();
+            return [];
         }
 
         int itemSize = Marshal.SizeOf<GameInputControllerSwitchInfo>();
@@ -385,7 +385,7 @@ public sealed class GameInputHapticInfoSnapshot
 
     internal static GameInputHapticInfoSnapshot FromNative(GameInputHapticInfo native)
     {
-        Guid[] locations = Array.Empty<Guid>();
+        Guid[] locations = [];
         if (native.Locations is not null && native.LocationCount > 0)
         {
             int count = Math.Min(checked((int)native.LocationCount), native.Locations.Length);

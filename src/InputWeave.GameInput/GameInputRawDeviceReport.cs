@@ -50,7 +50,16 @@ public sealed class GameInputRawDeviceReport : IDisposable
     /// <returns>操作完成後的查詢或建立結果。</returns>
     public int CopyRawData(byte[] buffer)
     {
-        return buffer is null ? throw new ArgumentNullException(nameof(buffer)) : CopyRawData(buffer, 0, buffer.Length);
+#if NET10_0_OR_GREATER
+        ArgumentNullException.ThrowIfNull(buffer);
+#else
+        if (buffer is null)
+        {
+            throw new ArgumentNullException(nameof(buffer));
+        }
+#endif
+
+        return CopyRawData(buffer, 0, buffer.Length);
     }
 
     /// <summary>
@@ -62,10 +71,14 @@ public sealed class GameInputRawDeviceReport : IDisposable
     /// <returns>操作完成後的查詢或建立結果。</returns>
     public int CopyRawData(byte[] buffer, int offset, int count)
     {
+#if NET10_0_OR_GREATER
+        ArgumentNullException.ThrowIfNull(buffer);
+#else
         if (buffer is null)
         {
             throw new ArgumentNullException(nameof(buffer));
         }
+#endif
 
         if (offset < 0 || count < 0 || offset > buffer.Length - count)
         {
@@ -110,7 +123,16 @@ public sealed class GameInputRawDeviceReport : IDisposable
     /// <returns>操作完成後的查詢或建立結果。</returns>
     public bool SetRawData(byte[] data)
     {
-        return data is null ? throw new ArgumentNullException(nameof(data)) : SetRawData(data, 0, data.Length);
+#if NET10_0_OR_GREATER
+        ArgumentNullException.ThrowIfNull(data);
+#else
+        if (data is null)
+        {
+            throw new ArgumentNullException(nameof(data));
+        }
+#endif
+
+        return SetRawData(data, 0, data.Length);
     }
 
     /// <summary>
@@ -122,10 +144,14 @@ public sealed class GameInputRawDeviceReport : IDisposable
     /// <returns>操作完成後的查詢或建立結果。</returns>
     public bool SetRawData(byte[] data, int offset, int count)
     {
+#if NET10_0_OR_GREATER
+        ArgumentNullException.ThrowIfNull(data);
+#else
         if (data is null)
         {
             throw new ArgumentNullException(nameof(data));
         }
+#endif
 
         if (offset < 0 || count < 0 || offset > data.Length - count)
         {

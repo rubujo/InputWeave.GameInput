@@ -12,7 +12,6 @@ public sealed class GameInputCallbackRegistration : IDisposable
     private readonly Action<GameInputCallbackRegistration> _removeRegistration;
     private readonly Action _deactivateContext;
     private GCHandle _contextHandle;
-    private bool _disposed;
 
     internal GameInputCallbackRegistration(
         ulong token,
@@ -38,25 +37,19 @@ public sealed class GameInputCallbackRegistration : IDisposable
     /// <summary>
     /// 註冊是否已釋放。
     /// </summary>
-    public bool IsDisposed
-    {
-        get
-        {
-            return _disposed;
-        }
-    }
+    public bool IsDisposed { get; private set; }
 
     /// <summary>
     /// 取消註冊 callback 並釋放相關 managed 狀態。
     /// </summary>
     public void Dispose()
     {
-        if (_disposed)
+        if (IsDisposed)
         {
             return;
         }
 
-        _disposed = true;
+        IsDisposed = true;
         _deactivateContext();
 
         try

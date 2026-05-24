@@ -13,7 +13,11 @@ public sealed class GameInputClient : IDisposable
     private static readonly GameInputSystemButtonCallback s_systemButtonCallback = OnSystemButtonCallback;
     private static readonly GameInputKeyboardLayoutCallback s_keyboardLayoutCallback = OnKeyboardLayoutCallback;
 
+#if NET10_0_OR_GREATER
+    private readonly System.Threading.Lock _syncRoot = new();
+#else
     private readonly object _syncRoot = new();
+#endif
     private readonly List<GameInputCallbackRegistration> _registrations = [];
     private IGameInput? _native;
     private bool _disposed;
@@ -118,10 +122,14 @@ public sealed class GameInputClient : IDisposable
     /// <returns>操作完成後的查詢或建立結果。</returns>
     public GameInputReading? GetNextReading(GameInputReading referenceReading, GameInputKind inputKind, GameInputDevice? device = null)
     {
+#if NET10_0_OR_GREATER
+        ArgumentNullException.ThrowIfNull(referenceReading);
+#else
         if (referenceReading is null)
         {
             throw new ArgumentNullException(nameof(referenceReading));
         }
+#endif
 
         int hResult = Native.GetNextReading(referenceReading.NativeInterface, inputKind, device?.NativeInterface, out IGameInputReading? nativeReading);
         if (hResult == GameInputHResult.ReadingNotFound || hResult == GameInputHResult.InputKindNotPresent)
@@ -142,10 +150,14 @@ public sealed class GameInputClient : IDisposable
     /// <returns>操作完成後的查詢或建立結果。</returns>
     public GameInputReading? GetPreviousReading(GameInputReading referenceReading, GameInputKind inputKind, GameInputDevice? device = null)
     {
+#if NET10_0_OR_GREATER
+        ArgumentNullException.ThrowIfNull(referenceReading);
+#else
         if (referenceReading is null)
         {
             throw new ArgumentNullException(nameof(referenceReading));
         }
+#endif
 
         int hResult = Native.GetPreviousReading(referenceReading.NativeInterface, inputKind, device?.NativeInterface, out IGameInputReading? nativeReading);
         if (hResult == GameInputHResult.ReadingNotFound || hResult == GameInputHResult.InputKindNotPresent)
@@ -274,10 +286,14 @@ public sealed class GameInputClient : IDisposable
     /// <returns>操作完成後的查詢或建立結果。</returns>
     public GameInputCallbackRegistration RegisterReadingCallback(GameInputDevice? device, GameInputKind inputKind, GameInputReadingHandler handler)
     {
+#if NET10_0_OR_GREATER
+        ArgumentNullException.ThrowIfNull(handler);
+#else
         if (handler is null)
         {
             throw new ArgumentNullException(nameof(handler));
         }
+#endif
 
         ReadingCallbackContext context = new(handler);
         GCHandle handle = GCHandle.Alloc(context);
@@ -315,10 +331,14 @@ public sealed class GameInputClient : IDisposable
         GameInputEnumerationKind enumerationKind,
         GameInputDeviceHandler handler)
     {
+#if NET10_0_OR_GREATER
+        ArgumentNullException.ThrowIfNull(handler);
+#else
         if (handler is null)
         {
             throw new ArgumentNullException(nameof(handler));
         }
+#endif
 
         DeviceCallbackContext context = new(handler);
         GCHandle handle = GCHandle.Alloc(context);
@@ -349,10 +369,14 @@ public sealed class GameInputClient : IDisposable
     /// <returns>操作完成後的查詢或建立結果。</returns>
     public GameInputCallbackRegistration RegisterSystemButtonCallback(GameInputDevice? device, GameInputSystemButtons buttonFilter, GameInputSystemButtonHandler handler)
     {
+#if NET10_0_OR_GREATER
+        ArgumentNullException.ThrowIfNull(handler);
+#else
         if (handler is null)
         {
             throw new ArgumentNullException(nameof(handler));
         }
+#endif
 
         SystemButtonCallbackContext context = new(handler);
         GCHandle handle = GCHandle.Alloc(context);
@@ -382,10 +406,14 @@ public sealed class GameInputClient : IDisposable
     /// <returns>操作完成後的查詢或建立結果。</returns>
     public GameInputCallbackRegistration RegisterKeyboardLayoutCallback(GameInputDevice? device, GameInputKeyboardLayoutHandler handler)
     {
+#if NET10_0_OR_GREATER
+        ArgumentNullException.ThrowIfNull(handler);
+#else
         if (handler is null)
         {
             throw new ArgumentNullException(nameof(handler));
         }
+#endif
 
         KeyboardLayoutCallbackContext context = new(handler);
         GCHandle handle = GCHandle.Alloc(context);
@@ -420,7 +448,7 @@ public sealed class GameInputClient : IDisposable
         GameInputCallbackRegistration[] registrations;
         lock (_syncRoot)
         {
-            registrations = _registrations.ToArray();
+            registrations = [.. _registrations];
             _registrations.Clear();
         }
 
@@ -559,60 +587,24 @@ public sealed class GameInputClient : IDisposable
         }
     }
 
-    private sealed class ReadingCallbackContext : CallbackContext
+    private sealed class ReadingCallbackContext(GameInputReadingHandler handler) : CallbackContext
     {
-        /// <summary>
-        /// 提供 ReadingCallbackContext 公開 API。
-        /// </summary>
-        /// <param name="handler">要註冊的 managed callback handler。</param>
-        public ReadingCallbackContext(GameInputReadingHandler handler)
-        {
-            Handler = handler;
-        }
-
-        public GameInputReadingHandler Handler { get; }
+        public GameInputReadingHandler Handler { get; } = handler;
     }
 
-    private sealed class DeviceCallbackContext : CallbackContext
+    private sealed class DeviceCallbackContext(GameInputDeviceHandler handler) : CallbackContext
     {
-        /// <summary>
-        /// 提供 DeviceCallbackContext 公開 API。
-        /// </summary>
-        /// <param name="handler">要註冊的 managed callback handler。</param>
-        public DeviceCallbackContext(GameInputDeviceHandler handler)
-        {
-            Handler = handler;
-        }
-
-        public GameInputDeviceHandler Handler { get; }
+        public GameInputDeviceHandler Handler { get; } = handler;
     }
 
-    private sealed class SystemButtonCallbackContext : CallbackContext
+    private sealed class SystemButtonCallbackContext(GameInputSystemButtonHandler handler) : CallbackContext
     {
-        /// <summary>
-        /// 提供 SystemButtonCallbackContext 公開 API。
-        /// </summary>
-        /// <param name="handler">要註冊的 managed callback handler。</param>
-        public SystemButtonCallbackContext(GameInputSystemButtonHandler handler)
-        {
-            Handler = handler;
-        }
-
-        public GameInputSystemButtonHandler Handler { get; }
+        public GameInputSystemButtonHandler Handler { get; } = handler;
     }
 
-    private sealed class KeyboardLayoutCallbackContext : CallbackContext
+    private sealed class KeyboardLayoutCallbackContext(GameInputKeyboardLayoutHandler handler) : CallbackContext
     {
-        /// <summary>
-        /// 提供 KeyboardLayoutCallbackContext 公開 API。
-        /// </summary>
-        /// <param name="handler">要註冊的 managed callback handler。</param>
-        public KeyboardLayoutCallbackContext(GameInputKeyboardLayoutHandler handler)
-        {
-            Handler = handler;
-        }
-
-        public GameInputKeyboardLayoutHandler Handler { get; }
+        public GameInputKeyboardLayoutHandler Handler { get; } = handler;
     }
 
     private sealed class DeviceEnumerationContext : CallbackContext

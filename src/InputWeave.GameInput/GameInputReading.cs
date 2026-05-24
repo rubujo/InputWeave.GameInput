@@ -65,7 +65,7 @@ public sealed class GameInputReading : IDisposable
         uint count = Native.GetControllerAxisCount();
         if (count == 0)
         {
-            return Array.Empty<float>();
+            return [];
         }
 
         float[] state = new float[checked((int)count)];
@@ -88,7 +88,7 @@ public sealed class GameInputReading : IDisposable
         uint count = Native.GetControllerButtonCount();
         if (count == 0)
         {
-            return Array.Empty<bool>();
+            return [];
         }
 
         byte[] nativeState = new byte[checked((int)count)];
@@ -111,7 +111,7 @@ public sealed class GameInputReading : IDisposable
         uint count = Native.GetControllerSwitchCount();
         if (count == 0)
         {
-            return Array.Empty<GameInputSwitchPosition>();
+            return [];
         }
 
         GameInputSwitchPosition[] state = new GameInputSwitchPosition[checked((int)count)];
@@ -134,7 +134,7 @@ public sealed class GameInputReading : IDisposable
         uint count = Native.GetKeyCount();
         if (count == 0)
         {
-            return Array.Empty<GameInputKeyState>();
+            return [];
         }
 
         GameInputKeyState[] state = new GameInputKeyState[checked((int)count)];

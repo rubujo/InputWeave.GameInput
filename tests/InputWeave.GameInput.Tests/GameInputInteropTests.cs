@@ -106,6 +106,6 @@ public sealed class GameInputInteropTests
 
         Assert.AreEqual(GameInputHResult.ReadingNotFound, exception.HResult);
         Assert.IsTrue(exception.IsNotFound);
-        StringAssert.Contains(exception.Message, "讀取資料");
+        Assert.Contains("讀取資料", exception.Message);
     }
 }

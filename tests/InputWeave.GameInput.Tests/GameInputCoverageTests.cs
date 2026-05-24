@@ -11,7 +11,7 @@ public sealed class GameInputCoverageTests
     {
         string project = File.ReadAllText(FindRepoFile("src/InputWeave.GameInput/InputWeave.GameInput.csproj"));
 
-        StringAssert.Contains(project, "<Version>0.0.1</Version>");
+        Assert.Contains("<Version>0.0.1</Version>", project);
         Assert.IsFalse(project.Contains("v.0.0.1", StringComparison.Ordinal));
     }
 
@@ -20,9 +20,9 @@ public sealed class GameInputCoverageTests
     {
         string report = File.ReadAllText(FindRepoFile("docs/gameinput-api-coverage.md"));
 
-        StringAssert.Contains(report, "InputWeave.GameInput v0.0.1");
-        StringAssert.Contains(report, "Microsoft.GameInput 3.4.218");
-        StringAssert.Contains(report, "缺口：0");
+        Assert.Contains("InputWeave.GameInput v0.0.1", report);
+        Assert.Contains("Microsoft.GameInput 3.4.218", report);
+        Assert.Contains("缺口：0", report);
         Assert.IsFalse(report.Contains("v.0.0.1", StringComparison.Ordinal));
     }
 
@@ -32,12 +32,12 @@ public sealed class GameInputCoverageTests
         string manifest = File.ReadAllText(FindRepoFile("src/InputWeave.GameInput/Interop/Generated/gameinput-abi-manifest.json"));
         string report = File.ReadAllText(FindRepoFile("docs/gameinput-api-coverage.md"));
 
-        StringAssert.Contains(manifest, "\"apiVersion\": 3");
-        StringAssert.Contains(report, "enum：27 / 27");
-        StringAssert.Contains(report, "struct：32 / 32");
-        StringAssert.Contains(report, "callback delegate：4 / 4");
-        StringAssert.Contains(report, "COM interface：7 / 7");
-        StringAssert.Contains(report, "HRESULT：10 / 10");
+        Assert.Contains("\"apiVersion\": 3", manifest);
+        Assert.Contains("enum：27 / 27", report);
+        Assert.Contains("struct：32 / 32", report);
+        Assert.Contains("callback delegate：4 / 4", report);
+        Assert.Contains("COM interface：7 / 7", report);
+        Assert.Contains("HRESULT：10 / 10", report);
     }
 
     [TestMethod]

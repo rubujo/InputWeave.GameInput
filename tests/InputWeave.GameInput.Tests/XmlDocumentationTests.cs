@@ -11,7 +11,7 @@ public sealed class XmlDocumentationTests
     public void PublicApiXmlDocumentationIsComplete()
     {
         Assembly assembly = typeof(GameInputClient).Assembly;
-        IReadOnlyDictionary<string, XElement> members = LoadXmlDocumentation(assembly);
+        Dictionary<string, XElement> members = LoadXmlDocumentation(assembly);
 
         foreach (Type type in assembly.GetExportedTypes().Where(static item => item.Namespace?.StartsWith("InputWeave.GameInput", StringComparison.Ordinal) == true))
         {
@@ -34,7 +34,7 @@ public sealed class XmlDocumentationTests
         }
     }
 
-    private static IReadOnlyDictionary<string, XElement> LoadXmlDocumentation(Assembly assembly)
+    private static Dictionary<string, XElement> LoadXmlDocumentation(Assembly assembly)
     {
         string xmlPath = Path.ChangeExtension(assembly.Location, ".xml");
         if (!File.Exists(xmlPath))
@@ -148,9 +148,9 @@ public sealed class XmlDocumentationTests
         return method.IsPublic || method.IsFamily || method.IsFamilyOrAssembly;
     }
 
-    private static XElement RequireDocumentedMember(IReadOnlyDictionary<string, XElement> members, string idPrefix, IReadOnlyList<ParameterInfo>? parameters = null)
+    private static XElement RequireDocumentedMember(IReadOnlyDictionary<string, XElement> members, string idPrefix, ParameterInfo[]? parameters = null)
     {
-        if ((parameters is null || parameters.Count == 0) && members.TryGetValue(idPrefix, out XElement? exact))
+        if ((parameters is null || parameters.Length == 0) && members.TryGetValue(idPrefix, out XElement? exact))
         {
             return exact;
         }
