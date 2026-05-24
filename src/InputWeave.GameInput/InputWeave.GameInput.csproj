@@ -8,6 +8,7 @@
     <Version>0.0.1</Version>
     <Authors>InputWeave contributors</Authors>
     <RepositoryType>git</RepositoryType>
+    <PackageLicenseExpression>CC0-1.0</PackageLicenseExpression>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>

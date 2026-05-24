@@ -1,0 +1,235 @@
+name: Release NuGet Package
+
+run-name: Release ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Existing v* tag to publish, for example v0.0.1.'
+        required: true
+        default: 'v0.0.1'
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-nupkg-${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    shell: pwsh
+
+env:
+  DOTNET_NOLOGO: true
+  GH_TOKEN: ${{ github.token }}
+
+jobs:
+  release:
+    name: Build and attach nupkg
+    runs-on: windows-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout release tag
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref }}
+          persist-credentials: false
+
+      - name: Resolve release context
+        id: release_context
+        run: |
+          $ErrorActionPreference = 'Stop'
+          Set-StrictMode -Version Latest
+
+          $tag = if ('${{ github.event_name }}' -eq 'workflow_dispatch') {
+              '${{ inputs.tag }}'
+          }
+          else {
+              '${{ github.ref_name }}'
+          }
+
+          if ([string]::IsNullOrWhiteSpace($tag)) {
+              throw '找不到 release tag。'
+          }
+
+          if ($tag -notmatch '^v(?<version>\d+\.\d+\.\d+(?:-[0-9A-Za-z][0-9A-Za-z.-]*)?)$') {
+              throw "Release tag '$tag' 必須符合 v<SemVer>，例如 v0.0.1。"
+          }
+
+          $version = $Matches['version']
+          $output = "tag=$tag`nversion=$version`n"
+          [System.IO.File]::AppendAllText(
+              $env:GITHUB_OUTPUT,
+              $output,
+              [System.Text.UTF8Encoding]::new($false))
+
+      - name: Preflight release inputs
+        run: |
+          $ErrorActionPreference = 'Stop'
+          Set-StrictMode -Version Latest
+
+          $tag = '${{ steps.release_context.outputs.tag }}'
+          $version = '${{ steps.release_context.outputs.version }}'
+
+          [xml]$project = Get-Content -LiteralPath 'src/InputWeave.GameInput/InputWeave.GameInput.csproj'
+          $projectVersion = [string]$project.Project.PropertyGroup.Version
+          if ($projectVersion -ne $version) {
+              throw "Tag '$tag' 對應版本 '$version'，但專案版本是 '$projectVersion'。"
+          }
+
+          & gh api "repos/$env:GITHUB_REPOSITORY/git/ref/tags/$tag" *> $null
+          if ($LASTEXITCODE -ne 0) {
+              throw "GitHub 上找不到 tag '$tag'。Workflow 不會自動建立 tag。"
+          }
+
+          & gh release view $tag *> $null
+          if ($LASTEXITCODE -eq 0) {
+              throw "Release '$tag' 已存在，為避免覆寫資產已停止。"
+          }
+
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v5
+        with:
+          global-json-file: global.json
+
+      - name: Restore
+        run: dotnet restore InputWeave.GameInput.slnx
+
+      - name: Build
+        run: dotnet build InputWeave.GameInput.slnx -c Release --no-restore
+
+      - name: Test
+        run: dotnet test InputWeave.GameInput.slnx -c Release --no-build
+
+      - name: Verify formatting
+        run: dotnet format InputWeave.GameInput.slnx --verify-no-changes
+
+      - name: Verify GameInput version
+        run: pwsh ./eng/Check-GameInputVersion.ps1 -FailOnOutdated
+
+      - name: Verify GameInput bindings
+        run: pwsh ./eng/Verify-GameInputBindings.ps1
+
+      - name: Verify GameInput coverage
+        run: pwsh ./eng/Verify-GameInputCoverage.ps1
+
+      - name: Validate text encoding
+        run: pwsh ./eng/Validate-TextEncoding.ps1
+
+      - name: Validate agent docs
+        run: pwsh ./eng/Validate-AgentDocs.ps1
+
+      - name: Clean package output
+        run: |
+          $ErrorActionPreference = 'Stop'
+          Set-StrictMode -Version Latest
+
+          if (Test-Path -LiteralPath '.tmp/packages') {
+              Remove-Item -LiteralPath '.tmp/packages' -Recurse -Force
+          }
+
+      - name: Pack
+        run: dotnet pack src/InputWeave.GameInput/InputWeave.GameInput.csproj -c Release --no-build -o .tmp/packages
+
+      - name: Verify package contents
+        id: package
+        run: |
+          $ErrorActionPreference = 'Stop'
+          Set-StrictMode -Version Latest
+
+          $version = '${{ steps.release_context.outputs.version }}'
+          $packageName = "InputWeave.GameInput.$version.nupkg"
+          $packagePath = Join-Path '.tmp/packages' $packageName
+
+          $packages = @(Get-ChildItem -LiteralPath '.tmp/packages' -Filter 'InputWeave.GameInput.*.nupkg')
+          if ($packages.Count -ne 1 -or $packages[0].Name -ne $packageName) {
+              $actual = ($packages | ForEach-Object { $_.Name }) -join ', '
+              throw "套件輸出不符合預期。Expected: $packageName; Actual: $actual"
+          }
+
+          Add-Type -AssemblyName System.IO.Compression.FileSystem
+          $archive = [System.IO.Compression.ZipFile]::OpenRead($packagePath)
+          try {
+              $entries = @($archive.Entries | ForEach-Object { $_.FullName })
+              $redistEntry = $entries | Where-Object { $_ -match '(^|/)GameInputRedist\.msi$' } | Select-Object -First 1
+              if ($null -ne $redistEntry) {
+                  throw "Wrapper NuGet 不得包含 GameInputRedist.msi：$redistEntry"
+              }
+
+              $nuspecEntry = $archive.Entries |
+                  Where-Object { $_.FullName -eq 'InputWeave.GameInput.nuspec' } |
+                  Select-Object -First 1
+              if ($null -eq $nuspecEntry) {
+                  throw '套件缺少 InputWeave.GameInput.nuspec。'
+              }
+
+              $reader = [System.IO.StreamReader]::new($nuspecEntry.Open())
+              try {
+                  $nuspec = $reader.ReadToEnd()
+              }
+              finally {
+                  $reader.Dispose()
+              }
+
+              if ($nuspec -notmatch '<license type="expression">CC0-1\.0</license>') {
+                  throw '套件 metadata 未包含 CC0-1.0 license expression。'
+              }
+          }
+          finally {
+              $archive.Dispose()
+          }
+
+          $hash = Get-FileHash -LiteralPath $packagePath -Algorithm SHA256
+          $hashPath = "$packagePath.sha256"
+          $hashLine = '{0}  {1}' -f $hash.Hash.ToLowerInvariant(), $packageName
+          [System.IO.File]::WriteAllText(
+              $hashPath,
+              "$hashLine`n",
+              [System.Text.UTF8Encoding]::new($false))
+
+          $output = "package-path=$packagePath`nhash-path=$hashPath`n"
+          [System.IO.File]::AppendAllText(
+              $env:GITHUB_OUTPUT,
+              $output,
+              [System.Text.UTF8Encoding]::new($false))
+
+      - name: Create GitHub Release
+        run: |
+          $ErrorActionPreference = 'Stop'
+          Set-StrictMode -Version Latest
+
+          $tag = '${{ steps.release_context.outputs.tag }}'
+          $version = '${{ steps.release_context.outputs.version }}'
+          $packagePath = '${{ steps.package.outputs.package-path }}'
+          $hashPath = '${{ steps.package.outputs.hash-path }}'
+          $notesPath = Join-Path $env:RUNNER_TEMP 'release-notes.md'
+
+          $notes = @(
+              "# InputWeave.GameInput $tag",
+              '',
+              "此 release 提供不上架的 NuGet package，僅作為 GitHub Release asset 發布。",
+              '',
+              "- NuGet package：InputWeave.GameInput.$version.nupkg",
+              "- SHA256 sidecar：InputWeave.GameInput.$version.nupkg.sha256",
+              "- 不會推送到 NuGet.org 或 GitHub Packages。",
+              "- Wrapper package 不包含 GameInputRedist.msi。"
+          )
+
+          [System.IO.File]::WriteAllLines(
+              $notesPath,
+              $notes,
+              [System.Text.UTF8Encoding]::new($false))
+
+          gh release create $tag `
+              $packagePath `
+              $hashPath `
+              --verify-tag `
+              --title "InputWeave.GameInput $tag" `
+              --notes-file $notesPath

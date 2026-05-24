@@ -25,7 +25,7 @@
 - Generated interop 的 XML 文件註解來源是 `eng/gameinput-xml-docs.zh-TW.json`；不要手改 generated `.g.cs` 補文件。
 - 不要手改 generated interop；若產生檔不符合需求，修改 `tools/InputWeave.GameInput.BindingsGenerator` 後重產。
 - `docs/gameinput-api-coverage.md` 的 v0.0.1 coverage 必須維持缺口為 0，release 前需跑 `eng/Verify-GameInputCoverage.ps1`。
-- 追版或競品狀態改變時，同步更新 `docs/competitive-comparison.md`。
+- 追版時同步更新 `docs/gameinput-version-report.md` 與 coverage 文件。
 
 ## 程式碼規範
 

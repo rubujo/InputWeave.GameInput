@@ -17,4 +17,4 @@
 2. 若有新版，執行 `pwsh ./eng/Update-GameInputVersion.ps1`。
 3. 檢查 `Directory.Packages.props`、`eng/gameinput-baseline.json`、`src/InputWeave.GameInput/Interop/Generated/` 下的 `.g.cs`、`gameinput-abi-manifest.json` 與本報告。
 4. 執行 `dotnet build`、`dotnet test`、`pwsh ./eng/Verify-GameInputBindings.ps1`、`pwsh ./eng/Verify-GameInputCoverage.ps1`。
-5. 若 GameInput.h 公開 API 有新增或異動，先更新 generator 映射，再更新 `docs/competitive-comparison.md` 的差距與追趕狀態。
+5. 若 GameInput.h 公開 API 有新增或異動，先更新 generator 映射，再更新 coverage 與版本文件。
