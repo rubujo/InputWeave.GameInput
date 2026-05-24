@@ -57,7 +57,17 @@ GameInputForceFeedbackMagnitude magnitude = GameInputForceFeedback.Magnitude(nor
 GameInputForceFeedbackParams parameters = GameInputForceFeedback.Constant(magnitude, envelope);
 ```
 
-範例專案在 `samples/InputWeave.GameInput.Samples`，涵蓋 polling、callbacks、device manager、dispatcher safe handle、haptics 與 rumble 路徑。
+Quickstart 範例專案在 `samples/InputWeave.GameInput.Samples`，預設只做唯讀的初始化、裝置列舉、gamepad polling、dispatcher safe wait handle 與 callback 示範：
+
+```powershell
+dotnet run --project samples/InputWeave.GameInput.Samples
+```
+
+如需確認支援裝置的 rumble 路徑，可明確傳入 `--rumble`；範例只會短暫輸出低強度震動，並在結束前立即清除震動狀態：
+
+```powershell
+dotnet run --project samples/InputWeave.GameInput.Samples -- --rumble
+```
 
 ## 建置與驗證
 
