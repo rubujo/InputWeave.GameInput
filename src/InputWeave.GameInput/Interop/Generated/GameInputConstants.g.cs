@@ -2,23 +2,22 @@
 // 此檔案由 InputWeave.GameInput.BindingsGenerator 依 Microsoft GameInput.h 產生。
 #nullable enable
 
-namespace InputWeave.GameInput.Interop
+namespace InputWeave.GameInput.Interop;
+
+/// <summary>
+/// GameInput v3 繫結會用到的固定常數。
+/// </summary>
+public static class GameInputConstants
 {
-    /// <summary>
-    /// GameInput v3 繫結會用到的固定常數。
-    /// </summary>
-    public static class GameInputConstants
-    {
-        public const int ApiVersion = 3;
+    public const int ApiVersion = 3;
 
-        public const string DllName = "GameInput.dll";
+    public const string DllName = "GameInput.dll";
 
-        public const ulong CurrentCallbackTokenValue = 0;
+    public const ulong CurrentCallbackTokenValue = 0;
 
-        public const int HapticMaxLocations = 8;
+    public const int HapticMaxLocations = 8;
 
-        public const int HapticMaxAudioEndpointIdSize = 256;
+    public const int HapticMaxAudioEndpointIdSize = 256;
 
-        public const int MaxSwitchStates = 8;
-    }
+    public const int MaxSwitchStates = 8;
 }

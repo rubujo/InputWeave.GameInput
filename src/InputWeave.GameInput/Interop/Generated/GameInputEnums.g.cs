@@ -2,462 +2,457 @@
 // 此檔案由 InputWeave.GameInput.BindingsGenerator 依 Microsoft GameInput.h 產生。
 #nullable enable
 
-#pragma warning disable CA1027
-#pragma warning disable CA2217
+namespace InputWeave.GameInput.Interop;
 
-namespace InputWeave.GameInput.Interop
+[System.Flags]
+public enum GameInputKind
 {
-    [System.Flags]
-    public enum GameInputKind
-    {
-        GameInputKindUnknown = 0,
-        GameInputKindRawDeviceReport = 1,
-        GameInputKindControllerAxis = 2,
-        GameInputKindControllerButton = 4,
-        GameInputKindControllerSwitch = 8,
-        GameInputKindController = 14,
-        GameInputKindKeyboard = 16,
-        GameInputKindMouse = 32,
-        GameInputKindSensors = 64,
-        GameInputKindArcadeStick = 65536,
-        GameInputKindFlightStick = 131072,
-        GameInputKindGamepad = 262144,
-        GameInputKindRacingWheel = 524288
-    }
+    GameInputKindUnknown = 0,
+    GameInputKindRawDeviceReport = 1,
+    GameInputKindControllerAxis = 2,
+    GameInputKindControllerButton = 4,
+    GameInputKindControllerSwitch = 8,
+    GameInputKindController = 14,
+    GameInputKindKeyboard = 16,
+    GameInputKindMouse = 32,
+    GameInputKindSensors = 64,
+    GameInputKindArcadeStick = 65536,
+    GameInputKindFlightStick = 131072,
+    GameInputKindGamepad = 262144,
+    GameInputKindRacingWheel = 524288
+}
 
-    public enum GameInputEnumerationKind
-    {
-        GameInputNoEnumeration = 0,
-        GameInputAsyncEnumeration = 1,
-        GameInputBlockingEnumeration = 2
-    }
+public enum GameInputEnumerationKind
+{
+    GameInputNoEnumeration = 0,
+    GameInputAsyncEnumeration = 1,
+    GameInputBlockingEnumeration = 2
+}
 
-    [System.Flags]
-    public enum GameInputFocusPolicy
-    {
-        GameInputDefaultFocusPolicy = 0,
-        GameInputExclusiveForegroundInput = 2,
-        GameInputExclusiveForegroundGuideButton = 8,
-        GameInputExclusiveForegroundShareButton = 32,
-        GameInputEnableBackgroundInput = 64,
-        GameInputEnableBackgroundGuideButton = 128,
-        GameInputEnableBackgroundShareButton = 256
-    }
+[System.Flags]
+public enum GameInputFocusPolicy
+{
+    GameInputDefaultFocusPolicy = 0,
+    GameInputExclusiveForegroundInput = 2,
+    GameInputExclusiveForegroundGuideButton = 8,
+    GameInputExclusiveForegroundShareButton = 32,
+    GameInputEnableBackgroundInput = 64,
+    GameInputEnableBackgroundGuideButton = 128,
+    GameInputEnableBackgroundShareButton = 256
+}
 
-    public enum GameInputSwitchKind
-    {
-        GameInputUnknownSwitchKind = -1,
-        GameInput2WaySwitch = 0,
-        GameInput4WaySwitch = 1,
-        GameInput8WaySwitch = 2
-    }
+public enum GameInputSwitchKind
+{
+    GameInputUnknownSwitchKind = -1,
+    GameInput2WaySwitch = 0,
+    GameInput4WaySwitch = 1,
+    GameInput8WaySwitch = 2
+}
 
-    public enum GameInputSwitchPosition
-    {
-        GameInputSwitchCenter = 0,
-        GameInputSwitchUp = 1,
-        GameInputSwitchUpRight = 2,
-        GameInputSwitchRight = 3,
-        GameInputSwitchDownRight = 4,
-        GameInputSwitchDown = 5,
-        GameInputSwitchDownLeft = 6,
-        GameInputSwitchLeft = 7,
-        GameInputSwitchUpLeft = 8
-    }
+public enum GameInputSwitchPosition
+{
+    GameInputSwitchCenter = 0,
+    GameInputSwitchUp = 1,
+    GameInputSwitchUpRight = 2,
+    GameInputSwitchRight = 3,
+    GameInputSwitchDownRight = 4,
+    GameInputSwitchDown = 5,
+    GameInputSwitchDownLeft = 6,
+    GameInputSwitchLeft = 7,
+    GameInputSwitchUpLeft = 8
+}
 
-    public enum GameInputKeyboardKind
-    {
-        GameInputUnknownKeyboard = -1,
-        GameInputAnsiKeyboard = 0,
-        GameInputIsoKeyboard = 1,
-        GameInputKsKeyboard = 2,
-        GameInputAbntKeyboard = 3,
-        GameInputJisKeyboard = 4
-    }
+public enum GameInputKeyboardKind
+{
+    GameInputUnknownKeyboard = -1,
+    GameInputAnsiKeyboard = 0,
+    GameInputIsoKeyboard = 1,
+    GameInputKsKeyboard = 2,
+    GameInputAbntKeyboard = 3,
+    GameInputJisKeyboard = 4
+}
 
-    [System.Flags]
-    public enum GameInputMouseButtons
-    {
-        GameInputMouseNone = 0,
-        GameInputMouseLeftButton = 1,
-        GameInputMouseRightButton = 2,
-        GameInputMouseMiddleButton = 4,
-        GameInputMouseButton4 = 8,
-        GameInputMouseButton5 = 16,
-        GameInputMouseWheelTiltLeft = 32,
-        GameInputMouseWheelTiltRight = 64
-    }
+[System.Flags]
+public enum GameInputMouseButtons
+{
+    GameInputMouseNone = 0,
+    GameInputMouseLeftButton = 1,
+    GameInputMouseRightButton = 2,
+    GameInputMouseMiddleButton = 4,
+    GameInputMouseButton4 = 8,
+    GameInputMouseButton5 = 16,
+    GameInputMouseWheelTiltLeft = 32,
+    GameInputMouseWheelTiltRight = 64
+}
 
-    [System.Flags]
-    public enum GameInputMousePositions
-    {
-        GameInputMouseNoPosition = 0,
-        GameInputMouseAbsolutePosition = 1,
-        GameInputMouseRelativePosition = 2
-    }
+[System.Flags]
+public enum GameInputMousePositions
+{
+    GameInputMouseNoPosition = 0,
+    GameInputMouseAbsolutePosition = 1,
+    GameInputMouseRelativePosition = 2
+}
 
-    [System.Flags]
-    public enum GameInputSensorsKind
-    {
-        GameInputSensorsNone = 0,
-        GameInputSensorsAccelerometer = 1,
-        GameInputSensorsGyrometer = 2,
-        GameInputSensorsCompass = 4,
-        GameInputSensorsOrientation = 8
-    }
+[System.Flags]
+public enum GameInputSensorsKind
+{
+    GameInputSensorsNone = 0,
+    GameInputSensorsAccelerometer = 1,
+    GameInputSensorsGyrometer = 2,
+    GameInputSensorsCompass = 4,
+    GameInputSensorsOrientation = 8
+}
 
-    public enum GameInputSensorAccuracy
-    {
-        GameInputSensorAccuracyUnknown = 0,
-        GameInputSensorAccuracyUnreliable = 1,
-        GameInputSensorAccuracyApproximate = 2,
-        GameInputSensorAccuracyHigh = 3
-    }
+public enum GameInputSensorAccuracy
+{
+    GameInputSensorAccuracyUnknown = 0,
+    GameInputSensorAccuracyUnreliable = 1,
+    GameInputSensorAccuracyApproximate = 2,
+    GameInputSensorAccuracyHigh = 3
+}
 
-    [System.Flags]
-    public enum GameInputArcadeStickButtons
-    {
-        GameInputArcadeStickNone = 0,
-        GameInputArcadeStickMenu = 1,
-        GameInputArcadeStickView = 2,
-        GameInputArcadeStickUp = 4,
-        GameInputArcadeStickDown = 8,
-        GameInputArcadeStickLeft = 16,
-        GameInputArcadeStickRight = 32,
-        GameInputArcadeStickAction1 = 64,
-        GameInputArcadeStickAction2 = 128,
-        GameInputArcadeStickAction3 = 256,
-        GameInputArcadeStickAction4 = 512,
-        GameInputArcadeStickAction5 = 1024,
-        GameInputArcadeStickAction6 = 2048,
-        GameInputArcadeStickSpecial1 = 4096,
-        GameInputArcadeStickSpecial2 = 8192
-    }
+[System.Flags]
+public enum GameInputArcadeStickButtons
+{
+    GameInputArcadeStickNone = 0,
+    GameInputArcadeStickMenu = 1,
+    GameInputArcadeStickView = 2,
+    GameInputArcadeStickUp = 4,
+    GameInputArcadeStickDown = 8,
+    GameInputArcadeStickLeft = 16,
+    GameInputArcadeStickRight = 32,
+    GameInputArcadeStickAction1 = 64,
+    GameInputArcadeStickAction2 = 128,
+    GameInputArcadeStickAction3 = 256,
+    GameInputArcadeStickAction4 = 512,
+    GameInputArcadeStickAction5 = 1024,
+    GameInputArcadeStickAction6 = 2048,
+    GameInputArcadeStickSpecial1 = 4096,
+    GameInputArcadeStickSpecial2 = 8192
+}
 
-    [System.Flags]
-    public enum GameInputFlightStickButtons
-    {
-        GameInputFlightStickNone = 0,
-        GameInputFlightStickMenu = 1,
-        GameInputFlightStickView = 2,
-        GameInputFlightStickFirePrimary = 4,
-        GameInputFlightStickFireSecondary = 8,
-        GameInputFlightStickHatSwitchUp = 16,
-        GameInputFlightStickHatSwitchDown = 32,
-        GameInputFlightStickHatSwitchLeft = 64,
-        GameInputFlightStickHatSwitchRight = 128,
-        GameInputFlightStickA = 256,
-        GameInputFlightStickB = 512,
-        GameInputFlightStickX = 1024,
-        GameInputFlightStickY = 2048,
-        GameInputFlightStickLeftShoulder = 4096,
-        GameInputFlightStickRightShoulder = 8192
-    }
+[System.Flags]
+public enum GameInputFlightStickButtons
+{
+    GameInputFlightStickNone = 0,
+    GameInputFlightStickMenu = 1,
+    GameInputFlightStickView = 2,
+    GameInputFlightStickFirePrimary = 4,
+    GameInputFlightStickFireSecondary = 8,
+    GameInputFlightStickHatSwitchUp = 16,
+    GameInputFlightStickHatSwitchDown = 32,
+    GameInputFlightStickHatSwitchLeft = 64,
+    GameInputFlightStickHatSwitchRight = 128,
+    GameInputFlightStickA = 256,
+    GameInputFlightStickB = 512,
+    GameInputFlightStickX = 1024,
+    GameInputFlightStickY = 2048,
+    GameInputFlightStickLeftShoulder = 4096,
+    GameInputFlightStickRightShoulder = 8192
+}
 
-    [System.Flags]
-    public enum GameInputGamepadButtons
-    {
-        GameInputGamepadNone = 0,
-        GameInputGamepadMenu = 1,
-        GameInputGamepadView = 2,
-        GameInputGamepadA = 4,
-        GameInputGamepadB = 8,
-        GameInputGamepadC = 16384,
-        GameInputGamepadX = 16,
-        GameInputGamepadY = 32,
-        GameInputGamepadZ = 32768,
-        GameInputGamepadDPadUp = 64,
-        GameInputGamepadDPadDown = 128,
-        GameInputGamepadDPadLeft = 256,
-        GameInputGamepadDPadRight = 512,
-        GameInputGamepadLeftShoulder = 1024,
-        GameInputGamepadRightShoulder = 2048,
-        GameInputGamepadLeftTriggerButton = 65536,
-        GameInputGamepadRightTriggerButton = 131072,
-        GameInputGamepadLeftThumbstick = 4096,
-        GameInputGamepadLeftThumbstickUp = 262144,
-        GameInputGamepadLeftThumbstickDown = 524288,
-        GameInputGamepadLeftThumbstickLeft = 1048576,
-        GameInputGamepadLeftThumbstickRight = 2097152,
-        GameInputGamepadRightThumbstick = 8192,
-        GameInputGamepadRightThumbstickUp = 4194304,
-        GameInputGamepadRightThumbstickDown = 8388608,
-        GameInputGamepadRightThumbstickLeft = 16777216,
-        GameInputGamepadRightThumbstickRight = 33554432,
-        GameInputGamepadPaddleLeft1 = 67108864,
-        GameInputGamepadPaddleLeft2 = 134217728,
-        GameInputGamepadPaddleRight1 = 268435456,
-        GameInputGamepadPaddleRight2 = 536870912
-    }
+[System.Flags]
+public enum GameInputGamepadButtons
+{
+    GameInputGamepadNone = 0,
+    GameInputGamepadMenu = 1,
+    GameInputGamepadView = 2,
+    GameInputGamepadA = 4,
+    GameInputGamepadB = 8,
+    GameInputGamepadC = 16384,
+    GameInputGamepadX = 16,
+    GameInputGamepadY = 32,
+    GameInputGamepadZ = 32768,
+    GameInputGamepadDPadUp = 64,
+    GameInputGamepadDPadDown = 128,
+    GameInputGamepadDPadLeft = 256,
+    GameInputGamepadDPadRight = 512,
+    GameInputGamepadLeftShoulder = 1024,
+    GameInputGamepadRightShoulder = 2048,
+    GameInputGamepadLeftTriggerButton = 65536,
+    GameInputGamepadRightTriggerButton = 131072,
+    GameInputGamepadLeftThumbstick = 4096,
+    GameInputGamepadLeftThumbstickUp = 262144,
+    GameInputGamepadLeftThumbstickDown = 524288,
+    GameInputGamepadLeftThumbstickLeft = 1048576,
+    GameInputGamepadLeftThumbstickRight = 2097152,
+    GameInputGamepadRightThumbstick = 8192,
+    GameInputGamepadRightThumbstickUp = 4194304,
+    GameInputGamepadRightThumbstickDown = 8388608,
+    GameInputGamepadRightThumbstickLeft = 16777216,
+    GameInputGamepadRightThumbstickRight = 33554432,
+    GameInputGamepadPaddleLeft1 = 67108864,
+    GameInputGamepadPaddleLeft2 = 134217728,
+    GameInputGamepadPaddleRight1 = 268435456,
+    GameInputGamepadPaddleRight2 = 536870912
+}
 
-    public enum GameInputRawDeviceReportKind
-    {
-        GameInputRawInputReport = 0,
-        GameInputRawOutputReport = 1
-    }
+public enum GameInputRawDeviceReportKind
+{
+    GameInputRawInputReport = 0,
+    GameInputRawOutputReport = 1
+}
 
-    [System.Flags]
-    public enum GameInputRacingWheelButtons
-    {
-        GameInputRacingWheelNone = 0,
-        GameInputRacingWheelMenu = 1,
-        GameInputRacingWheelView = 2,
-        GameInputRacingWheelPreviousGear = 4,
-        GameInputRacingWheelNextGear = 8,
-        GameInputRacingWheelA = 256,
-        GameInputRacingWheelB = 512,
-        GameInputRacingWheelX = 1024,
-        GameInputRacingWheelY = 2048,
-        GameInputRacingWheelDpadUp = 16,
-        GameInputRacingWheelDpadDown = 32,
-        GameInputRacingWheelDpadLeft = 64,
-        GameInputRacingWheelDpadRight = 128,
-        GameInputRacingWheelLeftThumbstick = 4096,
-        GameInputRacingWheelRightThumbstick = 8192
-    }
+[System.Flags]
+public enum GameInputRacingWheelButtons
+{
+    GameInputRacingWheelNone = 0,
+    GameInputRacingWheelMenu = 1,
+    GameInputRacingWheelView = 2,
+    GameInputRacingWheelPreviousGear = 4,
+    GameInputRacingWheelNextGear = 8,
+    GameInputRacingWheelA = 256,
+    GameInputRacingWheelB = 512,
+    GameInputRacingWheelX = 1024,
+    GameInputRacingWheelY = 2048,
+    GameInputRacingWheelDpadUp = 16,
+    GameInputRacingWheelDpadDown = 32,
+    GameInputRacingWheelDpadLeft = 64,
+    GameInputRacingWheelDpadRight = 128,
+    GameInputRacingWheelLeftThumbstick = 4096,
+    GameInputRacingWheelRightThumbstick = 8192
+}
 
-    [System.Flags]
-    public enum GameInputSystemButtons
-    {
-        GameInputSystemButtonNone = 0,
-        GameInputSystemButtonGuide = 1,
-        GameInputSystemButtonShare = 2
-    }
+[System.Flags]
+public enum GameInputSystemButtons
+{
+    GameInputSystemButtonNone = 0,
+    GameInputSystemButtonGuide = 1,
+    GameInputSystemButtonShare = 2
+}
 
-    [System.Flags]
-    public enum GameInputFlightStickAxes
-    {
-        GameInputFlightStickAxesNone = 0,
-        GameInputFlightStickRoll = 16,
-        GameInputFlightStickPitch = 32,
-        GameInputFlightStickYaw = 64,
-        GameInputFlightStickThrottle = 128
-    }
+[System.Flags]
+public enum GameInputFlightStickAxes
+{
+    GameInputFlightStickAxesNone = 0,
+    GameInputFlightStickRoll = 16,
+    GameInputFlightStickPitch = 32,
+    GameInputFlightStickYaw = 64,
+    GameInputFlightStickThrottle = 128
+}
 
-    [System.Flags]
-    public enum GameInputGamepadAxes
-    {
-        GameInputGamepadAxesNone = 0,
-        GameInputGamepadLeftTrigger = 1,
-        GameInputGamepadRightTrigger = 2,
-        GameInputGamepadLeftThumbstickX = 4,
-        GameInputGamepadLeftThumbstickY = 8,
-        GameInputGamepadRightThumbstickX = 16,
-        GameInputGamepadRightThumbstickY = 32
-    }
+[System.Flags]
+public enum GameInputGamepadAxes
+{
+    GameInputGamepadAxesNone = 0,
+    GameInputGamepadLeftTrigger = 1,
+    GameInputGamepadRightTrigger = 2,
+    GameInputGamepadLeftThumbstickX = 4,
+    GameInputGamepadLeftThumbstickY = 8,
+    GameInputGamepadRightThumbstickX = 16,
+    GameInputGamepadRightThumbstickY = 32
+}
 
-    [System.Flags]
-    public enum GameInputRacingWheelAxes
-    {
-        GameInputRacingWheelAxesNone = 0,
-        GameInputRacingWheelSteering = 256,
-        GameInputRacingWheelThrottle = 512,
-        GameInputRacingWheelBrake = 1024,
-        GameInputRacingWheelClutch = 2048,
-        GameInputRacingWheelHandbrake = 4096,
-        GameInputRacingWheelPatternShifter = 8192
-    }
+[System.Flags]
+public enum GameInputRacingWheelAxes
+{
+    GameInputRacingWheelAxesNone = 0,
+    GameInputRacingWheelSteering = 256,
+    GameInputRacingWheelThrottle = 512,
+    GameInputRacingWheelBrake = 1024,
+    GameInputRacingWheelClutch = 2048,
+    GameInputRacingWheelHandbrake = 4096,
+    GameInputRacingWheelPatternShifter = 8192
+}
 
-    [System.Flags]
-    public enum GameInputDeviceStatus
-    {
-        GameInputDeviceNoStatus = 0,
-        GameInputDeviceConnected = 1,
-        GameInputDeviceHapticInfoReady = 2097152,
-        GameInputDeviceAnyStatus = -1
-    }
+[System.Flags]
+public enum GameInputDeviceStatus
+{
+    GameInputDeviceNoStatus = 0,
+    GameInputDeviceConnected = 1,
+    GameInputDeviceHapticInfoReady = 2097152,
+    GameInputDeviceAnyStatus = -1
+}
 
-    public enum GameInputDeviceFamily
-    {
-        GameInputFamilyVirtual = -1,
-        GameInputFamilyUnknown = 0,
-        GameInputFamilyXboxOne = 1,
-        GameInputFamilyXbox360 = 2,
-        GameInputFamilyHid = 3,
-        GameInputFamilyI8042 = 4,
-        GameInputFamilyAggregate = 5
-    }
+public enum GameInputDeviceFamily
+{
+    GameInputFamilyVirtual = -1,
+    GameInputFamilyUnknown = 0,
+    GameInputFamilyXboxOne = 1,
+    GameInputFamilyXbox360 = 2,
+    GameInputFamilyHid = 3,
+    GameInputFamilyI8042 = 4,
+    GameInputFamilyAggregate = 5
+}
 
-    public enum GameInputLabel
-    {
-        GameInputLabelUnknown = -1,
-        GameInputLabelNone = 0,
-        GameInputLabelXboxGuide = 1,
-        GameInputLabelXboxBack = 2,
-        GameInputLabelXboxStart = 3,
-        GameInputLabelXboxMenu = 4,
-        GameInputLabelXboxView = 5,
-        GameInputLabelXboxA = 7,
-        GameInputLabelXboxB = 8,
-        GameInputLabelXboxX = 9,
-        GameInputLabelXboxY = 10,
-        GameInputLabelXboxDPadUp = 11,
-        GameInputLabelXboxDPadDown = 12,
-        GameInputLabelXboxDPadLeft = 13,
-        GameInputLabelXboxDPadRight = 14,
-        GameInputLabelXboxLeftShoulder = 15,
-        GameInputLabelXboxLeftTrigger = 16,
-        GameInputLabelXboxLeftStickButton = 17,
-        GameInputLabelXboxRightShoulder = 18,
-        GameInputLabelXboxRightTrigger = 19,
-        GameInputLabelXboxRightStickButton = 20,
-        GameInputLabelXboxPaddle1 = 21,
-        GameInputLabelXboxPaddle2 = 22,
-        GameInputLabelXboxPaddle3 = 23,
-        GameInputLabelXboxPaddle4 = 24,
-        GameInputLabelLetterA = 25,
-        GameInputLabelLetterB = 26,
-        GameInputLabelLetterC = 27,
-        GameInputLabelLetterD = 28,
-        GameInputLabelLetterE = 29,
-        GameInputLabelLetterF = 30,
-        GameInputLabelLetterG = 31,
-        GameInputLabelLetterH = 32,
-        GameInputLabelLetterI = 33,
-        GameInputLabelLetterJ = 34,
-        GameInputLabelLetterK = 35,
-        GameInputLabelLetterL = 36,
-        GameInputLabelLetterM = 37,
-        GameInputLabelLetterN = 38,
-        GameInputLabelLetterO = 39,
-        GameInputLabelLetterP = 40,
-        GameInputLabelLetterQ = 41,
-        GameInputLabelLetterR = 42,
-        GameInputLabelLetterS = 43,
-        GameInputLabelLetterT = 44,
-        GameInputLabelLetterU = 45,
-        GameInputLabelLetterV = 46,
-        GameInputLabelLetterW = 47,
-        GameInputLabelLetterX = 48,
-        GameInputLabelLetterY = 49,
-        GameInputLabelLetterZ = 50,
-        GameInputLabelNumber0 = 51,
-        GameInputLabelNumber1 = 52,
-        GameInputLabelNumber2 = 53,
-        GameInputLabelNumber3 = 54,
-        GameInputLabelNumber4 = 55,
-        GameInputLabelNumber5 = 56,
-        GameInputLabelNumber6 = 57,
-        GameInputLabelNumber7 = 58,
-        GameInputLabelNumber8 = 59,
-        GameInputLabelNumber9 = 60,
-        GameInputLabelArrowUp = 61,
-        GameInputLabelArrowUpRight = 62,
-        GameInputLabelArrowRight = 63,
-        GameInputLabelArrowDownRight = 64,
-        GameInputLabelArrowDown = 65,
-        GameInputLabelArrowDownLLeft = 66,
-        GameInputLabelArrowLeft = 67,
-        GameInputLabelArrowUpLeft = 68,
-        GameInputLabelArrowUpDown = 69,
-        GameInputLabelArrowLeftRight = 70,
-        GameInputLabelArrowUpDownLeftRight = 71,
-        GameInputLabelArrowClockwise = 72,
-        GameInputLabelArrowCounterClockwise = 73,
-        GameInputLabelArrowReturn = 74,
-        GameInputLabelIconBranding = 75,
-        GameInputLabelIconHome = 76,
-        GameInputLabelIconMenu = 77,
-        GameInputLabelIconCross = 78,
-        GameInputLabelIconCircle = 79,
-        GameInputLabelIconSquare = 80,
-        GameInputLabelIconTriangle = 81,
-        GameInputLabelIconStar = 82,
-        GameInputLabelIconDPadUp = 83,
-        GameInputLabelIconDPadDown = 84,
-        GameInputLabelIconDPadLeft = 85,
-        GameInputLabelIconDPadRight = 86,
-        GameInputLabelIconDialClockwise = 87,
-        GameInputLabelIconDialCounterClockwise = 88,
-        GameInputLabelIconSliderLeftRight = 89,
-        GameInputLabelIconSliderUpDown = 90,
-        GameInputLabelIconWheelUpDown = 91,
-        GameInputLabelIconPlus = 92,
-        GameInputLabelIconMinus = 93,
-        GameInputLabelIconSuspension = 94,
-        GameInputLabelHome = 95,
-        GameInputLabelGuide = 96,
-        GameInputLabelMode = 97,
-        GameInputLabelSelect = 98,
-        GameInputLabelMenu = 99,
-        GameInputLabelView = 100,
-        GameInputLabelBack = 101,
-        GameInputLabelStart = 102,
-        GameInputLabelOptions = 103,
-        GameInputLabelShare = 104,
-        GameInputLabelUp = 105,
-        GameInputLabelDown = 106,
-        GameInputLabelLeft = 107,
-        GameInputLabelRight = 108,
-        GameInputLabelLB = 109,
-        GameInputLabelLT = 110,
-        GameInputLabelLSB = 111,
-        GameInputLabelL1 = 112,
-        GameInputLabelL2 = 113,
-        GameInputLabelL3 = 114,
-        GameInputLabelRB = 115,
-        GameInputLabelRT = 116,
-        GameInputLabelRSB = 117,
-        GameInputLabelR1 = 118,
-        GameInputLabelR2 = 119,
-        GameInputLabelR3 = 120,
-        GameInputLabelPaddleLeft1 = 121,
-        GameInputLabelPaddleLeft2 = 122,
-        GameInputLabelPaddleRight1 = 123,
-        GameInputLabelPaddleRight2 = 124
-    }
+public enum GameInputLabel
+{
+    GameInputLabelUnknown = -1,
+    GameInputLabelNone = 0,
+    GameInputLabelXboxGuide = 1,
+    GameInputLabelXboxBack = 2,
+    GameInputLabelXboxStart = 3,
+    GameInputLabelXboxMenu = 4,
+    GameInputLabelXboxView = 5,
+    GameInputLabelXboxA = 7,
+    GameInputLabelXboxB = 8,
+    GameInputLabelXboxX = 9,
+    GameInputLabelXboxY = 10,
+    GameInputLabelXboxDPadUp = 11,
+    GameInputLabelXboxDPadDown = 12,
+    GameInputLabelXboxDPadLeft = 13,
+    GameInputLabelXboxDPadRight = 14,
+    GameInputLabelXboxLeftShoulder = 15,
+    GameInputLabelXboxLeftTrigger = 16,
+    GameInputLabelXboxLeftStickButton = 17,
+    GameInputLabelXboxRightShoulder = 18,
+    GameInputLabelXboxRightTrigger = 19,
+    GameInputLabelXboxRightStickButton = 20,
+    GameInputLabelXboxPaddle1 = 21,
+    GameInputLabelXboxPaddle2 = 22,
+    GameInputLabelXboxPaddle3 = 23,
+    GameInputLabelXboxPaddle4 = 24,
+    GameInputLabelLetterA = 25,
+    GameInputLabelLetterB = 26,
+    GameInputLabelLetterC = 27,
+    GameInputLabelLetterD = 28,
+    GameInputLabelLetterE = 29,
+    GameInputLabelLetterF = 30,
+    GameInputLabelLetterG = 31,
+    GameInputLabelLetterH = 32,
+    GameInputLabelLetterI = 33,
+    GameInputLabelLetterJ = 34,
+    GameInputLabelLetterK = 35,
+    GameInputLabelLetterL = 36,
+    GameInputLabelLetterM = 37,
+    GameInputLabelLetterN = 38,
+    GameInputLabelLetterO = 39,
+    GameInputLabelLetterP = 40,
+    GameInputLabelLetterQ = 41,
+    GameInputLabelLetterR = 42,
+    GameInputLabelLetterS = 43,
+    GameInputLabelLetterT = 44,
+    GameInputLabelLetterU = 45,
+    GameInputLabelLetterV = 46,
+    GameInputLabelLetterW = 47,
+    GameInputLabelLetterX = 48,
+    GameInputLabelLetterY = 49,
+    GameInputLabelLetterZ = 50,
+    GameInputLabelNumber0 = 51,
+    GameInputLabelNumber1 = 52,
+    GameInputLabelNumber2 = 53,
+    GameInputLabelNumber3 = 54,
+    GameInputLabelNumber4 = 55,
+    GameInputLabelNumber5 = 56,
+    GameInputLabelNumber6 = 57,
+    GameInputLabelNumber7 = 58,
+    GameInputLabelNumber8 = 59,
+    GameInputLabelNumber9 = 60,
+    GameInputLabelArrowUp = 61,
+    GameInputLabelArrowUpRight = 62,
+    GameInputLabelArrowRight = 63,
+    GameInputLabelArrowDownRight = 64,
+    GameInputLabelArrowDown = 65,
+    GameInputLabelArrowDownLLeft = 66,
+    GameInputLabelArrowLeft = 67,
+    GameInputLabelArrowUpLeft = 68,
+    GameInputLabelArrowUpDown = 69,
+    GameInputLabelArrowLeftRight = 70,
+    GameInputLabelArrowUpDownLeftRight = 71,
+    GameInputLabelArrowClockwise = 72,
+    GameInputLabelArrowCounterClockwise = 73,
+    GameInputLabelArrowReturn = 74,
+    GameInputLabelIconBranding = 75,
+    GameInputLabelIconHome = 76,
+    GameInputLabelIconMenu = 77,
+    GameInputLabelIconCross = 78,
+    GameInputLabelIconCircle = 79,
+    GameInputLabelIconSquare = 80,
+    GameInputLabelIconTriangle = 81,
+    GameInputLabelIconStar = 82,
+    GameInputLabelIconDPadUp = 83,
+    GameInputLabelIconDPadDown = 84,
+    GameInputLabelIconDPadLeft = 85,
+    GameInputLabelIconDPadRight = 86,
+    GameInputLabelIconDialClockwise = 87,
+    GameInputLabelIconDialCounterClockwise = 88,
+    GameInputLabelIconSliderLeftRight = 89,
+    GameInputLabelIconSliderUpDown = 90,
+    GameInputLabelIconWheelUpDown = 91,
+    GameInputLabelIconPlus = 92,
+    GameInputLabelIconMinus = 93,
+    GameInputLabelIconSuspension = 94,
+    GameInputLabelHome = 95,
+    GameInputLabelGuide = 96,
+    GameInputLabelMode = 97,
+    GameInputLabelSelect = 98,
+    GameInputLabelMenu = 99,
+    GameInputLabelView = 100,
+    GameInputLabelBack = 101,
+    GameInputLabelStart = 102,
+    GameInputLabelOptions = 103,
+    GameInputLabelShare = 104,
+    GameInputLabelUp = 105,
+    GameInputLabelDown = 106,
+    GameInputLabelLeft = 107,
+    GameInputLabelRight = 108,
+    GameInputLabelLB = 109,
+    GameInputLabelLT = 110,
+    GameInputLabelLSB = 111,
+    GameInputLabelL1 = 112,
+    GameInputLabelL2 = 113,
+    GameInputLabelL3 = 114,
+    GameInputLabelRB = 115,
+    GameInputLabelRT = 116,
+    GameInputLabelRSB = 117,
+    GameInputLabelR1 = 118,
+    GameInputLabelR2 = 119,
+    GameInputLabelR3 = 120,
+    GameInputLabelPaddleLeft1 = 121,
+    GameInputLabelPaddleLeft2 = 122,
+    GameInputLabelPaddleRight1 = 123,
+    GameInputLabelPaddleRight2 = 124
+}
 
-    [System.Flags]
-    public enum GameInputFeedbackAxes
-    {
-        GameInputFeedbackAxisNone = 0,
-        GameInputFeedbackAxisLinearX = 1,
-        GameInputFeedbackAxisLinearY = 2,
-        GameInputFeedbackAxisLinearZ = 4,
-        GameInputFeedbackAxisAngularX = 8,
-        GameInputFeedbackAxisAngularY = 16,
-        GameInputFeedbackAxisAngularZ = 32,
-        GameInputFeedbackAxisNormal = 64
-    }
+[System.Flags]
+public enum GameInputFeedbackAxes
+{
+    GameInputFeedbackAxisNone = 0,
+    GameInputFeedbackAxisLinearX = 1,
+    GameInputFeedbackAxisLinearY = 2,
+    GameInputFeedbackAxisLinearZ = 4,
+    GameInputFeedbackAxisAngularX = 8,
+    GameInputFeedbackAxisAngularY = 16,
+    GameInputFeedbackAxisAngularZ = 32,
+    GameInputFeedbackAxisNormal = 64
+}
 
-    public enum GameInputFeedbackEffectState
-    {
-        GameInputFeedbackStopped = 0,
-        GameInputFeedbackRunning = 1,
-        GameInputFeedbackPaused = 2
-    }
+public enum GameInputFeedbackEffectState
+{
+    GameInputFeedbackStopped = 0,
+    GameInputFeedbackRunning = 1,
+    GameInputFeedbackPaused = 2
+}
 
-    public enum GameInputForceFeedbackEffectKind
-    {
-        GameInputForceFeedbackConstant = 0,
-        GameInputForceFeedbackRamp = 1,
-        GameInputForceFeedbackSineWave = 2,
-        GameInputForceFeedbackSquareWave = 3,
-        GameInputForceFeedbackTriangleWave = 4,
-        GameInputForceFeedbackSawtoothUpWave = 5,
-        GameInputForceFeedbackSawtoothDownWave = 6,
-        GameInputForceFeedbackSpring = 7,
-        GameInputForceFeedbackFriction = 8,
-        GameInputForceFeedbackDamper = 9,
-        GameInputForceFeedbackInertia = 10
-    }
+public enum GameInputForceFeedbackEffectKind
+{
+    GameInputForceFeedbackConstant = 0,
+    GameInputForceFeedbackRamp = 1,
+    GameInputForceFeedbackSineWave = 2,
+    GameInputForceFeedbackSquareWave = 3,
+    GameInputForceFeedbackTriangleWave = 4,
+    GameInputForceFeedbackSawtoothUpWave = 5,
+    GameInputForceFeedbackSawtoothDownWave = 6,
+    GameInputForceFeedbackSpring = 7,
+    GameInputForceFeedbackFriction = 8,
+    GameInputForceFeedbackDamper = 9,
+    GameInputForceFeedbackInertia = 10
+}
 
-    [System.Flags]
-    public enum GameInputRumbleMotors
-    {
-        GameInputRumbleNone = 0,
-        GameInputRumbleLowFrequency = 1,
-        GameInputRumbleHighFrequency = 2,
-        GameInputRumbleLeftTrigger = 4,
-        GameInputRumbleRightTrigger = 8
-    }
+[System.Flags]
+public enum GameInputRumbleMotors
+{
+    GameInputRumbleNone = 0,
+    GameInputRumbleLowFrequency = 1,
+    GameInputRumbleHighFrequency = 2,
+    GameInputRumbleLeftTrigger = 4,
+    GameInputRumbleRightTrigger = 8
+}
 
-    public enum GameInputElementKind
-    {
-        GameInputElementKindNone = 0,
-        GameInputElementKindAxis = 1,
-        GameInputElementKindButton = 2,
-        GameInputElementKindSwitch = 3
-    }
-
+public enum GameInputElementKind
+{
+    GameInputElementKindNone = 0,
+    GameInputElementKindAxis = 1,
+    GameInputElementKindButton = 2,
+    GameInputElementKindSwitch = 3
 }

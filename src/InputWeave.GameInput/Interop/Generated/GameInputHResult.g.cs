@@ -2,31 +2,30 @@
 // 此檔案由 InputWeave.GameInput.BindingsGenerator 依 Microsoft GameInput.h 產生。
 #nullable enable
 
-namespace InputWeave.GameInput.Interop
+namespace InputWeave.GameInput.Interop;
+
+/// <summary>
+/// GameInput 原生 HRESULT 值。
+/// </summary>
+public static class GameInputHResult
 {
-    /// <summary>
-    /// GameInput 原生 HRESULT 值。
-    /// </summary>
-    public static class GameInputHResult
-    {
-        public const int DeviceDisconnected = unchecked((int)0x838A0001);
+    public const int DeviceDisconnected = unchecked((int)0x838A0001);
 
-        public const int DeviceNotFound = unchecked((int)0x838A0002);
+    public const int DeviceNotFound = unchecked((int)0x838A0002);
 
-        public const int ReadingNotFound = unchecked((int)0x838A0003);
+    public const int ReadingNotFound = unchecked((int)0x838A0003);
 
-        public const int ReferenceReadingTooOld = unchecked((int)0x838A0004);
+    public const int ReferenceReadingTooOld = unchecked((int)0x838A0004);
 
-        public const int FeedbackNotSupported = unchecked((int)0x838A0007);
+    public const int FeedbackNotSupported = unchecked((int)0x838A0007);
 
-        public const int ObjectNoLongerExists = unchecked((int)0x838A0008);
+    public const int ObjectNoLongerExists = unchecked((int)0x838A0008);
 
-        public const int CallbackNotFound = unchecked((int)0x838A0009);
+    public const int CallbackNotFound = unchecked((int)0x838A0009);
 
-        public const int HapticInfoNotFound = unchecked((int)0x838A000A);
+    public const int HapticInfoNotFound = unchecked((int)0x838A000A);
 
-        public const int AggregateOperationNotSupported = unchecked((int)0x838A000B);
+    public const int AggregateOperationNotSupported = unchecked((int)0x838A000B);
 
-        public const int InputKindNotPresent = unchecked((int)0x838A000C);
-    }
+    public const int InputKindNotPresent = unchecked((int)0x838A000C);
 }

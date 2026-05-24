@@ -29,8 +29,11 @@
 ## 程式碼規範
 
 - C# 使用 Allman braces、4 空白縮排、每行一個敘述。
+- C# 檔案一律使用 file-scoped namespace；新增或重產 `.cs` 時不得回到 block-scoped namespace。
 - C# 程式碼必須遵循 VS2026 / `dotnet format` 的 code style 與 analyzer 建議，並配合 `LangVersion latest` 使用 C# 最新穩定語法。
 - 若 VS2026 lint 要求可安全套用的新語法，例如 collection expression `[]`、更精準的 overload 或更具體的回傳型別，應更新程式碼而不是壓制規則。
+- 不得新增 `#pragma warning disable` 來壓制 C# analyzer 或 VS2026 lint；若出現警告，應修正程式碼、產生器或 `.editorconfig` 規則來源。
+- P/Invoke 在 `net10.0-windows` 等現代 TFM 必須使用 `LibraryImport` source generator；`DllImport` 只可存在於 `NETFRAMEWORK` 專用相容檔。
 - Public API 名稱維持英文技術命名；公開 XML 文件註解使用正體中文台灣用語。
 - `InputWeave.GameInput.Interop` 保留原生 GameInput 識別字，方便對照 Microsoft `GameInput.h`。
 - 一般使用者應優先使用 managed wrapper、snapshot、manager、builder 與 safe handle API；低階 interop 是 escape hatch。

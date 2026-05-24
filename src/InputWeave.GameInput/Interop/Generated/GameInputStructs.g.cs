@@ -5,673 +5,672 @@
 using System;
 using System.Runtime.InteropServices;
 
-namespace InputWeave.GameInput.Interop
+namespace InputWeave.GameInput.Interop;
+
+[StructLayout(LayoutKind.Sequential)]
+public unsafe struct AppLocalDeviceId
 {
-    [StructLayout(LayoutKind.Sequential)]
-    public unsafe struct AppLocalDeviceId
-    {
-        public const int Size = 32;
+    public const int Size = 32;
 
-        public fixed byte Value[Size];
-    }
+    public fixed byte Value[Size];
+}
 
-    [StructLayout(LayoutKind.Sequential)]
-    public struct GameInputKeyState
-    {
-        public uint ScanCode;
+[StructLayout(LayoutKind.Sequential)]
+public struct GameInputKeyState
+{
+    public uint ScanCode;
 
-        public uint CodePoint;
+    public uint CodePoint;
 
-        public byte VirtualKey;
+    public byte VirtualKey;
 
-        [MarshalAs(UnmanagedType.I1)]
-        public bool IsDeadKey;
-    }
+    [MarshalAs(UnmanagedType.I1)]
+    public bool IsDeadKey;
+}
 
-    [StructLayout(LayoutKind.Sequential)]
-    public struct GameInputMouseState
-    {
-        public GameInputMouseButtons Buttons;
+[StructLayout(LayoutKind.Sequential)]
+public struct GameInputMouseState
+{
+    public GameInputMouseButtons Buttons;
 
-        public GameInputMousePositions Positions;
+    public GameInputMousePositions Positions;
 
-        public long PositionX;
+    public long PositionX;
 
-        public long PositionY;
+    public long PositionY;
 
-        public long AbsolutePositionX;
+    public long AbsolutePositionX;
 
-        public long AbsolutePositionY;
+    public long AbsolutePositionY;
 
-        public long WheelX;
+    public long WheelX;
 
-        public long WheelY;
-    }
+    public long WheelY;
+}
 
-    [StructLayout(LayoutKind.Sequential)]
-    public struct GameInputVersion
-    {
-        public ushort Major;
+[StructLayout(LayoutKind.Sequential)]
+public struct GameInputVersion
+{
+    public ushort Major;
 
-        public ushort Minor;
+    public ushort Minor;
 
-        public ushort Build;
+    public ushort Build;
 
-        public ushort Revision;
-    }
+    public ushort Revision;
+}
 
-    [StructLayout(LayoutKind.Sequential)]
-    public struct GameInputSensorsState
-    {
-        public float AccelerationInGX;
+[StructLayout(LayoutKind.Sequential)]
+public struct GameInputSensorsState
+{
+    public float AccelerationInGX;
 
-        public float AccelerationInGY;
+    public float AccelerationInGY;
 
-        public float AccelerationInGZ;
+    public float AccelerationInGZ;
 
-        public float AngularVelocityInRadPerSecX;
+    public float AngularVelocityInRadPerSecX;
 
-        public float AngularVelocityInRadPerSecY;
+    public float AngularVelocityInRadPerSecY;
 
-        public float AngularVelocityInRadPerSecZ;
+    public float AngularVelocityInRadPerSecZ;
 
-        public float HeadingInDegreesFromMagneticNorth;
+    public float HeadingInDegreesFromMagneticNorth;
 
-        public GameInputSensorAccuracy HeadingAccuracy;
+    public GameInputSensorAccuracy HeadingAccuracy;
 
-        public float OrientationW;
+    public float OrientationW;
 
-        public float OrientationX;
+    public float OrientationX;
 
-        public float OrientationY;
+    public float OrientationY;
 
-        public float OrientationZ;
-    }
+    public float OrientationZ;
+}
 
-    [StructLayout(LayoutKind.Sequential)]
-    public struct GameInputArcadeStickState
-    {
-        public GameInputArcadeStickButtons Buttons;
-    }
+[StructLayout(LayoutKind.Sequential)]
+public struct GameInputArcadeStickState
+{
+    public GameInputArcadeStickButtons Buttons;
+}
 
-    [StructLayout(LayoutKind.Sequential)]
-    public struct GameInputFlightStickState
-    {
-        public GameInputFlightStickButtons Buttons;
+[StructLayout(LayoutKind.Sequential)]
+public struct GameInputFlightStickState
+{
+    public GameInputFlightStickButtons Buttons;
 
-        public GameInputSwitchPosition HatSwitch;
+    public GameInputSwitchPosition HatSwitch;
 
-        public float Roll;
+    public float Roll;
 
-        public float Pitch;
+    public float Pitch;
 
-        public float Yaw;
+    public float Yaw;
 
-        public float Throttle;
-    }
+    public float Throttle;
+}
 
-    [StructLayout(LayoutKind.Sequential)]
-    public struct GameInputGamepadState
-    {
-        public GameInputGamepadButtons Buttons;
+[StructLayout(LayoutKind.Sequential)]
+public struct GameInputGamepadState
+{
+    public GameInputGamepadButtons Buttons;
 
-        public float LeftTrigger;
+    public float LeftTrigger;
 
-        public float RightTrigger;
+    public float RightTrigger;
 
-        public float LeftThumbstickX;
+    public float LeftThumbstickX;
 
-        public float LeftThumbstickY;
+    public float LeftThumbstickY;
 
-        public float RightThumbstickX;
+    public float RightThumbstickX;
 
-        public float RightThumbstickY;
-    }
+    public float RightThumbstickY;
+}
 
-    [StructLayout(LayoutKind.Sequential)]
-    public struct GameInputRacingWheelState
-    {
-        public GameInputRacingWheelButtons Buttons;
+[StructLayout(LayoutKind.Sequential)]
+public struct GameInputRacingWheelState
+{
+    public GameInputRacingWheelButtons Buttons;
 
-        public int PatternShifterGear;
+    public int PatternShifterGear;
 
-        public float Wheel;
+    public float Wheel;
 
-        public float Throttle;
+    public float Throttle;
 
-        public float Brake;
+    public float Brake;
 
-        public float Clutch;
+    public float Clutch;
 
-        public float Handbrake;
-    }
+    public float Handbrake;
+}
 
-    [StructLayout(LayoutKind.Sequential)]
-    public struct GameInputUsage
-    {
-        public ushort Page;
+[StructLayout(LayoutKind.Sequential)]
+public struct GameInputUsage
+{
+    public ushort Page;
 
-        public ushort Id;
-    }
+    public ushort Id;
+}
 
-    [StructLayout(LayoutKind.Sequential)]
-    public unsafe struct GameInputControllerSwitchInfo
-    {
-        public fixed int Labels[GameInputConstants.MaxSwitchStates];
+[StructLayout(LayoutKind.Sequential)]
+public unsafe struct GameInputControllerSwitchInfo
+{
+    public fixed int Labels[GameInputConstants.MaxSwitchStates];
 
-        public GameInputSwitchKind Kind;
-    }
+    public GameInputSwitchKind Kind;
+}
 
-    [StructLayout(LayoutKind.Sequential)]
-    public struct GameInputControllerInfo
-    {
-        public uint ControllerAxisCount;
+[StructLayout(LayoutKind.Sequential)]
+public struct GameInputControllerInfo
+{
+    public uint ControllerAxisCount;
 
-        public IntPtr ControllerAxisLabels;
+    public IntPtr ControllerAxisLabels;
 
-        public uint ControllerButtonCount;
+    public uint ControllerButtonCount;
 
-        public IntPtr ControllerButtonLabels;
+    public IntPtr ControllerButtonLabels;
 
-        public uint ControllerSwitchCount;
+    public uint ControllerSwitchCount;
 
-        public IntPtr ControllerSwitchInfo;
-    }
+    public IntPtr ControllerSwitchInfo;
+}
 
-    [StructLayout(LayoutKind.Sequential)]
-    public struct GameInputKeyboardInfo
-    {
-        public GameInputKeyboardKind Kind;
+[StructLayout(LayoutKind.Sequential)]
+public struct GameInputKeyboardInfo
+{
+    public GameInputKeyboardKind Kind;
 
-        public uint Layout;
+    public uint Layout;
 
-        public uint KeyCount;
+    public uint KeyCount;
 
-        public uint FunctionKeyCount;
+    public uint FunctionKeyCount;
 
-        public uint MaxSimultaneousKeys;
+    public uint MaxSimultaneousKeys;
 
-        public uint PlatformType;
+    public uint PlatformType;
 
-        public uint PlatformSubtype;
-    }
+    public uint PlatformSubtype;
+}
 
-    [StructLayout(LayoutKind.Sequential)]
-    public struct GameInputMouseInfo
-    {
-        public GameInputMouseButtons SupportedButtons;
+[StructLayout(LayoutKind.Sequential)]
+public struct GameInputMouseInfo
+{
+    public GameInputMouseButtons SupportedButtons;
 
-        public uint SampleRate;
+    public uint SampleRate;
 
-        [MarshalAs(UnmanagedType.I1)]
-        public bool HasWheelX;
+    [MarshalAs(UnmanagedType.I1)]
+    public bool HasWheelX;
 
-        [MarshalAs(UnmanagedType.I1)]
-        public bool HasWheelY;
-    }
+    [MarshalAs(UnmanagedType.I1)]
+    public bool HasWheelY;
+}
 
-    [StructLayout(LayoutKind.Sequential)]
-    public struct GameInputSensorsInfo
-    {
-        public GameInputSensorsKind SupportedSensors;
-    }
+[StructLayout(LayoutKind.Sequential)]
+public struct GameInputSensorsInfo
+{
+    public GameInputSensorsKind SupportedSensors;
+}
 
-    [StructLayout(LayoutKind.Sequential)]
-    public struct GameInputArcadeStickInfo
-    {
-        public GameInputLabel MenuButtonLabel;
+[StructLayout(LayoutKind.Sequential)]
+public struct GameInputArcadeStickInfo
+{
+    public GameInputLabel MenuButtonLabel;
 
-        public GameInputLabel ViewButtonLabel;
+    public GameInputLabel ViewButtonLabel;
 
-        public GameInputLabel StickUpLabel;
+    public GameInputLabel StickUpLabel;
 
-        public GameInputLabel StickDownLabel;
+    public GameInputLabel StickDownLabel;
 
-        public GameInputLabel StickLeftLabel;
+    public GameInputLabel StickLeftLabel;
 
-        public GameInputLabel StickRightLabel;
+    public GameInputLabel StickRightLabel;
 
-        public GameInputLabel ActionButton1Label;
+    public GameInputLabel ActionButton1Label;
 
-        public GameInputLabel ActionButton2Label;
+    public GameInputLabel ActionButton2Label;
 
-        public GameInputLabel ActionButton3Label;
+    public GameInputLabel ActionButton3Label;
 
-        public GameInputLabel ActionButton4Label;
+    public GameInputLabel ActionButton4Label;
 
-        public GameInputLabel ActionButton5Label;
+    public GameInputLabel ActionButton5Label;
 
-        public GameInputLabel ActionButton6Label;
+    public GameInputLabel ActionButton6Label;
 
-        public GameInputLabel SpecialButton1Label;
+    public GameInputLabel SpecialButton1Label;
 
-        public GameInputLabel SpecialButton2Label;
+    public GameInputLabel SpecialButton2Label;
 
-        public uint ExtraButtonCount;
+    public uint ExtraButtonCount;
 
-        public uint ExtraAxisCount;
-    }
+    public uint ExtraAxisCount;
+}
 
-    [StructLayout(LayoutKind.Sequential)]
-    public struct GameInputFlightStickInfo
-    {
-        public GameInputLabel MenuButtonLabel;
+[StructLayout(LayoutKind.Sequential)]
+public struct GameInputFlightStickInfo
+{
+    public GameInputLabel MenuButtonLabel;
 
-        public GameInputLabel ViewButtonLabel;
+    public GameInputLabel ViewButtonLabel;
 
-        public GameInputLabel FirePrimaryButtonLabel;
+    public GameInputLabel FirePrimaryButtonLabel;
 
-        public GameInputLabel FireSecondaryButtonLabel;
+    public GameInputLabel FireSecondaryButtonLabel;
 
-        public GameInputLabel HatSwitchUpLabel;
+    public GameInputLabel HatSwitchUpLabel;
 
-        public GameInputLabel HatSwitchDownLabel;
+    public GameInputLabel HatSwitchDownLabel;
 
-        public GameInputLabel HatSwitchLeftLabel;
+    public GameInputLabel HatSwitchLeftLabel;
 
-        public GameInputLabel HatSwitchRightLabel;
+    public GameInputLabel HatSwitchRightLabel;
 
-        public GameInputLabel AButtonLabel;
+    public GameInputLabel AButtonLabel;
 
-        public GameInputLabel BButtonLabel;
+    public GameInputLabel BButtonLabel;
 
-        public GameInputLabel XButtonLabel;
+    public GameInputLabel XButtonLabel;
 
-        public GameInputLabel YButtonLabel;
+    public GameInputLabel YButtonLabel;
 
-        public GameInputLabel LeftShoulderButtonLabel;
+    public GameInputLabel LeftShoulderButtonLabel;
 
-        public GameInputLabel RightShoulderButtonLabel;
+    public GameInputLabel RightShoulderButtonLabel;
 
-        public uint ExtraButtonCount;
+    public uint ExtraButtonCount;
 
-        public uint ExtraAxisCount;
-    }
+    public uint ExtraAxisCount;
+}
 
-    [StructLayout(LayoutKind.Sequential)]
-    public struct GameInputGamepadInfo
-    {
-        public GameInputGamepadButtons SupportedLayout;
+[StructLayout(LayoutKind.Sequential)]
+public struct GameInputGamepadInfo
+{
+    public GameInputGamepadButtons SupportedLayout;
 
-        public GameInputLabel MenuButtonLabel;
+    public GameInputLabel MenuButtonLabel;
 
-        public GameInputLabel ViewButtonLabel;
+    public GameInputLabel ViewButtonLabel;
 
-        public GameInputLabel AButtonLabel;
+    public GameInputLabel AButtonLabel;
 
-        public GameInputLabel BButtonLabel;
+    public GameInputLabel BButtonLabel;
 
-        public GameInputLabel CButtonLabel;
+    public GameInputLabel CButtonLabel;
 
-        public GameInputLabel XButtonLabel;
+    public GameInputLabel XButtonLabel;
 
-        public GameInputLabel YButtonLabel;
+    public GameInputLabel YButtonLabel;
 
-        public GameInputLabel ZButtonLabel;
+    public GameInputLabel ZButtonLabel;
 
-        public GameInputLabel DPadUpLabel;
+    public GameInputLabel DPadUpLabel;
 
-        public GameInputLabel DPadDownLabel;
+    public GameInputLabel DPadDownLabel;
 
-        public GameInputLabel DPadLeftLabel;
+    public GameInputLabel DPadLeftLabel;
 
-        public GameInputLabel DPadRightLabel;
+    public GameInputLabel DPadRightLabel;
 
-        public GameInputLabel LeftShoulderButtonLabel;
+    public GameInputLabel LeftShoulderButtonLabel;
 
-        public GameInputLabel RightShoulderButtonLabel;
+    public GameInputLabel RightShoulderButtonLabel;
 
-        public GameInputLabel LeftThumbstickButtonLabel;
+    public GameInputLabel LeftThumbstickButtonLabel;
 
-        public GameInputLabel RightThumbstickButtonLabel;
+    public GameInputLabel RightThumbstickButtonLabel;
 
-        public uint ExtraButtonCount;
+    public uint ExtraButtonCount;
 
-        public uint ExtraAxisCount;
-    }
+    public uint ExtraAxisCount;
+}
 
-    [StructLayout(LayoutKind.Sequential)]
-    public struct GameInputRacingWheelInfo
-    {
-        public GameInputLabel MenuButtonLabel;
+[StructLayout(LayoutKind.Sequential)]
+public struct GameInputRacingWheelInfo
+{
+    public GameInputLabel MenuButtonLabel;
 
-        public GameInputLabel ViewButtonLabel;
+    public GameInputLabel ViewButtonLabel;
 
-        public GameInputLabel PreviousGearButtonLabel;
+    public GameInputLabel PreviousGearButtonLabel;
 
-        public GameInputLabel NextGearButtonLabel;
+    public GameInputLabel NextGearButtonLabel;
 
-        public GameInputLabel DPadUpLabel;
+    public GameInputLabel DPadUpLabel;
 
-        public GameInputLabel DPadDownLabel;
+    public GameInputLabel DPadDownLabel;
 
-        public GameInputLabel DPadLeftLabel;
+    public GameInputLabel DPadLeftLabel;
 
-        public GameInputLabel DPadRightLabel;
+    public GameInputLabel DPadRightLabel;
 
-        public GameInputLabel AButtonLabel;
+    public GameInputLabel AButtonLabel;
 
-        public GameInputLabel BButtonLabel;
+    public GameInputLabel BButtonLabel;
 
-        public GameInputLabel XButtonLabel;
+    public GameInputLabel XButtonLabel;
 
-        public GameInputLabel YButtonLabel;
+    public GameInputLabel YButtonLabel;
 
-        public GameInputLabel LeftThumbstickButtonLabel;
+    public GameInputLabel LeftThumbstickButtonLabel;
 
-        public GameInputLabel RightThumbstickButtonLabel;
+    public GameInputLabel RightThumbstickButtonLabel;
 
-        [MarshalAs(UnmanagedType.I1)]
-        public bool HasClutch;
+    [MarshalAs(UnmanagedType.I1)]
+    public bool HasClutch;
 
-        [MarshalAs(UnmanagedType.I1)]
-        public bool HasHandbrake;
+    [MarshalAs(UnmanagedType.I1)]
+    public bool HasHandbrake;
 
-        [MarshalAs(UnmanagedType.I1)]
-        public bool HasPatternShifter;
+    [MarshalAs(UnmanagedType.I1)]
+    public bool HasPatternShifter;
 
-        public int MinPatternShifterGear;
+    public int MinPatternShifterGear;
 
-        public int MaxPatternShifterGear;
+    public int MaxPatternShifterGear;
 
-        public float MaxWheelAngle;
+    public float MaxWheelAngle;
 
-        public uint ExtraButtonCount;
+    public uint ExtraButtonCount;
 
-        public uint ExtraAxisCount;
-    }
+    public uint ExtraAxisCount;
+}
 
-    [StructLayout(LayoutKind.Sequential)]
-    public struct GameInputForceFeedbackMotorInfo
-    {
-        public GameInputFeedbackAxes SupportedAxes;
+[StructLayout(LayoutKind.Sequential)]
+public struct GameInputForceFeedbackMotorInfo
+{
+    public GameInputFeedbackAxes SupportedAxes;
 
-        [MarshalAs(UnmanagedType.I1)]
-        public bool IsConstantEffectSupported;
+    [MarshalAs(UnmanagedType.I1)]
+    public bool IsConstantEffectSupported;
 
-        [MarshalAs(UnmanagedType.I1)]
-        public bool IsRampEffectSupported;
+    [MarshalAs(UnmanagedType.I1)]
+    public bool IsRampEffectSupported;
 
-        [MarshalAs(UnmanagedType.I1)]
-        public bool IsSineWaveEffectSupported;
+    [MarshalAs(UnmanagedType.I1)]
+    public bool IsSineWaveEffectSupported;
 
-        [MarshalAs(UnmanagedType.I1)]
-        public bool IsSquareWaveEffectSupported;
+    [MarshalAs(UnmanagedType.I1)]
+    public bool IsSquareWaveEffectSupported;
 
-        [MarshalAs(UnmanagedType.I1)]
-        public bool IsTriangleWaveEffectSupported;
+    [MarshalAs(UnmanagedType.I1)]
+    public bool IsTriangleWaveEffectSupported;
 
-        [MarshalAs(UnmanagedType.I1)]
-        public bool IsSawtoothUpWaveEffectSupported;
+    [MarshalAs(UnmanagedType.I1)]
+    public bool IsSawtoothUpWaveEffectSupported;
 
-        [MarshalAs(UnmanagedType.I1)]
-        public bool IsSawtoothDownWaveEffectSupported;
+    [MarshalAs(UnmanagedType.I1)]
+    public bool IsSawtoothDownWaveEffectSupported;
 
-        [MarshalAs(UnmanagedType.I1)]
-        public bool IsSpringEffectSupported;
+    [MarshalAs(UnmanagedType.I1)]
+    public bool IsSpringEffectSupported;
 
-        [MarshalAs(UnmanagedType.I1)]
-        public bool IsFrictionEffectSupported;
+    [MarshalAs(UnmanagedType.I1)]
+    public bool IsFrictionEffectSupported;
 
-        [MarshalAs(UnmanagedType.I1)]
-        public bool IsDamperEffectSupported;
+    [MarshalAs(UnmanagedType.I1)]
+    public bool IsDamperEffectSupported;
 
-        [MarshalAs(UnmanagedType.I1)]
-        public bool IsInertiaEffectSupported;
-    }
+    [MarshalAs(UnmanagedType.I1)]
+    public bool IsInertiaEffectSupported;
+}
 
-    [StructLayout(LayoutKind.Sequential)]
-    public struct GameInputRawDeviceReportInfo
-    {
-        public GameInputRawDeviceReportKind Kind;
+[StructLayout(LayoutKind.Sequential)]
+public struct GameInputRawDeviceReportInfo
+{
+    public GameInputRawDeviceReportKind Kind;
 
-        public uint Id;
+    public uint Id;
 
-        public uint Size;
-    }
+    public uint Size;
+}
 
-    [StructLayout(LayoutKind.Sequential)]
-    public struct GameInputDeviceInfo
-    {
-        public ushort VendorId;
+[StructLayout(LayoutKind.Sequential)]
+public struct GameInputDeviceInfo
+{
+    public ushort VendorId;
 
-        public ushort ProductId;
+    public ushort ProductId;
 
-        public ushort RevisionNumber;
+    public ushort RevisionNumber;
 
-        public GameInputUsage Usage;
+    public GameInputUsage Usage;
 
-        public GameInputVersion HardwareVersion;
+    public GameInputVersion HardwareVersion;
 
-        public GameInputVersion FirmwareVersion;
+    public GameInputVersion FirmwareVersion;
 
-        public AppLocalDeviceId DeviceId;
+    public AppLocalDeviceId DeviceId;
 
-        public AppLocalDeviceId DeviceRootId;
+    public AppLocalDeviceId DeviceRootId;
 
-        public GameInputDeviceFamily DeviceFamily;
+    public GameInputDeviceFamily DeviceFamily;
 
-        public GameInputKind SupportedInput;
+    public GameInputKind SupportedInput;
 
-        public GameInputRumbleMotors SupportedRumbleMotors;
+    public GameInputRumbleMotors SupportedRumbleMotors;
 
-        public GameInputSystemButtons SupportedSystemButtons;
+    public GameInputSystemButtons SupportedSystemButtons;
 
-        public Guid ContainerId;
+    public Guid ContainerId;
 
-        public IntPtr DisplayName;
+    public IntPtr DisplayName;
 
-        public IntPtr PnpPath;
+    public IntPtr PnpPath;
 
-        public IntPtr KeyboardInfo;
+    public IntPtr KeyboardInfo;
 
-        public IntPtr MouseInfo;
+    public IntPtr MouseInfo;
 
-        public IntPtr SensorsInfo;
+    public IntPtr SensorsInfo;
 
-        public IntPtr ControllerInfo;
+    public IntPtr ControllerInfo;
 
-        public IntPtr ArcadeStickInfo;
+    public IntPtr ArcadeStickInfo;
 
-        public IntPtr FlightStickInfo;
+    public IntPtr FlightStickInfo;
 
-        public IntPtr GamepadInfo;
+    public IntPtr GamepadInfo;
 
-        public IntPtr RacingWheelInfo;
+    public IntPtr RacingWheelInfo;
 
-        public uint ForceFeedbackMotorCount;
+    public uint ForceFeedbackMotorCount;
 
-        public IntPtr ForceFeedbackMotorInfo;
+    public IntPtr ForceFeedbackMotorInfo;
 
-        public uint InputReportCount;
+    public uint InputReportCount;
 
-        public IntPtr InputReportInfo;
+    public IntPtr InputReportInfo;
 
-        public uint OutputReportCount;
+    public uint OutputReportCount;
 
-        public IntPtr OutputReportInfo;
-    }
+    public IntPtr OutputReportInfo;
+}
 
-    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
-    public struct GameInputHapticInfo
-    {
-        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = GameInputConstants.HapticMaxAudioEndpointIdSize)]
-        public string AudioEndpointId;
+[StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
+public struct GameInputHapticInfo
+{
+    [MarshalAs(UnmanagedType.ByValTStr, SizeConst = GameInputConstants.HapticMaxAudioEndpointIdSize)]
+    public string AudioEndpointId;
 
-        public uint LocationCount;
+    public uint LocationCount;
 
-        [MarshalAs(UnmanagedType.ByValArray, SizeConst = GameInputConstants.HapticMaxLocations)]
-        public Guid[] Locations;
-    }
+    [MarshalAs(UnmanagedType.ByValArray, SizeConst = GameInputConstants.HapticMaxLocations)]
+    public Guid[] Locations;
+}
 
-    [StructLayout(LayoutKind.Sequential)]
-    public struct GameInputForceFeedbackEnvelope
-    {
-        public ulong AttackDuration;
+[StructLayout(LayoutKind.Sequential)]
+public struct GameInputForceFeedbackEnvelope
+{
+    public ulong AttackDuration;
 
-        public ulong SustainDuration;
+    public ulong SustainDuration;
 
-        public ulong ReleaseDuration;
+    public ulong ReleaseDuration;
 
-        public float AttackGain;
+    public float AttackGain;
 
-        public float SustainGain;
+    public float SustainGain;
 
-        public float ReleaseGain;
+    public float ReleaseGain;
 
-        public uint PlayCount;
+    public uint PlayCount;
 
-        public ulong RepeatDelay;
-    }
+    public ulong RepeatDelay;
+}
 
-    [StructLayout(LayoutKind.Sequential)]
-    public struct GameInputForceFeedbackMagnitude
-    {
-        public float LinearX;
+[StructLayout(LayoutKind.Sequential)]
+public struct GameInputForceFeedbackMagnitude
+{
+    public float LinearX;
 
-        public float LinearY;
+    public float LinearY;
 
-        public float LinearZ;
+    public float LinearZ;
 
-        public float AngularX;
+    public float AngularX;
 
-        public float AngularY;
+    public float AngularY;
 
-        public float AngularZ;
+    public float AngularZ;
 
-        public float Normal;
-    }
+    public float Normal;
+}
 
-    [StructLayout(LayoutKind.Sequential)]
-    public struct GameInputForceFeedbackConditionParams
-    {
-        public GameInputForceFeedbackMagnitude Magnitude;
+[StructLayout(LayoutKind.Sequential)]
+public struct GameInputForceFeedbackConditionParams
+{
+    public GameInputForceFeedbackMagnitude Magnitude;
 
-        public float PositiveCoefficient;
+    public float PositiveCoefficient;
 
-        public float NegativeCoefficient;
+    public float NegativeCoefficient;
 
-        public float MaxPositiveMagnitude;
+    public float MaxPositiveMagnitude;
 
-        public float MaxNegativeMagnitude;
+    public float MaxNegativeMagnitude;
 
-        public float DeadZone;
+    public float DeadZone;
 
-        public float Bias;
-    }
+    public float Bias;
+}
 
-    [StructLayout(LayoutKind.Sequential)]
-    public struct GameInputForceFeedbackConstantParams
-    {
-        public GameInputForceFeedbackEnvelope Envelope;
+[StructLayout(LayoutKind.Sequential)]
+public struct GameInputForceFeedbackConstantParams
+{
+    public GameInputForceFeedbackEnvelope Envelope;
 
-        public GameInputForceFeedbackMagnitude Magnitude;
-    }
+    public GameInputForceFeedbackMagnitude Magnitude;
+}
 
-    [StructLayout(LayoutKind.Sequential)]
-    public struct GameInputForceFeedbackPeriodicParams
-    {
-        public GameInputForceFeedbackEnvelope Envelope;
+[StructLayout(LayoutKind.Sequential)]
+public struct GameInputForceFeedbackPeriodicParams
+{
+    public GameInputForceFeedbackEnvelope Envelope;
 
-        public GameInputForceFeedbackMagnitude Magnitude;
+    public GameInputForceFeedbackMagnitude Magnitude;
 
-        public float Frequency;
+    public float Frequency;
 
-        public float Phase;
+    public float Phase;
 
-        public float Bias;
-    }
+    public float Bias;
+}
 
-    [StructLayout(LayoutKind.Sequential)]
-    public struct GameInputForceFeedbackRampParams
-    {
-        public GameInputForceFeedbackEnvelope Envelope;
+[StructLayout(LayoutKind.Sequential)]
+public struct GameInputForceFeedbackRampParams
+{
+    public GameInputForceFeedbackEnvelope Envelope;
 
-        public GameInputForceFeedbackMagnitude StartMagnitude;
+    public GameInputForceFeedbackMagnitude StartMagnitude;
 
-        public GameInputForceFeedbackMagnitude EndMagnitude;
-    }
+    public GameInputForceFeedbackMagnitude EndMagnitude;
+}
 
-    [StructLayout(LayoutKind.Explicit)]
-    public struct GameInputForceFeedbackParams
-    {
-        [FieldOffset(0)]
-        public GameInputForceFeedbackEffectKind Kind;
+[StructLayout(LayoutKind.Explicit)]
+public struct GameInputForceFeedbackParams
+{
+    [FieldOffset(0)]
+    public GameInputForceFeedbackEffectKind Kind;
 
-        [FieldOffset(8)]
-        public GameInputForceFeedbackConstantParams Constant;
+    [FieldOffset(8)]
+    public GameInputForceFeedbackConstantParams Constant;
 
-        [FieldOffset(8)]
-        public GameInputForceFeedbackRampParams Ramp;
+    [FieldOffset(8)]
+    public GameInputForceFeedbackRampParams Ramp;
 
-        [FieldOffset(8)]
-        public GameInputForceFeedbackPeriodicParams SineWave;
+    [FieldOffset(8)]
+    public GameInputForceFeedbackPeriodicParams SineWave;
 
-        [FieldOffset(8)]
-        public GameInputForceFeedbackPeriodicParams SquareWave;
+    [FieldOffset(8)]
+    public GameInputForceFeedbackPeriodicParams SquareWave;
 
-        [FieldOffset(8)]
-        public GameInputForceFeedbackPeriodicParams TriangleWave;
+    [FieldOffset(8)]
+    public GameInputForceFeedbackPeriodicParams TriangleWave;
 
-        [FieldOffset(8)]
-        public GameInputForceFeedbackPeriodicParams SawtoothUpWave;
+    [FieldOffset(8)]
+    public GameInputForceFeedbackPeriodicParams SawtoothUpWave;
 
-        [FieldOffset(8)]
-        public GameInputForceFeedbackPeriodicParams SawtoothDownWave;
+    [FieldOffset(8)]
+    public GameInputForceFeedbackPeriodicParams SawtoothDownWave;
 
-        [FieldOffset(8)]
-        public GameInputForceFeedbackConditionParams Spring;
+    [FieldOffset(8)]
+    public GameInputForceFeedbackConditionParams Spring;
 
-        [FieldOffset(8)]
-        public GameInputForceFeedbackConditionParams Friction;
+    [FieldOffset(8)]
+    public GameInputForceFeedbackConditionParams Friction;
 
-        [FieldOffset(8)]
-        public GameInputForceFeedbackConditionParams Damper;
+    [FieldOffset(8)]
+    public GameInputForceFeedbackConditionParams Damper;
 
-        [FieldOffset(8)]
-        public GameInputForceFeedbackConditionParams Inertia;
-    }
+    [FieldOffset(8)]
+    public GameInputForceFeedbackConditionParams Inertia;
+}
 
-    [StructLayout(LayoutKind.Sequential)]
-    public struct GameInputRumbleParams
-    {
-        public float LowFrequency;
+[StructLayout(LayoutKind.Sequential)]
+public struct GameInputRumbleParams
+{
+    public float LowFrequency;
 
-        public float HighFrequency;
+    public float HighFrequency;
 
-        public float LeftTrigger;
+    public float LeftTrigger;
 
-        public float RightTrigger;
-    }
+    public float RightTrigger;
+}
 
-    [StructLayout(LayoutKind.Sequential)]
-    public struct GameInputAxisMapping
-    {
-        public GameInputElementKind ControllerElementKind;
+[StructLayout(LayoutKind.Sequential)]
+public struct GameInputAxisMapping
+{
+    public GameInputElementKind ControllerElementKind;
 
-        public uint ControllerIndex;
+    public uint ControllerIndex;
 
-        [MarshalAs(UnmanagedType.I1)]
-        public bool IsInverted;
+    [MarshalAs(UnmanagedType.I1)]
+    public bool IsInverted;
 
-        [MarshalAs(UnmanagedType.I1)]
-        public bool FromTwoButtons;
+    [MarshalAs(UnmanagedType.I1)]
+    public bool FromTwoButtons;
 
-        public uint ButtonMinIndexValue;
+    public uint ButtonMinIndexValue;
 
-        public GameInputSwitchPosition ReferenceDirection;
-    }
+    public GameInputSwitchPosition ReferenceDirection;
+}
 
-    [StructLayout(LayoutKind.Sequential)]
-    public struct GameInputButtonMapping
-    {
-        public GameInputElementKind ControllerElementKind;
+[StructLayout(LayoutKind.Sequential)]
+public struct GameInputButtonMapping
+{
+    public GameInputElementKind ControllerElementKind;
 
-        public uint ControllerIndex;
+    public uint ControllerIndex;
 
-        [MarshalAs(UnmanagedType.I1)]
-        public bool IsInverted;
+    [MarshalAs(UnmanagedType.I1)]
+    public bool IsInverted;
 
-        public GameInputSwitchPosition SwitchPosition;
-    }
+    public GameInputSwitchPosition SwitchPosition;
 }

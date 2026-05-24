@@ -1,81 +1,79 @@
-using System;
 using System.Runtime.InteropServices;
 
-namespace InputWeave.GameInput
+namespace InputWeave.GameInput;
+
+/// <summary>
+/// GameInput 原生回呼註冊。
+/// </summary>
+public sealed class GameInputCallbackRegistration : IDisposable
 {
-    /// <summary>
-    /// GameInput 原生回呼註冊。
-    /// </summary>
-    public sealed class GameInputCallbackRegistration : IDisposable
+    private readonly Action<ulong> _stopCallback;
+    private readonly Func<ulong, bool> _unregisterCallback;
+    private readonly Action<GameInputCallbackRegistration> _removeRegistration;
+    private readonly Action _deactivateContext;
+    private GCHandle _contextHandle;
+    private bool _disposed;
+
+    internal GameInputCallbackRegistration(
+        ulong token,
+        GCHandle contextHandle,
+        Action deactivateContext,
+        Action<ulong> stopCallback,
+        Func<ulong, bool> unregisterCallback,
+        Action<GameInputCallbackRegistration> removeRegistration)
     {
-        private readonly Action<ulong> _stopCallback;
-        private readonly Func<ulong, bool> _unregisterCallback;
-        private readonly Action<GameInputCallbackRegistration> _removeRegistration;
-        private readonly Action _deactivateContext;
-        private GCHandle _contextHandle;
-        private bool _disposed;
+        Token = token;
+        _contextHandle = contextHandle;
+        _deactivateContext = deactivateContext;
+        _stopCallback = stopCallback;
+        _unregisterCallback = unregisterCallback;
+        _removeRegistration = removeRegistration;
+    }
 
-        internal GameInputCallbackRegistration(
-            ulong token,
-            GCHandle contextHandle,
-            Action deactivateContext,
-            Action<ulong> stopCallback,
-            Func<ulong, bool> unregisterCallback,
-            Action<GameInputCallbackRegistration> removeRegistration)
+    /// <summary>
+    /// 原生 GameInput callback token。
+    /// </summary>
+    public ulong Token { get; }
+
+    /// <summary>
+    /// 註冊是否已釋放。
+    /// </summary>
+    public bool IsDisposed
+    {
+        get
         {
-            Token = token;
-            _contextHandle = contextHandle;
-            _deactivateContext = deactivateContext;
-            _stopCallback = stopCallback;
-            _unregisterCallback = unregisterCallback;
-            _removeRegistration = removeRegistration;
+            return _disposed;
+        }
+    }
+
+    /// <inheritdoc />
+    public void Dispose()
+    {
+        if (_disposed)
+        {
+            return;
         }
 
-        /// <summary>
-        /// 原生 GameInput callback token。
-        /// </summary>
-        public ulong Token { get; }
+        _disposed = true;
+        _deactivateContext();
 
-        /// <summary>
-        /// 註冊是否已釋放。
-        /// </summary>
-        public bool IsDisposed
+        try
         {
-            get
+            if (Token != 0)
             {
-                return _disposed;
+                _stopCallback(Token);
+                _unregisterCallback(Token);
             }
         }
-
-        /// <inheritdoc />
-        public void Dispose()
+        finally
         {
-            if (_disposed)
+            if (_contextHandle.IsAllocated)
             {
-                return;
+                _contextHandle.Free();
             }
 
-            _disposed = true;
-            _deactivateContext();
-
-            try
-            {
-                if (Token != 0)
-                {
-                    _stopCallback(Token);
-                    _unregisterCallback(Token);
-                }
-            }
-            finally
-            {
-                if (_contextHandle.IsAllocated)
-                {
-                    _contextHandle.Free();
-                }
-
-                _removeRegistration(this);
-                GC.SuppressFinalize(this);
-            }
+            _removeRegistration(this);
+            GC.SuppressFinalize(this);
         }
     }
 }

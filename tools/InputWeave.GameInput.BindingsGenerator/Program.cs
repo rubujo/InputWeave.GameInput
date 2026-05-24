@@ -123,12 +123,9 @@ internal sealed record GeneratorOptions(string HeaderPath, string OutputPath, st
             throw new ArgumentException("必須指定 --output。");
         }
 
-        if (!File.Exists(header))
-        {
-            throw new FileNotFoundException("找不到 GameInput.h。", header);
-        }
-
-        return new GeneratorOptions(
+        return !File.Exists(header)
+            ? throw new FileNotFoundException("找不到 GameInput.h。", header)
+            : new GeneratorOptions(
             Path.GetFullPath(header),
             Path.GetFullPath(output),
             string.IsNullOrWhiteSpace(manifest) ? null : Path.GetFullPath(manifest),
@@ -165,12 +162,7 @@ internal static partial class GameInputHeaderParser
             enums.Add(new EnumDefinition(name, isFlags, members));
         }
 
-        if (enums.Count == 0)
-        {
-            throw new InvalidOperationException("GameInput.h 未找到任何 enum。");
-        }
-
-        return enums;
+        return enums.Count == 0 ? throw new InvalidOperationException("GameInput.h 未找到任何 enum。") : (IReadOnlyList<EnumDefinition>)enums;
     }
 
     public static AbiManifest ParseAbiManifest(string headerText, IReadOnlyList<EnumDefinition> enums)
@@ -341,12 +333,7 @@ internal static partial class GameInputHeaderParser
     private static string ExtractMethodName(string signature)
     {
         Match method = Regex.Match(signature, @"IFACEMETHOD(?:_\([^,]+,\s*(?<name>\w+)\)|\((?<name>\w+)\))");
-        if (!method.Success)
-        {
-            throw new InvalidOperationException($"無法解析 COM 方法名稱：{signature}");
-        }
-
-        return method.Groups["name"].Value;
+        return !method.Success ? throw new InvalidOperationException($"無法解析 COM 方法名稱：{signature}") : method.Groups["name"].Value;
     }
 
     [GeneratedRegex(@"enum\s+(?<name>GameInput\w+)\s*\{(?<body>.*?)\};", RegexOptions.Singleline)]
@@ -373,45 +360,38 @@ internal static class GameInputEnumWriter
     public static string Write(IReadOnlyList<EnumDefinition> enums, string ns)
     {
         StringBuilder builder = CreateGeneratedBuilder();
-        builder.AppendLine("#pragma warning disable CA1027");
-        builder.AppendLine("#pragma warning disable CA2217");
-        builder.AppendLine();
-        builder.AppendLine("namespace " + ns);
-        builder.AppendLine("{");
+        AppendFileScopedNamespace(builder, ns);
 
         foreach (EnumDefinition enumDefinition in enums)
         {
             if (enumDefinition.IsFlags)
             {
-                builder.AppendLine("    [System.Flags]");
+                builder.AppendLine("[System.Flags]");
             }
 
-            builder.AppendLine("    public enum " + enumDefinition.Name);
-            builder.AppendLine("    {");
+            builder.AppendLine("public enum " + enumDefinition.Name);
+            builder.AppendLine("{");
 
             for (int index = 0; index < enumDefinition.Members.Count; index++)
             {
                 EnumMemberDefinition member = enumDefinition.Members[index];
                 string separator = index == enumDefinition.Members.Count - 1 ? string.Empty : ",";
-                builder.AppendLine($"        {member.Name} = {FormatValue(member.Value)}{separator}");
+                builder.AppendLine($"    {member.Name} = {FormatValue(member.Value)}{separator}");
             }
 
-            builder.AppendLine("    }");
+            builder.AppendLine("}");
             builder.AppendLine();
         }
 
-        builder.AppendLine("}");
+        TrimLastBlankLine(builder);
         return builder.ToString();
     }
 
     private static string FormatValue(long value)
     {
-        if (value < 0)
-        {
-            return value.ToString(CultureInfo.InvariantCulture);
-        }
-
-        return value > int.MaxValue
+        return value < 0
+            ? value.ToString(CultureInfo.InvariantCulture)
+            : value > int.MaxValue
             ? $"unchecked((int)0x{unchecked((uint)value):X8})"
             : value.ToString(CultureInfo.InvariantCulture);
     }
@@ -425,11 +405,25 @@ internal static class GameInputEnumWriter
         builder.AppendLine();
         return builder;
     }
+
+    internal static void AppendFileScopedNamespace(StringBuilder builder, string ns)
+    {
+        builder.AppendLine("namespace " + ns + ";");
+        builder.AppendLine();
+    }
+
+    internal static void TrimLastBlankLine(StringBuilder builder)
+    {
+        if (builder.Length >= Environment.NewLine.Length)
+        {
+            builder.Length -= Environment.NewLine.Length;
+        }
+    }
 }
 
 internal static class GameInputInteropWriter
 {
-    private static readonly IReadOnlyDictionary<string, string> s_knownTypeAliases = new Dictionary<string, string>(StringComparer.Ordinal)
+    private static readonly Dictionary<string, string> s_knownTypeAliases = new Dictionary<string, string>(StringComparer.Ordinal)
     {
         ["APP_LOCAL_DEVICE_ID"] = "AppLocalDeviceId",
         ["GUID"] = "Guid",
@@ -474,25 +468,23 @@ internal static class GameInputInteropWriter
         int maxSwitchStates = GetConstant(manifest, "GAMEINPUT_MAX_SWITCH_STATES");
 
         StringBuilder builder = GameInputEnumWriter.CreateGeneratedBuilder();
-        builder.AppendLine("namespace " + ns);
+        GameInputEnumWriter.AppendFileScopedNamespace(builder, ns);
+        builder.AppendLine("/// <summary>");
+        builder.AppendLine("/// GameInput v3 繫結會用到的固定常數。");
+        builder.AppendLine("/// </summary>");
+        builder.AppendLine("public static class GameInputConstants");
         builder.AppendLine("{");
-        builder.AppendLine("    /// <summary>");
-        builder.AppendLine("    /// GameInput v3 繫結會用到的固定常數。");
-        builder.AppendLine("    /// </summary>");
-        builder.AppendLine("    public static class GameInputConstants");
-        builder.AppendLine("    {");
-        builder.AppendLine("        public const int ApiVersion = 3;");
+        builder.AppendLine("    public const int ApiVersion = 3;");
         builder.AppendLine();
-        builder.AppendLine("        public const string DllName = \"GameInput.dll\";");
+        builder.AppendLine("    public const string DllName = \"GameInput.dll\";");
         builder.AppendLine();
-        builder.AppendLine("        public const ulong CurrentCallbackTokenValue = 0;");
+        builder.AppendLine("    public const ulong CurrentCallbackTokenValue = 0;");
         builder.AppendLine();
-        builder.AppendLine($"        public const int HapticMaxLocations = {hapticLocations};");
+        builder.AppendLine($"    public const int HapticMaxLocations = {hapticLocations};");
         builder.AppendLine();
-        builder.AppendLine($"        public const int HapticMaxAudioEndpointIdSize = {hapticAudioEndpoint};");
+        builder.AppendLine($"    public const int HapticMaxAudioEndpointIdSize = {hapticAudioEndpoint};");
         builder.AppendLine();
-        builder.AppendLine($"        public const int MaxSwitchStates = {maxSwitchStates};");
-        builder.AppendLine("    }");
+        builder.AppendLine($"    public const int MaxSwitchStates = {maxSwitchStates};");
         builder.AppendLine("}");
         return builder.ToString();
     }
@@ -500,21 +492,19 @@ internal static class GameInputInteropWriter
     private static string WriteHResults(AbiManifest manifest, string ns)
     {
         StringBuilder builder = GameInputEnumWriter.CreateGeneratedBuilder();
-        builder.AppendLine("namespace " + ns);
+        GameInputEnumWriter.AppendFileScopedNamespace(builder, ns);
+        builder.AppendLine("/// <summary>");
+        builder.AppendLine("/// GameInput 原生 HRESULT 值。");
+        builder.AppendLine("/// </summary>");
+        builder.AppendLine("public static class GameInputHResult");
         builder.AppendLine("{");
-        builder.AppendLine("    /// <summary>");
-        builder.AppendLine("    /// GameInput 原生 HRESULT 值。");
-        builder.AppendLine("    /// </summary>");
-        builder.AppendLine("    public static class GameInputHResult");
-        builder.AppendLine("    {");
         foreach (HResultDefinition hresult in manifest.HResults)
         {
-            builder.AppendLine($"        public const int {ToHResultName(hresult.Name)} = unchecked((int)0x{hresult.Value});");
+            builder.AppendLine($"    public const int {ToHResultName(hresult.Name)} = unchecked((int)0x{hresult.Value});");
             builder.AppendLine();
         }
 
         TrimLastBlankLine(builder);
-        builder.AppendLine("    }");
         builder.AppendLine("}");
         return builder.ToString();
     }
@@ -524,21 +514,19 @@ internal static class GameInputInteropWriter
         StringBuilder builder = GameInputEnumWriter.CreateGeneratedBuilder();
         builder.AppendLine("using System;");
         builder.AppendLine();
-        builder.AppendLine("namespace " + ns);
+        GameInputEnumWriter.AppendFileScopedNamespace(builder, ns);
+        builder.AppendLine("/// <summary>");
+        builder.AppendLine("/// GameInput v3 COM 介面的 IID。");
+        builder.AppendLine("/// </summary>");
+        builder.AppendLine("public static class GameInputIids");
         builder.AppendLine("{");
-        builder.AppendLine("    /// <summary>");
-        builder.AppendLine("    /// GameInput v3 COM 介面的 IID。");
-        builder.AppendLine("    /// </summary>");
-        builder.AppendLine("    public static class GameInputIids");
-        builder.AppendLine("    {");
         foreach (InterfaceDefinition interfaceDefinition in manifest.Interfaces)
         {
-            builder.AppendLine($"        public static readonly Guid {interfaceDefinition.Name} = new(\"{interfaceDefinition.Iid}\");");
+            builder.AppendLine($"    public static readonly Guid {interfaceDefinition.Name} = new(\"{interfaceDefinition.Iid}\");");
             builder.AppendLine();
         }
 
         TrimLastBlankLine(builder);
-        builder.AppendLine("    }");
         builder.AppendLine("}");
         return builder.ToString();
     }
@@ -549,17 +537,15 @@ internal static class GameInputInteropWriter
         builder.AppendLine("using System;");
         builder.AppendLine("using System.Runtime.InteropServices;");
         builder.AppendLine();
-        builder.AppendLine("namespace " + ns);
-        builder.AppendLine("{");
+        GameInputEnumWriter.AppendFileScopedNamespace(builder, ns);
         foreach (CallbackDefinition callback in manifest.Callbacks)
         {
-            builder.AppendLine("    [UnmanagedFunctionPointer(CallingConvention.Winapi)]");
-            builder.AppendLine("    " + GetCallbackDeclaration(callback.Name));
+            builder.AppendLine("[UnmanagedFunctionPointer(CallingConvention.Winapi)]");
+            builder.AppendLine(GetCallbackDeclaration(callback.Name));
             builder.AppendLine();
         }
 
         TrimLastBlankLine(builder);
-        builder.AppendLine("}");
         return builder.ToString();
     }
 
@@ -569,8 +555,7 @@ internal static class GameInputInteropWriter
         builder.AppendLine("using System;");
         builder.AppendLine("using System.Runtime.InteropServices;");
         builder.AppendLine();
-        builder.AppendLine("namespace " + ns);
-        builder.AppendLine("{");
+        GameInputEnumWriter.AppendFileScopedNamespace(builder, ns);
         WriteAppLocalDeviceId(builder);
 
         foreach (StructDefinition structDefinition in manifest.Structs)
@@ -579,19 +564,18 @@ internal static class GameInputInteropWriter
         }
 
         TrimLastBlankLine(builder);
-        builder.AppendLine("}");
         return builder.ToString();
     }
 
     private static void WriteAppLocalDeviceId(StringBuilder builder)
     {
-        builder.AppendLine("    [StructLayout(LayoutKind.Sequential)]");
-        builder.AppendLine("    public unsafe struct AppLocalDeviceId");
-        builder.AppendLine("    {");
-        builder.AppendLine("        public const int Size = 32;");
+        builder.AppendLine("[StructLayout(LayoutKind.Sequential)]");
+        builder.AppendLine("public unsafe struct AppLocalDeviceId");
+        builder.AppendLine("{");
+        builder.AppendLine("    public const int Size = 32;");
         builder.AppendLine();
-        builder.AppendLine("        public fixed byte Value[Size];");
-        builder.AppendLine("    }");
+        builder.AppendLine("    public fixed byte Value[Size];");
+        builder.AppendLine("}");
         builder.AppendLine();
     }
 
@@ -601,39 +585,34 @@ internal static class GameInputInteropWriter
         builder.AppendLine("using System;");
         builder.AppendLine("using System.Runtime.InteropServices;");
         builder.AppendLine();
-        builder.AppendLine("namespace " + ns);
-        builder.AppendLine("{");
+        GameInputEnumWriter.AppendFileScopedNamespace(builder, ns);
         foreach (InterfaceDefinition interfaceDefinition in manifest.Interfaces)
         {
-            builder.AppendLine("    [ComImport]");
-            builder.AppendLine($"    [Guid(\"{interfaceDefinition.Iid}\")]");
-            builder.AppendLine("    [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]");
-            builder.AppendLine($"    public interface {interfaceDefinition.Name}");
-            builder.AppendLine("    {");
+            builder.AppendLine("[ComImport]");
+            builder.AppendLine($"[Guid(\"{interfaceDefinition.Iid}\")]");
+            builder.AppendLine("[InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]");
+            builder.AppendLine($"public interface {interfaceDefinition.Name}");
+            builder.AppendLine("{");
             foreach (InterfaceMethodDefinition method in interfaceDefinition.Methods)
             {
                 WriteInterfaceMethod(builder, interfaceDefinition.Name, method.Name);
             }
 
             TrimLastBlankLine(builder);
-            builder.AppendLine("    }");
+            builder.AppendLine("}");
             builder.AppendLine();
         }
 
         TrimLastBlankLine(builder);
-        builder.AppendLine("}");
         return builder.ToString();
     }
 
     private static int GetConstant(AbiManifest manifest, string name)
     {
         ConstantDefinition? constant = manifest.Constants.FirstOrDefault(item => item.Name == name);
-        if (constant is null)
-        {
-            throw new InvalidOperationException($"GameInput.h 缺少必要常數 {name}。");
-        }
-
-        return int.Parse(constant.Value, CultureInfo.InvariantCulture);
+        return constant is null
+            ? throw new InvalidOperationException($"GameInput.h 缺少必要常數 {name}。")
+            : int.Parse(constant.Value, CultureInfo.InvariantCulture);
     }
 
     private static string GetCallbackDeclaration(string callbackName)
@@ -658,20 +637,20 @@ internal static class GameInputInteropWriter
 
         bool requiresUnsafe = structDefinition.Name == "GameInputControllerSwitchInfo";
         string declaration = requiresUnsafe
-            ? $"    public unsafe struct {structDefinition.Name}"
-            : $"    public struct {structDefinition.Name}";
+            ? $"public unsafe struct {structDefinition.Name}"
+            : $"public struct {structDefinition.Name}";
 
         if (structDefinition.Name == "GameInputHapticInfo")
         {
-            builder.AppendLine("    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]");
+            builder.AppendLine("[StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]");
         }
         else
         {
-            builder.AppendLine("    [StructLayout(LayoutKind.Sequential)]");
+            builder.AppendLine("[StructLayout(LayoutKind.Sequential)]");
         }
 
         builder.AppendLine(declaration);
-        builder.AppendLine("    {");
+        builder.AppendLine("{");
 
         foreach (string member in structDefinition.Members)
         {
@@ -679,14 +658,14 @@ internal static class GameInputInteropWriter
         }
 
         TrimLastBlankLine(builder);
-        builder.AppendLine("    }");
+        builder.AppendLine("}");
         builder.AppendLine();
     }
 
     private static void WriteForceFeedbackParams(StringBuilder builder, StructDefinition structDefinition)
     {
         string[] expectedMembers =
-        {
+        [
             "GameInputForceFeedbackEffectKind kind;",
             "GameInputForceFeedbackConstantParams constant;",
             "GameInputForceFeedbackRampParams ramp;",
@@ -699,29 +678,29 @@ internal static class GameInputInteropWriter
             "GameInputForceFeedbackConditionParams friction;",
             "GameInputForceFeedbackConditionParams damper;",
             "GameInputForceFeedbackConditionParams inertia;"
-        };
+        ];
 
         if (!expectedMembers.SequenceEqual(structDefinition.Members))
         {
             throw new InvalidOperationException("GameInputForceFeedbackParams union 結構與 generator 預期不一致。");
         }
 
-        builder.AppendLine("    [StructLayout(LayoutKind.Explicit)]");
-        builder.AppendLine("    public struct GameInputForceFeedbackParams");
-        builder.AppendLine("    {");
-        builder.AppendLine("        [FieldOffset(0)]");
-        builder.AppendLine("        public GameInputForceFeedbackEffectKind Kind;");
+        builder.AppendLine("[StructLayout(LayoutKind.Explicit)]");
+        builder.AppendLine("public struct GameInputForceFeedbackParams");
+        builder.AppendLine("{");
+        builder.AppendLine("    [FieldOffset(0)]");
+        builder.AppendLine("    public GameInputForceFeedbackEffectKind Kind;");
         builder.AppendLine();
         foreach (string member in expectedMembers.Skip(1))
         {
             NativeMember parsed = ParseNativeMember(member);
-            builder.AppendLine("        [FieldOffset(8)]");
-            builder.AppendLine($"        public {ToManagedType(parsed.NativeType)} {ToPascalCase(parsed.Name)};");
+            builder.AppendLine("    [FieldOffset(8)]");
+            builder.AppendLine($"    public {ToManagedType(parsed.NativeType)} {ToPascalCase(parsed.Name)};");
             builder.AppendLine();
         }
 
         TrimLastBlankLine(builder);
-        builder.AppendLine("    }");
+        builder.AppendLine("}");
         builder.AppendLine();
     }
 
@@ -731,23 +710,23 @@ internal static class GameInputInteropWriter
 
         if (parsed.Name == "labels" && parsed.NativeType == "GameInputLabel" && parsed.ArraySize == "GAMEINPUT_MAX_SWITCH_STATES")
         {
-            builder.AppendLine("        public fixed int Labels[GameInputConstants.MaxSwitchStates];");
+            builder.AppendLine("    public fixed int Labels[GameInputConstants.MaxSwitchStates];");
             builder.AppendLine();
             return;
         }
 
         if (parsed.Name == "audioEndpointId" && parsed.NativeType == "wchar_t" && parsed.ArraySize == "GAMEINPUT_HAPTIC_MAX_AUDIO_ENDPOINT_ID_SIZE")
         {
-            builder.AppendLine("        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = GameInputConstants.HapticMaxAudioEndpointIdSize)]");
-            builder.AppendLine("        public string AudioEndpointId;");
+            builder.AppendLine("    [MarshalAs(UnmanagedType.ByValTStr, SizeConst = GameInputConstants.HapticMaxAudioEndpointIdSize)]");
+            builder.AppendLine("    public string AudioEndpointId;");
             builder.AppendLine();
             return;
         }
 
         if (parsed.Name == "locations" && parsed.NativeType == "GUID" && parsed.ArraySize == "GAMEINPUT_HAPTIC_MAX_LOCATIONS")
         {
-            builder.AppendLine("        [MarshalAs(UnmanagedType.ByValArray, SizeConst = GameInputConstants.HapticMaxLocations)]");
-            builder.AppendLine("        public Guid[] Locations;");
+            builder.AppendLine("    [MarshalAs(UnmanagedType.ByValArray, SizeConst = GameInputConstants.HapticMaxLocations)]");
+            builder.AppendLine("    public Guid[] Locations;");
             builder.AppendLine();
             return;
         }
@@ -756,10 +735,10 @@ internal static class GameInputInteropWriter
         string managedName = ToPascalCase(parsed.Name);
         if (managedType == "bool")
         {
-            builder.AppendLine("        [MarshalAs(UnmanagedType.I1)]");
+            builder.AppendLine("    [MarshalAs(UnmanagedType.I1)]");
         }
 
-        builder.AppendLine($"        public {managedType} {managedName};");
+        builder.AppendLine($"    public {managedType} {managedName};");
         builder.AppendLine();
     }
 
@@ -776,12 +755,9 @@ internal static class GameInputInteropWriter
         }
 
         Match fieldMatch = Regex.Match(cleaned, @"^(?<type>.+?)\s+(?<name>\w+)$");
-        if (!fieldMatch.Success)
-        {
-            throw new InvalidOperationException($"無法解析 struct 欄位：{member}");
-        }
-
-        return new NativeMember(fieldMatch.Groups["type"].Value.Trim(), fieldMatch.Groups["name"].Value.Trim(), null);
+        return !fieldMatch.Success
+            ? throw new InvalidOperationException($"無法解析 struct 欄位：{member}")
+            : new NativeMember(fieldMatch.Groups["type"].Value.Trim(), fieldMatch.Groups["name"].Value.Trim(), null);
     }
 
     private static string StripAnnotations(string value)
@@ -805,7 +781,7 @@ internal static class GameInputInteropWriter
             .Replace("const ", string.Empty, StringComparison.Ordinal)
             .Trim();
 
-        if (normalized.EndsWith("*", StringComparison.Ordinal))
+        if (normalized.EndsWith('*'))
         {
             return "IntPtr";
         }
@@ -815,12 +791,9 @@ internal static class GameInputInteropWriter
             return alias;
         }
 
-        if (normalized.StartsWith("GameInput", StringComparison.Ordinal))
-        {
-            return normalized;
-        }
-
-        throw new InvalidOperationException($"未支援的 native type：{nativeType}");
+        return normalized.StartsWith("GameInput", StringComparison.Ordinal)
+            ? normalized
+            : throw new InvalidOperationException($"未支援的 native type：{nativeType}");
     }
 
     private static string ToHResultName(string nativeName)
@@ -932,21 +905,21 @@ internal static class GameInputInteropWriter
 
     private static string[] Method(string declaration)
     {
-        return new[]
-        {
-            "        [PreserveSig]",
-            "        " + declaration
-        };
+        return
+        [
+            "    [PreserveSig]",
+            "    " + declaration
+        ];
     }
 
     private static string[] BoolMethod(string declaration)
     {
-        return new[]
-        {
-            "        [PreserveSig]",
-            "        [return: MarshalAs(UnmanagedType.I1)]",
-            "        " + declaration
-        };
+        return
+        [
+            "    [PreserveSig]",
+            "    [return: MarshalAs(UnmanagedType.I1)]",
+            "    " + declaration
+        ];
     }
 
     private static void TrimLastBlankLine(StringBuilder builder)

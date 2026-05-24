@@ -5,17 +5,16 @@
 using System;
 using System.Runtime.InteropServices;
 
-namespace InputWeave.GameInput.Interop
-{
-    [UnmanagedFunctionPointer(CallingConvention.Winapi)]
-    public delegate void GameInputReadingCallback(ulong callbackToken, IntPtr context, IGameInputReading reading);
+namespace InputWeave.GameInput.Interop;
 
-    [UnmanagedFunctionPointer(CallingConvention.Winapi)]
-    public delegate void GameInputDeviceCallback(ulong callbackToken, IntPtr context, IGameInputDevice device, ulong timestamp, GameInputDeviceStatus currentStatus, GameInputDeviceStatus previousStatus);
+[UnmanagedFunctionPointer(CallingConvention.Winapi)]
+public delegate void GameInputReadingCallback(ulong callbackToken, IntPtr context, IGameInputReading reading);
 
-    [UnmanagedFunctionPointer(CallingConvention.Winapi)]
-    public delegate void GameInputSystemButtonCallback(ulong callbackToken, IntPtr context, IGameInputDevice device, ulong timestamp, GameInputSystemButtons currentButtons, GameInputSystemButtons previousButtons);
+[UnmanagedFunctionPointer(CallingConvention.Winapi)]
+public delegate void GameInputDeviceCallback(ulong callbackToken, IntPtr context, IGameInputDevice device, ulong timestamp, GameInputDeviceStatus currentStatus, GameInputDeviceStatus previousStatus);
 
-    [UnmanagedFunctionPointer(CallingConvention.Winapi)]
-    public delegate void GameInputKeyboardLayoutCallback(ulong callbackToken, IntPtr context, IGameInputDevice device, ulong timestamp, uint currentLayout, uint previousLayout);
-}
+[UnmanagedFunctionPointer(CallingConvention.Winapi)]
+public delegate void GameInputSystemButtonCallback(ulong callbackToken, IntPtr context, IGameInputDevice device, ulong timestamp, GameInputSystemButtons currentButtons, GameInputSystemButtons previousButtons);
+
+[UnmanagedFunctionPointer(CallingConvention.Winapi)]
+public delegate void GameInputKeyboardLayoutCallback(ulong callbackToken, IntPtr context, IGameInputDevice device, ulong timestamp, uint currentLayout, uint previousLayout);

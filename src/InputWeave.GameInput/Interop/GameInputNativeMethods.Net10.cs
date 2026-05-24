@@ -2,12 +2,11 @@
 using System;
 using System.Runtime.InteropServices;
 
-namespace InputWeave.GameInput.Interop
+namespace InputWeave.GameInput.Interop;
+
+internal static partial class GameInputNativeMethods
 {
-    internal static partial class GameInputNativeMethods
-    {
-        [LibraryImport(GameInputConstants.DllName, EntryPoint = "GameInputInitialize")]
-        internal static partial int GameInputInitialize(ref Guid riid, out IntPtr ppv);
-    }
+    [LibraryImport(GameInputConstants.DllName, EntryPoint = "GameInputInitialize")]
+    internal static partial int GameInputInitialize(ref Guid riid, out IntPtr ppv);
 }
 #endif

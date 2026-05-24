@@ -19,6 +19,14 @@
     <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies.net48" PrivateAssets="all" Condition="'$(TargetFramework)' == 'net48'" />
   </ItemGroup>
 
+  <ItemGroup Condition="'$(TargetFramework)' == 'net48'">
+    <Compile Remove="**\*.Net10.cs" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' != '' and '$(TargetFramework)' != 'net48'">
+    <Compile Remove="**\*.NetFramework.cs" />
+  </ItemGroup>
+
   <ItemGroup>
     <None Include="..\..\README.md" Pack="true" PackagePath="\" />
   </ItemGroup>
