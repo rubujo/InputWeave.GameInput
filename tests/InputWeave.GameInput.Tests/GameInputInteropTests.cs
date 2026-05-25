@@ -100,6 +100,43 @@ public sealed class GameInputInteropTests
     }
 
     [TestMethod]
+    public void NativeDllImportsConstrainSearchPaths()
+    {
+        var methods = typeof(GameInputConstants).Assembly.GetTypes()
+            .SelectMany(static type => type.GetMethods(BindingFlags.Static | BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.DeclaredOnly))
+            .Select(static method => new
+            {
+                Method = method,
+                Import = method.GetCustomAttribute<DllImportAttribute>()
+            })
+            .Where(static item => item.Import is not null)
+            .ToArray();
+
+        Assert.IsNotEmpty(methods);
+
+        foreach (var item in methods)
+        {
+            DefaultDllImportSearchPathsAttribute? attribute = item.Method.GetCustomAttribute<DefaultDllImportSearchPathsAttribute>();
+            string methodName = $"{item.Method.DeclaringType?.FullName}.{item.Method.Name}";
+
+            Assert.IsNotNull(attribute, $"{methodName} 應明確限制 DLL 搜尋路徑。");
+            Assert.AreEqual(DllImportSearchPath.System32, attribute.Paths & DllImportSearchPath.System32, $"{methodName} 應限制從 System32 載入 native DLL。");
+        }
+    }
+
+    [TestMethod]
+    public void SourceGeneratedLibraryImportsConstrainSearchPaths()
+    {
+        AssertLibraryImportUsesSystem32SearchPath(
+            "src/InputWeave.GameInput/Interop/GameInputNativeMethods.Net10.cs",
+            "[LibraryImport(GameInputConstants.DllName, EntryPoint = \"GameInputInitialize\")]");
+
+        AssertLibraryImportUsesSystem32SearchPath(
+            "src/InputWeave.GameInput/Win32NativeMethods.Net10.cs",
+            "[LibraryImport(\"kernel32.dll\", SetLastError = true)]");
+    }
+
+    [TestMethod]
     public void GameInputExceptionFormatsKnownHResults()
     {
         GameInputException exception = new(GameInputHResult.ReadingNotFound);
@@ -107,5 +144,40 @@ public sealed class GameInputInteropTests
         Assert.AreEqual(GameInputHResult.ReadingNotFound, exception.HResult);
         Assert.IsTrue(exception.IsNotFound);
         Assert.Contains("讀取資料", exception.Message);
+    }
+
+    private static void AssertLibraryImportUsesSystem32SearchPath(string relativePath, string importAttribute)
+    {
+        string sourcePath = Path.Combine(FindRepositoryRoot(), relativePath);
+        string source = File.ReadAllText(sourcePath);
+        int importIndex = source.IndexOf(importAttribute, StringComparison.Ordinal);
+
+        Assert.AreNotEqual(-1, importIndex, $"{relativePath} 應包含 {importAttribute}。");
+
+        int declarationEnd = source.IndexOf(';', importIndex);
+
+        Assert.AreNotEqual(-1, declarationEnd, $"{relativePath} 的 LibraryImport 宣告應以分號結尾。");
+
+        string declaration = source[importIndex..declarationEnd];
+
+        Assert.Contains("DefaultDllImportSearchPaths(DllImportSearchPath.System32)", declaration);
+    }
+
+    private static string FindRepositoryRoot()
+    {
+        DirectoryInfo? directory = new(AppContext.BaseDirectory);
+
+        while (directory is not null)
+        {
+            if (File.Exists(Path.Combine(directory.FullName, "InputWeave.GameInput.slnx")))
+            {
+                return directory.FullName;
+            }
+
+            directory = directory.Parent;
+        }
+
+        Assert.Fail("找不到 InputWeave.GameInput.slnx，無法定位 repo root。");
+        return string.Empty;
     }
 }

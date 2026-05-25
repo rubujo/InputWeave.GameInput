@@ -6,6 +6,7 @@ namespace InputWeave.GameInput;
 internal static partial class Win32NativeMethods
 {
     [LibraryImport("kernel32.dll", SetLastError = true)]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
     [return: MarshalAs(UnmanagedType.Bool)]
     internal static partial bool CloseHandle(IntPtr hObject);
 }
