@@ -1,4 +1,49 @@
 <Solution>
+  <Folder Name="/方案項目/">
+    <File Path=".editorconfig" />
+    <File Path=".gitattributes" />
+    <File Path=".gitignore" />
+    <File Path="AGENTS.md" />
+    <File Path="CLAUDE.md" />
+    <File Path="Directory.Build.props" />
+    <File Path="Directory.Packages.props" />
+    <File Path="global.json" />
+    <File Path="LICENSE" />
+    <File Path="README.md" />
+  </Folder>
+  <Folder Name="/方案項目/.agents/skills/">
+    <File Path=".agents/skills/gameinput-binding-generation/SKILL.md" />
+    <File Path=".agents/skills/gameinput-version-tracking/SKILL.md" />
+    <File Path=".agents/skills/interop-abi-review/SKILL.md" />
+    <File Path=".agents/skills/package-release-validation/SKILL.md" />
+  </Folder>
+  <Folder Name="/方案項目/.github/workflows/">
+    <File Path=".github/workflows/release-nupkg.yml" />
+  </Folder>
+  <Folder Name="/方案項目/docs/">
+    <File Path="docs/gameinput-api-coverage.md" />
+    <File Path="docs/gameinput-cookbook.md" />
+    <File Path="docs/gameinput-redist.md" />
+    <File Path="docs/gameinput-version-report.md" />
+    <File Path="docs/release-checklist.md" />
+  </Folder>
+  <Folder Name="/方案項目/docs/agents/">
+    <File Path="docs/agents/cli-support.md" />
+    <File Path="docs/agents/gameinput-wrapper-agent-policy.md" />
+    <File Path="docs/agents/skill-authoring.md" />
+  </Folder>
+  <Folder Name="/方案項目/eng/">
+    <File Path="eng/Check-GameInputVersion.ps1" />
+    <File Path="eng/Common.psm1" />
+    <File Path="eng/PSScriptAnalyzerSettings.psd1" />
+    <File Path="eng/Update-GameInputVersion.ps1" />
+    <File Path="eng/Validate-AgentDocs.ps1" />
+    <File Path="eng/Validate-TextEncoding.ps1" />
+    <File Path="eng/Verify-GameInputBindings.ps1" />
+    <File Path="eng/Verify-GameInputCoverage.ps1" />
+    <File Path="eng/gameinput-baseline.json" />
+    <File Path="eng/gameinput-xml-docs.zh-TW.json" />
+  </Folder>
   <Folder Name="/src/">
     <Project Path="src/InputWeave.GameInput/InputWeave.GameInput.csproj" />
   </Folder>

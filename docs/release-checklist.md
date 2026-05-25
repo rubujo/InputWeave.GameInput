@@ -22,6 +22,8 @@ dotnet pack src/InputWeave.GameInput/InputWeave.GameInput.csproj -c Release -o .
 - nupkg 檔名應為 `InputWeave.GameInput.0.0.1.nupkg`。
 - nupkg 不得包含 `GameInputRedist.msi`、`GameInputRedist.dll` 或 `InputWeave.GameInput.Native.dll`。
 - `README.md` 必須包含 redist 安裝責任說明。
+- `README.md` 必須連到 `docs/gameinput-cookbook.md`。
+- Cookbook 不得暗示 wrapper NuGet 會散佈 `GameInputRedist.msi`、`GameInputRedist.dll` 或 native shim。
 - Redist 文件必須說明 managed loader 的 Microsoft C++ loader parity、DLL hijack 防護邊界與 `GameInputRuntime.TryProbe` 診斷方式。
 - Redist 文件不得暗示 wrapper NuGet 會散佈 `GameInputRedist.msi`、`GameInputRedist.dll` 或 native shim。
 - `docs/gameinput-api-coverage.md` 必須標示缺口為 0。

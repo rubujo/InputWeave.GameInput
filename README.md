@@ -69,6 +69,10 @@ dotnet run --project samples/InputWeave.GameInput.Samples
 dotnet run --project samples/InputWeave.GameInput.Samples -- --rumble
 ```
 
+## 常見情境
+
+更多可搬進應用程式的片段請看 [GameInput 常見情境 Cookbook](docs/gameinput-cookbook.md)，內容涵蓋 gamepad polling loop、device hotplug / callback、rumble opt-in 與 runtime missing troubleshooting。
+
 ## 建置與驗證
 
 ```powershell
