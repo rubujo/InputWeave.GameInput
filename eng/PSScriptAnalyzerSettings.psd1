@@ -5,6 +5,7 @@
     )
 
     ExcludeRules = @(
-        'PSAvoidUsingWriteHost'
+        'PSAvoidUsingWriteHost',
+        'PSUseBOMForUnicodeEncodedFile'
     )
 }

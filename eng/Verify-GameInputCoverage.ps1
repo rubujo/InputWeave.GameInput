@@ -25,7 +25,7 @@ function Add-Failure
     $failures.Add($Message)
 }
 
-function Assert-TextContains
+function Assert-TextContent
 {
     param(
         [Parameter(Mandatory)]
@@ -66,27 +66,27 @@ $report = Get-Content -LiteralPath $reportPath -Raw -Encoding utf8
 
 foreach ($enum in $manifest.enums)
 {
-    Assert-TextContains -Text $allSource -Expected "enum $($enum.name)" -FailureMessage "低階 interop 缺少 enum $($enum.name)。"
+    Assert-TextContent -Text $allSource -Expected "enum $($enum.name)" -FailureMessage "低階 interop 缺少 enum $($enum.name)。"
 }
 
 foreach ($struct in $manifest.structs)
 {
-    Assert-TextContains -Text $allSource -Expected "struct $($struct.name)" -FailureMessage "低階 interop 缺少 struct $($struct.name)。"
+    Assert-TextContent -Text $allSource -Expected "struct $($struct.name)" -FailureMessage "低階 interop 缺少 struct $($struct.name)。"
 }
 
 foreach ($callback in $manifest.callbacks)
 {
-    Assert-TextContains -Text $allSource -Expected "delegate void $($callback.name)" -FailureMessage "低階 interop 缺少 callback $($callback.name)。"
+    Assert-TextContent -Text $allSource -Expected "delegate void $($callback.name)" -FailureMessage "低階 interop 缺少 callback $($callback.name)。"
 }
 
 foreach ($interface in $manifest.interfaces)
 {
-    Assert-TextContains -Text $allSource -Expected "interface $($interface.name)" -FailureMessage "低階 interop 缺少 COM interface $($interface.name)。"
+    Assert-TextContent -Text $allSource -Expected "interface $($interface.name)" -FailureMessage "低階 interop 缺少 COM interface $($interface.name)。"
 }
 
 foreach ($hresult in $manifest.hResults)
 {
-    Assert-TextContains -Text $allSource -Expected "0x$($hresult.value)" -FailureMessage "低階 interop 缺少 HRESULT $($hresult.name)。"
+    Assert-TextContent -Text $allSource -Expected "0x$($hresult.value)" -FailureMessage "低階 interop 缺少 HRESULT $($hresult.name)。"
 }
 
 $requiredWrapperSurface = @(
@@ -111,12 +111,12 @@ $requiredWrapperSurface = @(
 
 foreach ($surface in $requiredWrapperSurface)
 {
-    Assert-TextContains -Text $allSource -Expected $surface -FailureMessage "高階 wrapper coverage 缺少 $surface。"
+    Assert-TextContent -Text $allSource -Expected $surface -FailureMessage "高階 wrapper coverage 缺少 $surface。"
 }
 
-Assert-TextContains -Text $report -Expected '缺口：0' -FailureMessage 'coverage report 未標示缺口為 0。'
-Assert-TextContains -Text $report -Expected 'InputWeave.GameInput v0.0.1' -FailureMessage 'coverage report 未標示 v0.0.1。'
-Assert-TextContains -Text $report -Expected 'Microsoft.GameInput 3.4.218' -FailureMessage 'coverage report 未標示 GameInput baseline。'
+Assert-TextContent -Text $report -Expected '缺口：0' -FailureMessage 'coverage report 未標示缺口為 0。'
+Assert-TextContent -Text $report -Expected 'InputWeave.GameInput v0.0.1' -FailureMessage 'coverage report 未標示 v0.0.1。'
+Assert-TextContent -Text $report -Expected 'Microsoft.GameInput 3.4.218' -FailureMessage 'coverage report 未標示 GameInput baseline。'
 
 if ($failures.Count -gt 0)
 {

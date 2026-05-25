@@ -105,10 +105,15 @@ $scriptAnalyzer = Get-Command Invoke-ScriptAnalyzer -ErrorAction SilentlyContinu
 if ($null -ne $scriptAnalyzer)
 {
     $settingsPath = Join-Path $repoRoot 'eng\PSScriptAnalyzerSettings.psd1'
-    $results = Invoke-ScriptAnalyzer -Path $repoRoot -Recurse -Settings $settingsPath -Severity Warning,Error
-    foreach ($result in $results)
+    $scriptFiles = $files | Where-Object { $_.Extension -in @('.ps1', '.psm1', '.psd1') }
+    foreach ($scriptFile in $scriptFiles)
     {
-        $failures.Add("$($result.ScriptName):$($result.Line) $($result.RuleName) $($result.Message)")
+        $results = Invoke-ScriptAnalyzer -Path $scriptFile.FullName -Settings $settingsPath -Severity Warning,Error
+        foreach ($result in $results)
+        {
+            $relativePath = [System.IO.Path]::GetRelativePath($repoRoot, $scriptFile.FullName)
+            $failures.Add("$relativePath`:$($result.Line) $($result.RuleName) $($result.Message)")
+        }
     }
 }
 else
