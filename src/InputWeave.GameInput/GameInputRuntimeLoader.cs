@@ -52,6 +52,8 @@ internal static class GameInputRuntimeLoader
 
     internal static GameInputRuntimeCandidate? SelectPreferredCandidate(IReadOnlyList<GameInputRuntimeCandidate> candidates)
     {
+        // 對齊 Microsoft C++ loader：System32 redist 優先於 registry fallback，
+        // 且 redist 版本大於或等於 inbox runtime 時選 redist。
         bool hasInbox = TryFindExistingCandidate(candidates, GameInputRuntimeModuleKind.SystemGameInput, out GameInputRuntimeCandidate inbox);
         bool hasSystemRedist = TryFindExistingCandidate(candidates, GameInputRuntimeModuleKind.SystemGameInputRedist, out GameInputRuntimeCandidate systemRedist);
         bool hasRegistryRedist = TryFindExistingCandidate(candidates, GameInputRuntimeModuleKind.RegistryGameInputRedist, out GameInputRuntimeCandidate registryRedist);
@@ -150,6 +152,7 @@ internal static class GameInputRuntimeLoader
         string registryRedistPath = string.IsNullOrWhiteSpace(redistDirectory)
             ? string.Empty
             : Path.Combine(redistDirectory, GameInputRedistDllName);
+        // Registry redist 只允許 DLL 所在目錄與 System32 解析相依性，不回落到 app dir、cwd 或 PATH。
         candidates.Add(CreateFileCandidate(GameInputRuntimeModuleKind.RegistryGameInputRedist, registryRedistPath, LoadLibrarySearchDllLoadDir | LoadLibrarySearchSystem32, redistDirectoryHResult));
 
         return candidates;
@@ -228,6 +231,7 @@ internal static class GameInputRuntimeLoader
 
                 if (keepLoaded)
                 {
+                    // 保留 module handle 到程序結束，避免 GameInput COM 物件仍存活時 runtime 被卸載。
                     loaded = new LoadedRuntime(module, initialize, info);
                     module = IntPtr.Zero;
                 }
