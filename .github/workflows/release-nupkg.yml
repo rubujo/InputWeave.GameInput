@@ -78,19 +78,34 @@ jobs:
           $tag = '${{ steps.release_context.outputs.tag }}'
           $version = '${{ steps.release_context.outputs.version }}'
 
+          function Invoke-GitHubCliProbe {
+              param(
+                  [Parameter(Mandatory = $true)]
+                  [string[]]$Arguments
+              )
+
+              & gh @Arguments *> $null
+              $exitCode = $LASTEXITCODE
+
+              # gh release view 找不到 release 時會回傳非零；這裡屬於預期探測結果。
+              # 捕捉 exit code 後清除 LASTEXITCODE，避免 PowerShell step 在結尾被判定失敗。
+              $global:LASTEXITCODE = 0
+              return $exitCode
+          }
+
           [xml]$project = Get-Content -LiteralPath 'src/InputWeave.GameInput/InputWeave.GameInput.csproj'
           $projectVersion = [string]$project.Project.PropertyGroup.Version
           if ($projectVersion -ne $version) {
               throw "Tag '$tag' 對應版本 '$version'，但專案版本是 '$projectVersion'。"
           }
 
-          & gh api "repos/$env:GITHUB_REPOSITORY/git/ref/tags/$tag" *> $null
-          if ($LASTEXITCODE -ne 0) {
+          $tagExitCode = Invoke-GitHubCliProbe -Arguments @('api', "repos/$env:GITHUB_REPOSITORY/git/ref/tags/$tag")
+          if ($tagExitCode -ne 0) {
               throw "GitHub 上找不到 tag '$tag'。Workflow 不會自動建立 tag。"
           }
 
-          & gh release view $tag *> $null
-          if ($LASTEXITCODE -eq 0) {
+          $releaseExitCode = Invoke-GitHubCliProbe -Arguments @('release', 'view', $tag)
+          if ($releaseExitCode -eq 0) {
               throw "Release '$tag' 已存在，為避免覆寫資產已停止。"
           }
 
