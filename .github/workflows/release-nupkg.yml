@@ -158,9 +158,16 @@ jobs:
           $archive = [System.IO.Compression.ZipFile]::OpenRead($packagePath)
           try {
               $entries = @($archive.Entries | ForEach-Object { $_.FullName })
-              $redistEntry = $entries | Where-Object { $_ -match '(^|/)GameInputRedist\.msi$' } | Select-Object -First 1
-              if ($null -ne $redistEntry) {
-                  throw "Wrapper NuGet 不得包含 GameInputRedist.msi：$redistEntry"
+              $forbiddenEntries = @(
+                  'GameInputRedist\.msi',
+                  'GameInputRedist\.dll',
+                  'InputWeave\.GameInput\.Native\.dll'
+              )
+              foreach ($pattern in $forbiddenEntries) {
+                  $entry = $entries | Where-Object { $_ -match "(^|/)$pattern$" } | Select-Object -First 1
+                  if ($null -ne $entry) {
+                      throw "Wrapper NuGet 不得包含禁止的 runtime/native 檔案：$entry"
+                  }
               }
 
               $nuspecEntry = $archive.Entries |
@@ -219,7 +226,7 @@ jobs:
               "- NuGet package：InputWeave.GameInput.$version.nupkg",
               "- SHA256 sidecar：InputWeave.GameInput.$version.nupkg.sha256",
               "- 不會推送到 NuGet.org 或 GitHub Packages。",
-              "- Wrapper package 不包含 GameInputRedist.msi。"
+              "- Wrapper package 不包含 GameInputRedist.msi、GameInputRedist.dll 或 native shim。"
           )
 
           [System.IO.File]::WriteAllLines(

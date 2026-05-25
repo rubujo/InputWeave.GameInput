@@ -35,7 +35,7 @@
 - 若 VS2026 lint 要求可安全套用的新語法，例如 collection expression `[]`、更精準的 overload 或更具體的回傳型別，應更新程式碼而不是壓制規則。
 - 不得新增 `#pragma warning disable` 來壓制 C# analyzer 或 VS2026 lint；若出現警告，應修正程式碼、產生器或 `.editorconfig` 規則來源。
 - P/Invoke 在 `net10.0-windows` 等現代 TFM 必須使用 `LibraryImport` source generator；`DllImport` 只可存在於 `NETFRAMEWORK` 專用相容檔。
-- 本專案預設維持 managed-only wrapper，不導入 native/API shim；除非另有 runtime selection 或載入診斷需求，必須先另行規劃。
+- 本專案預設維持 managed-only wrapper；GameInput runtime selection 與載入診斷由 managed loader 實作，不導入 native/API shim，除非另有單檔發佈或原生診斷需求並先另行規劃。
 - Public API 名稱維持英文技術命名；公開 XML 文件註解使用正體中文台灣用語。
 - 所有 public/protected type、member、enum member、delegate、方法參數與非 void 回傳值都必須有 XML 文件註解；不得忽略 `CS1591`。
 - `InputWeave.GameInput.Interop` 保留原生 GameInput 識別字，方便對照 Microsoft `GameInput.h`。

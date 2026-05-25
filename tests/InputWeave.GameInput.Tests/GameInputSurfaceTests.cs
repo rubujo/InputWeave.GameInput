@@ -22,7 +22,12 @@ public sealed class GameInputSurfaceTests
                 typeof(GameInputForceFeedback),
                 typeof(GameInputDeviceManager),
                 typeof(GameInputDeviceInfoSnapshot),
-                typeof(GameInputHapticInfoSnapshot)
+                typeof(GameInputHapticInfoSnapshot),
+                typeof(GameInputRuntime),
+                typeof(GameInputRuntimeInfo),
+                typeof(GameInputRuntimeProbeInfo),
+                typeof(GameInputRuntimeCandidateInfo),
+                typeof(GameInputRuntimeModuleKind)
             ];
 
         foreach (Type type in requiredTypes)
@@ -139,6 +144,54 @@ public sealed class GameInputSurfaceTests
                     nameof(GameInputDispatcher.OpenWaitHandle),
                     nameof(GameInputDispatcher.OpenSafeWaitHandle)
             });
+
+        AssertPublicMethods(
+            typeof(GameInputRuntime),
+            new[]
+            {
+                    nameof(GameInputRuntime.GetInfo),
+                    nameof(GameInputRuntime.TryProbe)
+            });
+
+        AssertPublicProperties(
+            typeof(GameInputRuntimeInfo),
+            new[]
+            {
+                    nameof(GameInputRuntimeInfo.LoaderPolicy),
+                    nameof(GameInputRuntimeInfo.LoadedModuleKind),
+                    nameof(GameInputRuntimeInfo.LoadedModulePath),
+                    nameof(GameInputRuntimeInfo.FileVersion),
+                    nameof(GameInputRuntimeInfo.IsAvailable)
+            });
+
+        AssertPublicProperties(
+            typeof(GameInputRuntimeProbeInfo),
+            new[]
+            {
+                    nameof(GameInputRuntimeProbeInfo.LoaderPolicy),
+                    nameof(GameInputRuntimeProbeInfo.IsAvailable),
+                    nameof(GameInputRuntimeProbeInfo.SelectedModuleKind),
+                    nameof(GameInputRuntimeProbeInfo.SelectedModulePath),
+                    nameof(GameInputRuntimeProbeInfo.SelectedFileVersion),
+                    nameof(GameInputRuntimeProbeInfo.HResult),
+                    nameof(GameInputRuntimeProbeInfo.Win32Error),
+                    nameof(GameInputRuntimeProbeInfo.Candidates)
+            });
+
+        AssertPublicProperties(
+            typeof(GameInputRuntimeCandidateInfo),
+            new[]
+            {
+                    nameof(GameInputRuntimeCandidateInfo.ModuleKind),
+                    nameof(GameInputRuntimeCandidateInfo.ModulePath),
+                    nameof(GameInputRuntimeCandidateInfo.Exists),
+                    nameof(GameInputRuntimeCandidateInfo.FileVersion),
+                    nameof(GameInputRuntimeCandidateInfo.DiscoveryHResult),
+                    nameof(GameInputRuntimeCandidateInfo.FileVersionHResult),
+                    nameof(GameInputRuntimeCandidateInfo.LoadHResult),
+                    nameof(GameInputRuntimeCandidateInfo.GetProcAddressHResult),
+                    nameof(GameInputRuntimeCandidateInfo.Win32Error)
+            });
     }
 
     [TestMethod]
@@ -197,6 +250,18 @@ public sealed class GameInputSurfaceTests
         foreach (string methodName in methodNames)
         {
             CollectionAssert.Contains(actual.ToList(), methodName, $"{type.Name} 缺少 {methodName}。");
+        }
+    }
+
+    private static void AssertPublicProperties(Type type, IReadOnlyCollection<string> propertyNames)
+    {
+        HashSet<string> actual = type.GetProperties(BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public)
+            .Select(property => property.Name)
+            .ToHashSet(StringComparer.Ordinal);
+
+        foreach (string propertyName in propertyNames)
+        {
+            CollectionAssert.Contains(actual.ToList(), propertyName, $"{type.Name} 缺少 {propertyName}。");
         }
     }
 

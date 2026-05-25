@@ -125,15 +125,22 @@ public sealed class GameInputInteropTests
     }
 
     [TestMethod]
-    public void SourceGeneratedLibraryImportsConstrainSearchPaths()
+    public void SourceNativeImportsConstrainSearchPaths()
     {
-        AssertLibraryImportUsesSystem32SearchPath(
-            "src/InputWeave.GameInput/Interop/GameInputNativeMethods.Net10.cs",
-            "[LibraryImport(GameInputConstants.DllName, EntryPoint = \"GameInputInitialize\")]");
-
-        AssertLibraryImportUsesSystem32SearchPath(
+        AssertNativeImportDeclarationsUseSystem32SearchPath(
             "src/InputWeave.GameInput/Win32NativeMethods.Net10.cs",
-            "[LibraryImport(\"kernel32.dll\", SetLastError = true)]");
+            "[LibraryImport(");
+
+        AssertNativeImportDeclarationsUseSystem32SearchPath(
+            "src/InputWeave.GameInput/Win32NativeMethods.NetFramework.cs",
+            "[DllImport(");
+    }
+
+    [TestMethod]
+    public void GameInputInitializeUsesManagedRuntimeLoader()
+    {
+        AssertGameInputInitializeDelegatesToRuntimeLoader("src/InputWeave.GameInput/Interop/GameInputNativeMethods.Net10.cs");
+        AssertGameInputInitializeDelegatesToRuntimeLoader("src/InputWeave.GameInput/Interop/GameInputNativeMethods.NetFramework.cs");
     }
 
     [TestMethod]
@@ -146,21 +153,40 @@ public sealed class GameInputInteropTests
         Assert.Contains("讀取資料", exception.Message);
     }
 
-    private static void AssertLibraryImportUsesSystem32SearchPath(string relativePath, string importAttribute)
+    private static void AssertNativeImportDeclarationsUseSystem32SearchPath(string relativePath, string importAttributePrefix)
     {
         string sourcePath = Path.Combine(FindRepositoryRoot(), relativePath);
         string source = File.ReadAllText(sourcePath);
-        int importIndex = source.IndexOf(importAttribute, StringComparison.Ordinal);
+        int importIndex = source.IndexOf(importAttributePrefix, StringComparison.Ordinal);
 
-        Assert.AreNotEqual(-1, importIndex, $"{relativePath} 應包含 {importAttribute}。");
+        Assert.AreNotEqual(-1, importIndex, $"{relativePath} 應包含 {importAttributePrefix} 宣告。");
 
-        int declarationEnd = source.IndexOf(';', importIndex);
+        while (importIndex >= 0)
+        {
+            int declarationEnd = source.IndexOf(';', importIndex);
 
-        Assert.AreNotEqual(-1, declarationEnd, $"{relativePath} 的 LibraryImport 宣告應以分號結尾。");
+            Assert.AreNotEqual(-1, declarationEnd, $"{relativePath} 的 native import 宣告應以分號結尾。");
 
-        string declaration = source[importIndex..declarationEnd];
+            string declaration = source[importIndex..declarationEnd];
 
-        Assert.Contains("DefaultDllImportSearchPaths(DllImportSearchPath.System32)", declaration);
+            Assert.Contains("DefaultDllImportSearchPaths(DllImportSearchPath.System32)", declaration);
+
+            importIndex = source.IndexOf(importAttributePrefix, declarationEnd, StringComparison.Ordinal);
+        }
+    }
+
+    private static void AssertGameInputInitializeDelegatesToRuntimeLoader(string relativePath)
+    {
+        string sourcePath = Path.Combine(FindRepositoryRoot(), relativePath);
+        string source = File.ReadAllText(sourcePath);
+
+        Assert.Contains("GameInputRuntimeLoader.GameInputInitialize", source);
+        Assert.IsFalse(
+            source.Contains("LibraryImport(GameInputConstants.DllName", StringComparison.Ordinal),
+            $"{relativePath} 不應直接 LibraryImport GameInput.dll。");
+        Assert.IsFalse(
+            source.Contains("DllImport(GameInputConstants.DllName", StringComparison.Ordinal),
+            $"{relativePath} 不應直接 DllImport GameInput.dll。");
     }
 
     private static string FindRepositoryRoot()

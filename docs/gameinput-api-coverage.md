@@ -34,6 +34,7 @@
 - raw report：`byte[]` 區段 API 與 `net10.0-windows` span API
 - force feedback / haptics：`GameInputForceFeedback` builder、`GameInputForceFeedbackEffect`、`GameInputHapticInfoSnapshot`
 - aggregate device：create / disable
+- runtime loader：`GameInputRuntime` 提供 Microsoft C++ loader parity 的 managed runtime selection 與 probe 診斷
 
 ## 測試與驗收
 

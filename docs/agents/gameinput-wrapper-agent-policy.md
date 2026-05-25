@@ -8,4 +8,5 @@ Agent 修改本 repo 時必須遵守：
 - 不要手改產生檔；應修改 `tools/InputWeave.GameInput.BindingsGenerator` 後重產。
 - PowerShell 腳本必須支援 `pwsh` 7.4+，檔案使用 UTF-8 無 BOM 與 CRLF。
 - VS/MSBuild 檔案可保留 Visual Studio 或 .NET CLI 建立時既有的 UTF-8 BOM；不要用批次正規化強制移除。
-- 不要把 `GameInputRedist.msi` 包進 wrapper NuGet；只記錄雜湊並在應用程式發佈文件說明安裝責任。
+- 不要把 `GameInputRedist.msi`、`GameInputRedist.dll` 或 native shim 包進 wrapper NuGet；只記錄雜湊並在應用程式發佈文件說明安裝責任。
+- GameInput runtime selection 與載入診斷維持 managed loader 實作；新增 native shim 前必須先另行規劃套件形狀與驗證矩陣。

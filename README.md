@@ -88,10 +88,10 @@ pwsh ./eng/Verify-GameInputCoverage.ps1
 
 ## GameInput Redist
 
-InputWeave 會將 `GameInput.dll` 的 P/Invoke 搜尋路徑限制在 Windows System32，降低應用程式目錄或目前工作目錄中同名 DLL 造成的 hijack 風險。
+InputWeave 預設使用 managed loader 對齊 Microsoft C++ loader 的 runtime selection 行為，依序探測 Windows System32 內的 `GameInput.dll`、System32 內的 `GameInputRedist.dll`，以及 `HKLM\SOFTWARE\Microsoft\GameInput\RedistDir` 指向的 `GameInputRedist.dll`。當 redist runtime 版本大於或等於 inbox runtime 時，會優先載入 redist runtime。
 
-本 wrapper 不會讀取 redist 登錄檔路徑、載入 `GameInputRedist.dll`，或在 inbox runtime 與 redist runtime 之間做版本選擇。
+載入流程仍然維持 DLL hijack 防護：不從應用程式目錄、目前工作目錄或 `PATH` 載入同名 DLL；System32 runtime 只用 System32 搜尋路徑，registry redist runtime 只允許 DLL 所在目錄與 System32 解析相依性。需要診斷時可呼叫 `GameInputRuntime.TryProbe(out GameInputRuntimeProbeInfo info)` 檢查候選路徑、選擇結果、HRESULT 與 Win32 錯誤碼。
 
-`Microsoft.GameInput` NuGet 套件包含 `GameInputRedist.msi`，但不會自動安裝。PC 應用程式發佈時必須把該 redist 納入安裝流程；本 wrapper 只記錄與驗證 redist 雜湊，不會把 MSI 包進 wrapper NuGet。
+`Microsoft.GameInput` NuGet 套件包含 `GameInputRedist.msi`，但不會自動安裝。PC 應用程式發佈時必須把該 redist 納入安裝流程；本 wrapper 只記錄與驗證 redist 雜湊，不會把 MSI、redist DLL 或 native shim 包進 wrapper NuGet。
 
 更多細節請看 [docs/gameinput-redist.md](docs/gameinput-redist.md)。
