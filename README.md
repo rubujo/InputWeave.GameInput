@@ -90,6 +90,8 @@ pwsh ./eng/Verify-GameInputCoverage.ps1
 
 InputWeave 會將 `GameInput.dll` 的 P/Invoke 搜尋路徑限制在 Windows System32，降低應用程式目錄或目前工作目錄中同名 DLL 造成的 hijack 風險。
 
+本 wrapper 不會讀取 redist 登錄檔路徑、載入 `GameInputRedist.dll`，或在 inbox runtime 與 redist runtime 之間做版本選擇。
+
 `Microsoft.GameInput` NuGet 套件包含 `GameInputRedist.msi`，但不會自動安裝。PC 應用程式發佈時必須把該 redist 納入安裝流程；本 wrapper 只記錄與驗證 redist 雜湊，不會把 MSI 包進 wrapper NuGet。
 
 更多細節請看 [docs/gameinput-redist.md](docs/gameinput-redist.md)。

@@ -25,7 +25,7 @@
 - Generated interop 的 XML 文件註解來源是 `eng/gameinput-xml-docs.zh-TW.json`；不要手改 generated `.g.cs` 補文件。
 - 不要手改 generated interop；若產生檔不符合需求，修改 `tools/InputWeave.GameInput.BindingsGenerator` 後重產。
 - `docs/gameinput-api-coverage.md` 的 v0.0.1 coverage 必須維持缺口為 0，release 前需跑 `eng/Verify-GameInputCoverage.ps1`。
-- 追版時同步更新 `docs/gameinput-version-report.md` 與 coverage 文件。
+- 追版時同步更新 `docs/gameinput-version-report.md`、`docs/gameinput-redist.md` 與 coverage 文件。
 
 ## 程式碼規範
 
@@ -35,12 +35,13 @@
 - 若 VS2026 lint 要求可安全套用的新語法，例如 collection expression `[]`、更精準的 overload 或更具體的回傳型別，應更新程式碼而不是壓制規則。
 - 不得新增 `#pragma warning disable` 來壓制 C# analyzer 或 VS2026 lint；若出現警告，應修正程式碼、產生器或 `.editorconfig` 規則來源。
 - P/Invoke 在 `net10.0-windows` 等現代 TFM 必須使用 `LibraryImport` source generator；`DllImport` 只可存在於 `NETFRAMEWORK` 專用相容檔。
+- 本專案預設維持 managed-only wrapper，不導入 native/API shim；除非另有 runtime selection 或載入診斷需求，必須先另行規劃。
 - Public API 名稱維持英文技術命名；公開 XML 文件註解使用正體中文台灣用語。
 - 所有 public/protected type、member、enum member、delegate、方法參數與非 void 回傳值都必須有 XML 文件註解；不得忽略 `CS1591`。
 - `InputWeave.GameInput.Interop` 保留原生 GameInput 識別字，方便對照 Microsoft `GameInput.h`。
 - 一般使用者應優先使用 managed wrapper、snapshot、manager、builder 與 safe handle API；低階 interop 是 escape hatch。
 - COM 物件與 native reading 必須有明確 `IDisposable` 生命週期。
-- 不要把 `GameInputRedist.msi` 包進 wrapper NuGet。
+- 不要把 `GameInputRedist.msi`、`GameInputRedist.dll` 或 native shim 包進 wrapper NuGet。
 
 ## Git 提交規範
 

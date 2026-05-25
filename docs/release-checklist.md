@@ -20,8 +20,9 @@ dotnet pack src/InputWeave.GameInput/InputWeave.GameInput.csproj -c Release -o .
 ## 套件檢查
 
 - nupkg 檔名應為 `InputWeave.GameInput.0.0.1.nupkg`。
-- nupkg 不得包含 `GameInputRedist.msi`。
+- nupkg 不得包含 `GameInputRedist.msi`、`GameInputRedist.dll` 或 `InputWeave.GameInput.Native.dll`。
 - `README.md` 必須包含 redist 安裝責任說明。
+- Redist 文件必須維持 managed-only、安全優先的載入策略，不得暗示 v0.0.1 會做 redist fallback、runtime version selection 或原生 shim 發佈。
 - `docs/gameinput-api-coverage.md` 必須標示缺口為 0。
 - `InputWeave.GameInput.xml` 必須包含 public/protected API 的 summary、param 與 returns；`dotnet test` 會驗證 XML 文件完整性。
 
