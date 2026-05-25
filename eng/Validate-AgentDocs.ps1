@@ -13,6 +13,8 @@ $failures = [System.Collections.Generic.List[string]]::new()
 $agentsPath = Join-Path $repoRoot 'AGENTS.md'
 $claudePath = Join-Path $repoRoot 'CLAUDE.md'
 $skillsRoot = Join-Path $repoRoot '.agents\skills'
+$legacyAgentPath = Join-Path $repoRoot '.agent'
+$claudeSkillsRoot = Join-Path $repoRoot '.claude\skills'
 
 if (-not (Test-Path -LiteralPath $agentsPath -PathType Leaf))
 {
@@ -38,6 +40,21 @@ else
     {
         $failures.Add('CLAUDE.md 必須以 @AGENTS.md 匯入開頭。')
     }
+
+    if ($claude.Length -gt 256)
+    {
+        $failures.Add('CLAUDE.md 應維持薄轉接，請避免複製 AGENTS.md 規則。')
+    }
+}
+
+if (Test-Path -LiteralPath $legacyAgentPath)
+{
+    $failures.Add('請使用 .agents/ 目錄，不要重新加入舊版 .agent/ 目錄。')
+}
+
+if (Test-Path -LiteralPath $claudeSkillsRoot)
+{
+    $failures.Add('目前不維護 .claude/skills 副本；若需要 Claude Code slash-skill，請先規劃同步策略。')
 }
 
 if (-not (Test-Path -LiteralPath $skillsRoot -PathType Container))
@@ -71,6 +88,16 @@ else
         if ($Matches['name'] -ne $skillDirectory.Name)
         {
             $failures.Add("$($skillDirectory.Name) 的 frontmatter name 與資料夾名稱不一致。")
+        }
+
+        $description = [string]$Matches['description']
+        if ([string]::IsNullOrWhiteSpace($description))
+        {
+            $failures.Add("$($skillDirectory.Name) 的 frontmatter description 不可為空。")
+        }
+        elseif ($description.Length -gt 1024)
+        {
+            $failures.Add("$($skillDirectory.Name) 的 frontmatter description 超過 1024 字元。")
         }
     }
 }

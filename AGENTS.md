@@ -61,13 +61,20 @@
 - 腳本說明、錯誤訊息與一般輸出使用正體中文台灣用語。
 - 寫檔必須明確使用 UTF-8 無 BOM，不使用 `>` 或 `>>` 產生文字檔。
 
-## Agent Skills
+## Agent CLI 與 Skills
 
-共用 skills 放在 `.agents/skills/`：
+`AGENTS.md` 是本 repo 的主要跨工具規範來源。Codex CLI 與 Copilot CLI 會讀取根目錄 `AGENTS.md`；Antigravity CLI 目前也會讀取工作區的 `AGENTS.md`。Claude Code 透過根目錄 `CLAUDE.md` 的 `@AGENTS.md` 匯入本檔。
+
+- 不預設建立 `GEMINI.md`；Antigravity CLI 已支援 `AGENTS.md`，避免同一份規則重複維護。
+- 不預設建立 `.github/copilot-instructions.md`；Copilot CLI 可讀取 `AGENTS.md`。若未來要支援 GitHub.com Copilot Chat、code review 或 cloud agent，再新增薄轉接檔，不複製本檔全文。
+- 不使用舊版 `.agent/` 目錄；Antigravity workspace 規則與 skills 一律使用 `.agents/`。
+- `CLAUDE.md` 只保留 `@AGENTS.md` 匯入，不複製專案規則；Claude Code 專用權限、hooks 或 subagents 應放在 `.claude/` 專屬設定並先另行規劃。
+
+共用 Agent Skills 放在 `.agents/skills/`，此位置是 Copilot CLI 與 Antigravity CLI 的 project skill 位置，也符合 Agent Skills 的資料夾與 `SKILL.md` 結構。Claude Code 的 project skill 位置是 `.claude/skills/`；本 repo 不建立第二份 skill 副本，除非未來需要 Claude Code slash-skill 入口並同步維護規則。
 
 - `gameinput-version-tracking`
 - `gameinput-binding-generation`
 - `interop-abi-review`
 - `package-release-validation`
 
-CLI 專屬轉接應保持很薄。`CLAUDE.md` 只匯入本檔，不複製規則。
+Skill 的 `name` 必須與資料夾名稱一致，`description` 必須說明何時使用。不要在 skill 內複製大型文件；需要時以相對連結指向 repo 文件或 `eng/` 腳本。

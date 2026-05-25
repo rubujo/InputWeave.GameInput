@@ -1,6 +1,6 @@
 ---
 name: gameinput-binding-generation
-description: 當任務涉及從 Microsoft GameInput.h 產生或更新 C# interop enum 與低階繫結時使用。
+description: Use when regenerating C# interop bindings from Microsoft GameInput.h or changing the bindings generator.
 ---
 
 使用此 skill 時：

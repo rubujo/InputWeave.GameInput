@@ -1,6 +1,6 @@
 ---
 name: interop-abi-review
-description: 當任務涉及 GameInput COM 介面、struct layout、HRESULT、callback 或 native lifetime 審查時使用。
+description: Use when reviewing GameInput COM interfaces, struct layout, HRESULT mapping, callbacks, or native lifetime.
 ---
 
 使用此 skill 時：

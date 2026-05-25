@@ -1,6 +1,6 @@
 ---
 name: gameinput-version-tracking
-description: 當任務涉及檢查、更新或確認 Microsoft.GameInput NuGet 版本與 GameInputRedist 雜湊時使用。
+description: Use when checking, updating, or confirming Microsoft.GameInput NuGet versions and GameInputRedist hashes.
 ---
 
 使用此 skill 時：
