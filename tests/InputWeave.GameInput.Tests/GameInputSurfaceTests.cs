@@ -4,10 +4,10 @@ using System.Text.Json;
 namespace InputWeave.GameInput.Tests;
 
 [TestClass]
-public sealed class GameInputParityTests
+public sealed class GameInputSurfaceTests
 {
     [TestMethod]
-    public void PublicWrapperTypesCoverCompetitiveBaseline()
+    public void PublicWrapperTypesCoverCoreWrapperSurface()
     {
         Type[] requiredTypes =
         [
@@ -32,7 +32,7 @@ public sealed class GameInputParityTests
     }
 
     [TestMethod]
-    public void GameInputClientExposesCompetitiveBaselineMethods()
+    public void GameInputClientExposesCoreWrapperMethods()
     {
         string[] methodNames =
         [
@@ -55,7 +55,7 @@ public sealed class GameInputParityTests
     }
 
     [TestMethod]
-    public void DeviceAndReadingExposeCompetitiveBaselineMethods()
+    public void DeviceAndReadingExposeCoreWrapperMethods()
     {
         AssertPublicMethods(
             typeof(GameInputDevice),
