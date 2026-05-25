@@ -15,17 +15,13 @@
 - GameInput 繫結檢查：`pwsh ./eng/Verify-GameInputBindings.ps1`
 - GameInput coverage 檢查：`pwsh ./eng/Verify-GameInputCoverage.ps1`
 
-## GameInput 追版規則
+## GameInput 維護邊界
 
 - 目前基準是 `Microsoft.GameInput` `3.4.218`，API version `3`。
-- 修改 interop 前先執行 `pwsh ./eng/Check-GameInputVersion.ps1 -FailOnOutdated`。
-- 更新 GameInput 時使用 `pwsh ./eng/Update-GameInputVersion.ps1`，不要手動改產生檔。
-- `eng/gameinput-baseline.json` 必須同步記錄 nupkg、`GameInput.h` 與 `GameInputRedist.msi` 的 SHA256。
-- `src/InputWeave.GameInput/Interop/Generated/` 下的 `.g.cs` 與 `gameinput-abi-manifest.json` 必須由 generator 產生，用來驗證 enum、constants、HRESULT、IID、struct、callback、XML 文件註解與 COM interface method order。
-- Generated interop 的 XML 文件註解來源是 `eng/gameinput-xml-docs.zh-TW.json`；不要手改 generated `.g.cs` 補文件。
-- 不要手改 generated interop；若產生檔不符合需求，修改 `tools/InputWeave.GameInput.BindingsGenerator` 後重產。
+- 修改 interop、版本基準或 release 包裝前，先使用對應 `.agents/skills/` 流程；不要把多步驟程序塞回本檔。
+- `src/InputWeave.GameInput/Interop/Generated/` 下的 `.g.cs` 與 `gameinput-abi-manifest.json` 必須由 generator 產生；不要手改 generated interop。
+- Generated interop 的 XML 文件註解來源是 `eng/gameinput-xml-docs.zh-TW.json`；若缺文件，修改文件來源與 generator 後重產。
 - `docs/gameinput-api-coverage.md` 的 v0.0.1 coverage 必須維持缺口為 0，release 前需跑 `eng/Verify-GameInputCoverage.ps1`。
-- 追版時同步更新 `docs/gameinput-version-report.md`、`docs/gameinput-redist.md` 與 coverage 文件。
 
 ## 程式碼規範
 
@@ -61,20 +57,17 @@
 - 腳本說明、錯誤訊息與一般輸出使用正體中文台灣用語。
 - 寫檔必須明確使用 UTF-8 無 BOM，不使用 `>` 或 `>>` 產生文字檔。
 
-## Agent CLI 與 Skills
+## Agent 規範與 Skills
 
-`AGENTS.md` 是本 repo 的主要跨工具規範來源。Codex CLI 與 Copilot CLI 會讀取根目錄 `AGENTS.md`；Antigravity CLI 目前也會讀取工作區的 `AGENTS.md`。Claude Code 透過根目錄 `CLAUDE.md` 的 `@AGENTS.md` 匯入本檔。
+`AGENTS.md` 是唯一主規範。它只放每次工作都需要的專案規則；低頻率、多步驟流程放進 `.agents/skills/<name>/SKILL.md` 或一般文件。
 
-- 不預設建立 `GEMINI.md`；Antigravity CLI 已支援 `AGENTS.md`，避免同一份規則重複維護。
-- 不預設建立 `.github/copilot-instructions.md`；Copilot CLI 可讀取 `AGENTS.md`。若未來要支援 GitHub.com Copilot Chat、code review 或 cloud agent，再新增薄轉接檔，不複製本檔全文。
-- 不使用舊版 `.agent/` 目錄；Antigravity workspace 規則與 skills 一律使用 `.agents/`。
-- `CLAUDE.md` 只保留 `@AGENTS.md` 匯入，不複製專案規則；Claude Code 專用權限、hooks 或 subagents 應放在 `.claude/` 專屬設定並先另行規劃。
+- `CLAUDE.md` 只保留 `@AGENTS.md`，讓 Claude Code 匯入同一份主規範。
+- 不建立 `GEMINI.md`、`.github/copilot-instructions.md`、`.github/skills`、`.claude/skills` 或舊版 `.agent/`；新增這些入口前必須先確認目標工具與同步策略。
+- `.agents/skills/` 是本 repo 的 canonical skill 位置，採 Agent Skills 最大公因數：`SKILL.md`、`name`、`description` 與 Markdown body。
+- Skill frontmatter 不使用工具專屬欄位，例如 `allowed-tools`、`disable-model-invocation` 或 `user-invocable`。
 
-共用 Agent Skills 放在 `.agents/skills/`，此位置是 Copilot CLI 與 Antigravity CLI 的 project skill 位置，也符合 Agent Skills 的資料夾與 `SKILL.md` 結構。Claude Code 的 project skill 位置是 `.claude/skills/`；本 repo 不建立第二份 skill 副本，除非未來需要 Claude Code slash-skill 入口並同步維護規則。
+目前保留的 project skills：
 
-- `gameinput-version-tracking`
+- `gameinput-version-update`
 - `gameinput-binding-generation`
-- `interop-abi-review`
 - `package-release-validation`
-
-Skill 的 `name` 必須與資料夾名稱一致，`description` 必須說明何時使用。不要在 skill 內複製大型文件；需要時以相對連結指向 repo 文件或 `eng/` 腳本。

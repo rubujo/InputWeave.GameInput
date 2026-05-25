@@ -1,23 +1,22 @@
 # Agent CLI 支援策略
 
-本 repo 採用「一份主要規則，必要時才加薄轉接」：
-
-| 工具 | 規範入口 | Skill 入口 | 本 repo 決策 |
-| --- | --- | --- | --- |
-| Codex CLI | 根目錄 `AGENTS.md`，必要時可用巢狀 `AGENTS.override.md` 覆蓋 | `.agents/skills/<skill>/SKILL.md` | 以 `AGENTS.md` 作為主規範，不建立額外 Codex 專用規則檔 |
-| Claude Code | 根目錄 `CLAUDE.md` 或 `.claude/CLAUDE.md` | `.claude/skills/<skill>/SKILL.md` | `CLAUDE.md` 只用 `@AGENTS.md` 匯入主規範；目前不建立 `.claude/skills` 副本 |
-| GitHub Copilot CLI | 根目錄 `AGENTS.md`，也支援 `.github/copilot-instructions.md` | `.github/skills/`、`.agents/skills/` 或 `.claude/skills/` | CLI 使用 `AGENTS.md` 與 `.agents/skills`；不預設建立 Copilot 專用 mirror |
-| Antigravity CLI | 工作區 `AGENTS.md` 與 `GEMINI.md` | `.agents/skills/<skill>/SKILL.md` | 使用 `AGENTS.md` 與 `.agents/skills`；不建立 `GEMINI.md` 或舊版 `.agent/` |
+本 repo 的 Agent 規範採最大公因數：一份主規範、一個 canonical skill 目錄，不為每個 CLI 建立內容副本。
 
 ## 維護規則
 
-- `AGENTS.md` 放跨工具、跨任務都需要的專案規範。
-- 多步驟、低頻率、特定任務的流程放進 `.agents/skills/<name>/SKILL.md`，不要把大型程序堆進 `AGENTS.md`。
-- CLI 專屬檔案只能做薄轉接或記錄該 CLI 的載入限制，不複製 `AGENTS.md` 全文。
-- 若要讓 Claude Code 以 `/skill-name` 直接叫用 project skill，必須另行規劃 `.claude/skills` 同步策略，避免 `.agents/skills` 與 `.claude/skills` 內容分歧。
-- 若要支援 GitHub.com Copilot Chat、Copilot code review 或 Copilot cloud agent，再新增 `.github/copilot-instructions.md` 或 `.github/instructions/**/*.instructions.md`；這不是 Copilot CLI 的必要條件。
-- 不使用舊版 `.agent/` 目錄；Antigravity 目前文件已將 workspace rules 與 skills 預設位置改為 `.agents/`。
+- `AGENTS.md` 是唯一主規範。Codex CLI、GitHub Copilot CLI 與 Antigravity CLI 都能讀取此檔。
+- `CLAUDE.md` 只保留 `@AGENTS.md`，因為 Claude Code 讀 `CLAUDE.md` 而不是直接讀 `AGENTS.md`。
+- `.agents/skills/` 是 canonical project skill 位置。它覆蓋 Codex CLI、GitHub Copilot CLI 與 Antigravity CLI；Claude Code 若需要 slash-skill，必須另行規劃 `.claude/skills` mirror，不在本 repo 預設維護第二份。
+- `AGENTS.md` 放穩定規則；`.agents/skills/` 放低頻率、多步驟、任務導向流程。
+- 不建立 `GEMINI.md`、`.github/copilot-instructions.md`、`.github/skills`、`.claude/skills` 或 `.agent/`。這些都是工具專屬入口，只有在明確支援該工具情境並有同步策略時才新增。
 - 所有 Agent 文件都必須使用正體中文台灣用語、UTF-8 無 BOM、CRLF。
+
+## 需要另開規劃的情境
+
+- 支援 GitHub.com Copilot Chat、Copilot code review 或 Copilot cloud agent：新增 `.github/copilot-instructions.md` 或 `.github/instructions/**/*.instructions.md`。
+- 讓 Claude Code 直接以 `/skill-name` 執行 project skill：建立 `.claude/skills` mirror 與一致性檢查。
+- 需要 Antigravity 專屬 path-scoped rules：新增 `.agents/rules`，但不得把它當成主規範替代品。
+- 要跨 repo 發佈 skills：改用各工具的 plugin / skill 發佈機制，而不是在本 repo 增加工具專屬副本。
 
 ## 官方依據
 

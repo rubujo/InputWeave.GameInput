@@ -13,8 +13,23 @@ $failures = [System.Collections.Generic.List[string]]::new()
 $agentsPath = Join-Path $repoRoot 'AGENTS.md'
 $claudePath = Join-Path $repoRoot 'CLAUDE.md'
 $skillsRoot = Join-Path $repoRoot '.agents\skills'
-$legacyAgentPath = Join-Path $repoRoot '.agent'
-$claudeSkillsRoot = Join-Path $repoRoot '.claude\skills'
+$disallowedPaths = @(
+    'GEMINI.md',
+    '.agent',
+    '.github\copilot-instructions.md',
+    '.github\instructions',
+    '.github\skills',
+    '.claude\skills'
+)
+$expectedSkillNames = @(
+    'gameinput-binding-generation',
+    'gameinput-version-update',
+    'package-release-validation'
+)
+$allowedSkillFrontmatterKeys = [System.Collections.Generic.HashSet[string]]::new(
+    [string[]]@('name', 'description'),
+    [System.StringComparer]::Ordinal
+)
 
 if (-not (Test-Path -LiteralPath $agentsPath -PathType Leaf))
 {
@@ -36,25 +51,19 @@ if (-not (Test-Path -LiteralPath $claudePath -PathType Leaf))
 else
 {
     $claude = Get-Content -LiteralPath $claudePath -Raw -Encoding utf8
-    if (-not $claude.StartsWith('@AGENTS.md', [System.StringComparison]::Ordinal))
+    if ($claude.Trim() -ne '@AGENTS.md')
     {
-        $failures.Add('CLAUDE.md 必須以 @AGENTS.md 匯入開頭。')
-    }
-
-    if ($claude.Length -gt 256)
-    {
-        $failures.Add('CLAUDE.md 應維持薄轉接，請避免複製 AGENTS.md 規則。')
+        $failures.Add('CLAUDE.md 必須只保留 @AGENTS.md 匯入，不複製規則。')
     }
 }
 
-if (Test-Path -LiteralPath $legacyAgentPath)
+foreach ($relativePath in $disallowedPaths)
 {
-    $failures.Add('請使用 .agents/ 目錄，不要重新加入舊版 .agent/ 目錄。')
-}
-
-if (Test-Path -LiteralPath $claudeSkillsRoot)
-{
-    $failures.Add('目前不維護 .claude/skills 副本；若需要 Claude Code slash-skill，請先規劃同步策略。')
+    $path = Join-Path $repoRoot $relativePath
+    if (Test-Path -LiteralPath $path)
+    {
+        $failures.Add("不得重新加入 $relativePath；請維持 AGENTS.md 與 .agents/skills 的最小 Agent 結構。")
+    }
 }
 
 if (-not (Test-Path -LiteralPath $skillsRoot -PathType Container))
@@ -63,7 +72,25 @@ if (-not (Test-Path -LiteralPath $skillsRoot -PathType Container))
 }
 else
 {
-    $skillDirectories = Get-ChildItem -LiteralPath $skillsRoot -Directory
+    $skillDirectories = @(Get-ChildItem -LiteralPath $skillsRoot -Directory | Sort-Object Name)
+    $actualSkillNames = [string[]]($skillDirectories | Select-Object -ExpandProperty Name)
+
+    foreach ($expectedSkillName in $expectedSkillNames)
+    {
+        if ($actualSkillNames -notcontains $expectedSkillName)
+        {
+            $failures.Add("缺少必要 skill：$expectedSkillName。")
+        }
+    }
+
+    foreach ($actualSkillName in $actualSkillNames)
+    {
+        if ($expectedSkillNames -notcontains $actualSkillName)
+        {
+            $failures.Add("未規劃的 skill：$actualSkillName。新增 skill 前請先確認是否為跨工具共同流程。")
+        }
+    }
+
     foreach ($skillDirectory in $skillDirectories)
     {
         if ($skillDirectory.Name -notmatch '^[a-z0-9]+(-[a-z0-9]+)*$')
@@ -79,25 +106,75 @@ else
         }
 
         $skill = Get-Content -LiteralPath $skillPath -Raw -Encoding utf8
-        if ($skill -notmatch '(?s)^---\s+name:\s*(?<name>[a-z0-9-]+)\s+description:\s*(?<description>.+?)\s+---')
+        $frontmatterMatch = [System.Text.RegularExpressions.Regex]::Match(
+            $skill,
+            '\A---\r?\n(?<frontmatter>.*?)\r?\n---',
+            [System.Text.RegularExpressions.RegexOptions]::Singleline
+        )
+        if (-not $frontmatterMatch.Success)
         {
             $failures.Add("$($skillDirectory.Name) 的 SKILL.md 缺少有效 frontmatter。")
             continue
         }
 
-        if ($Matches['name'] -ne $skillDirectory.Name)
+        $frontmatter = $frontmatterMatch.Groups['frontmatter'].Value
+        $metadata = @{}
+        foreach ($line in $frontmatter -split '\r?\n')
+        {
+            if ([string]::IsNullOrWhiteSpace($line))
+            {
+                continue
+            }
+
+            $keyMatch = [System.Text.RegularExpressions.Regex]::Match($line, '^(?<key>[A-Za-z0-9_-]+)\s*:\s*(?<value>.*)$')
+            if (-not $keyMatch.Success)
+            {
+                $failures.Add("$($skillDirectory.Name) 的 frontmatter 行無法解析：$line")
+                continue
+            }
+
+            $key = $keyMatch.Groups['key'].Value
+            if (-not $allowedSkillFrontmatterKeys.Contains($key))
+            {
+                $failures.Add("$($skillDirectory.Name) 使用工具專屬 frontmatter 欄位：$key。只允許 name 與 description。")
+                continue
+            }
+
+            $metadata[$key] = $keyMatch.Groups['value'].Value.Trim()
+        }
+
+        if (-not $metadata.ContainsKey('name'))
+        {
+            $failures.Add("$($skillDirectory.Name) 的 frontmatter 缺少 name。")
+        }
+        elseif ($metadata['name'] -ne $skillDirectory.Name)
         {
             $failures.Add("$($skillDirectory.Name) 的 frontmatter name 與資料夾名稱不一致。")
         }
-
-        $description = [string]$Matches['description']
-        if ([string]::IsNullOrWhiteSpace($description))
+        elseif ($metadata['name'].Length -gt 64)
         {
-            $failures.Add("$($skillDirectory.Name) 的 frontmatter description 不可為空。")
+            $failures.Add("$($skillDirectory.Name) 的 frontmatter name 超過 64 字元。")
         }
-        elseif ($description.Length -gt 1024)
+
+        if (-not $metadata.ContainsKey('description'))
         {
-            $failures.Add("$($skillDirectory.Name) 的 frontmatter description 超過 1024 字元。")
+            $failures.Add("$($skillDirectory.Name) 的 frontmatter 缺少 description。")
+        }
+        else
+        {
+            $description = [string]$metadata['description']
+            if ([string]::IsNullOrWhiteSpace($description))
+            {
+                $failures.Add("$($skillDirectory.Name) 的 frontmatter description 不可為空。")
+            }
+            elseif ($description.Length -gt 1024)
+            {
+                $failures.Add("$($skillDirectory.Name) 的 frontmatter description 超過 1024 字元。")
+            }
+            elseif (-not $description.StartsWith('Use when ', [System.StringComparison]::Ordinal))
+            {
+                $failures.Add("$($skillDirectory.Name) 的 frontmatter description 應以 'Use when ' 開頭，明確描述觸發時機。")
+            }
         }
     }
 }

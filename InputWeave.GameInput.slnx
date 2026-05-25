@@ -13,8 +13,7 @@
   </Folder>
   <Folder Name="/方案項目/.agents/skills/">
     <File Path=".agents/skills/gameinput-binding-generation/SKILL.md" />
-    <File Path=".agents/skills/gameinput-version-tracking/SKILL.md" />
-    <File Path=".agents/skills/interop-abi-review/SKILL.md" />
+    <File Path=".agents/skills/gameinput-version-update/SKILL.md" />
     <File Path=".agents/skills/package-release-validation/SKILL.md" />
   </Folder>
   <Folder Name="/方案項目/.github/workflows/">
@@ -29,7 +28,6 @@
   </Folder>
   <Folder Name="/方案項目/docs/agents/">
     <File Path="docs/agents/cli-support.md" />
-    <File Path="docs/agents/gameinput-wrapper-agent-policy.md" />
     <File Path="docs/agents/skill-authoring.md" />
   </Folder>
   <Folder Name="/方案項目/eng/">
