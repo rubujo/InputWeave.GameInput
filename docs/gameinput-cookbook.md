@@ -1,10 +1,10 @@
-# InputWeave.GameInput 常見情境 Cookbook
+# InputWeave.GameInput 常見情境指南
 
-本文件提供可以直接放進 console app 或方法中的常見整合片段。正式應用程式仍應依自己的遊戲迴圈、執行緒模型與安裝流程調整錯誤處理。
+本文件提供可以直接放進主控台應用程式或方法中的常見整合片段。正式應用程式仍應依自己的遊戲迴圈、執行緒模型與安裝流程調整錯誤處理。
 
-## Gamepad polling loop
+## 遊戲控制器輪詢迴圈
 
-這個片段會列舉裝置、以能力選出第一個支援 gamepad 的裝置，然後用簡單迴圈讀取目前 snapshot。沒有 gamepad 或暫時沒有 reading 時，程式會清楚略過。
+這個片段會列舉裝置、以能力選出第一個支援 Gamepad 的裝置，然後用簡單迴圈讀取目前快照。沒有遊戲控制器或暫時沒有讀取資料時，程式會清楚略過。
 
 ```csharp
 using System;
@@ -19,7 +19,7 @@ IReadOnlyList<GameInputDeviceInfoSnapshot> snapshots = manager.RefreshDevices();
 int gamepadIndex = FindFirstGamepad(snapshots);
 if (gamepadIndex < 0)
 {
-    Console.WriteLine("目前沒有支援 gamepad 的 GameInput 裝置。");
+    Console.WriteLine("目前沒有支援 Gamepad 的 GameInput 裝置。");
     return;
 }
 
@@ -31,7 +31,7 @@ for (int frame = 0; frame < 600; frame++)
     GamepadReadingSnapshot? gamepad = manager.GetCurrentGamepad(gamepadDevice);
     if (gamepad is null)
     {
-        Console.WriteLine("目前沒有可讀取的 gamepad snapshot。");
+        Console.WriteLine("目前沒有可讀取的 Gamepad 快照。");
     }
     else
     {
@@ -63,9 +63,9 @@ static string GetDisplayName(GameInputDeviceInfoSnapshot snapshot)
 }
 ```
 
-## Device hotplug 與 callback
+## 裝置熱插拔與回呼
 
-這個片段示範建立 dispatcher、safe wait handle 與 device callback。沒有插拔或狀態變化時，不收到 callback 是正常結果；callback 內的 `GameInputDevice` 只在 callback 執行期間有效，不要存起來跨 callback 使用。
+這個片段示範建立分派器、Safe Wait Handle 與裝置回呼。沒有插拔或狀態變化時，不收到回呼是正常結果；回呼內的 `GameInputDevice` 只在回呼執行期間有效，不要存起來跨回呼使用。
 
 ```csharp
 using System;
@@ -86,8 +86,8 @@ using GameInputCallbackRegistration registration = client.RegisterDeviceCallback
     handler: OnDeviceChanged);
 
 Console.WriteLine(waitHandle.IsInvalid
-    ? "Dispatcher safe wait handle 無效；改用直接 Dispatch。"
-    : "Dispatcher safe wait handle 已建立。");
+    ? "Dispatcher Safe Wait Handle 無效；改用直接 Dispatch。"
+    : "Dispatcher Safe Wait Handle 已建立。");
 
 Stopwatch watch = Stopwatch.StartNew();
 while (watch.Elapsed < TimeSpan.FromSeconds(10))
@@ -107,9 +107,9 @@ static void OnDeviceChanged(
 }
 ```
 
-## Rumble opt-in
+## 明確啟用震動
 
-Rumble 應該由使用者明確啟用。這個片段預設不震動，只有傳入 `--rumble` 時才對支援裝置輸出短暫低強度震動，並用 `finally` 清除狀態。
+震動功能應該由使用者明確啟用。這個片段預設不震動，只有傳入 `--rumble` 時才對支援裝置輸出短暫低強度震動，並用 `finally` 清除狀態。
 
 ```csharp
 using System;
@@ -132,7 +132,7 @@ IReadOnlyList<GameInputDeviceInfoSnapshot> snapshots = manager.RefreshDevices();
 int deviceIndex = FindFirstRumbleDevice(snapshots);
 if (deviceIndex < 0)
 {
-    Console.WriteLine("目前沒有宣告支援 rumble motor 的 GameInput 裝置。");
+    Console.WriteLine("目前沒有宣告支援震動馬達的 GameInput 裝置。");
     return;
 }
 
@@ -144,7 +144,7 @@ try
 {
     device.SetRumbleState(rumble);
     Thread.Sleep(250);
-    Console.WriteLine($"已短暫觸發低強度 rumble：{motors}");
+    Console.WriteLine($"已短暫觸發低強度 Rumble：{motors}");
 }
 finally
 {
@@ -179,9 +179,9 @@ static bool SupportsRumbleMotor(GameInputRumbleMotors supportedMotors, GameInput
 }
 ```
 
-## Runtime missing troubleshooting
+## 執行階段缺失排除
 
-`GameInputRuntime.TryProbe` 可在建立 client 前檢查目前 loader policy、候選 runtime、HRESULT 與 Win32 錯誤碼。InputWeave 會用 managed loader 對齊 Microsoft C++ loader 的 runtime selection 行為，但 wrapper NuGet 不會散佈或安裝 `GameInputRedist.msi`、`GameInputRedist.dll` 或 native shim；應用程式安裝流程仍需負責安裝 Microsoft 支援的 GameInput redist。
+`GameInputRuntime.TryProbe` 可在建立 client 前檢查目前載入原則、候選執行階段、HRESULT 與 Win32 錯誤碼。InputWeave 會用受控載入器對齊 Microsoft C++ 載入器的執行階段選擇行為，但包裝套件不會散佈或安裝 `GameInputRedist.msi`、`GameInputRedist.dll` 或原生橋接 DLL；應用程式安裝流程仍需負責安裝 Microsoft 支援的 GameInput 可轉散發套件。
 
 ```csharp
 using System;
@@ -189,16 +189,16 @@ using InputWeave.GameInput;
 
 if (GameInputRuntime.TryProbe(out GameInputRuntimeProbeInfo info))
 {
-    Console.WriteLine($"GameInput runtime 可用：{info.SelectedModuleKind}");
-    Console.WriteLine($"Path：{info.SelectedModulePath}");
-    Console.WriteLine($"Version：{info.SelectedFileVersion?.ToString() ?? "(未知)"}");
+    Console.WriteLine($"GameInput 執行階段可用：{info.SelectedModuleKind}");
+    Console.WriteLine($"路徑：{info.SelectedModulePath}");
+    Console.WriteLine($"版本：{info.SelectedFileVersion?.ToString() ?? "(未知)"}");
     return;
 }
 
-Console.WriteLine("找不到可用的 GameInput runtime。");
-Console.WriteLine($"Loader policy：{info.LoaderPolicy}");
+Console.WriteLine("找不到可用的 GameInput 執行階段。");
+Console.WriteLine($"載入原則：{info.LoaderPolicy}");
 Console.WriteLine($"HRESULT：0x{info.HResult:X8}");
-Console.WriteLine($"Win32 error：{info.Win32Error}");
+Console.WriteLine($"Win32 錯誤：{info.Win32Error}");
 
 foreach (GameInputRuntimeCandidateInfo candidate in info.Candidates)
 {
@@ -211,5 +211,5 @@ foreach (GameInputRuntimeCandidateInfo candidate in info.Candidates)
         $"Win32={candidate.Win32Error}");
 }
 
-Console.WriteLine("請確認 Windows 內建 GameInput runtime 可用，或在應用程式安裝流程中安裝 Microsoft GameInput redist。");
+Console.WriteLine("請確認 Windows 內建 GameInput 執行階段可用，或在應用程式安裝流程中安裝 Microsoft GameInput 可轉散發套件。");
 ```

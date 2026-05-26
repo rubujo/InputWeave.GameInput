@@ -1,6 +1,6 @@
 # InputWeave.GameInput v0.0.1 發佈檢查表
 
-`v0.0.1` 是 Git tag / GitHub Release 名稱；NuGet / MSBuild 套件版本為 `0.0.1`。
+`v0.0.1` 是 Git 標籤 / GitHub Release 名稱；NuGet / MSBuild 套件版本為 `0.0.1`。
 
 ## 必跑命令
 
@@ -19,19 +19,19 @@ dotnet pack src/InputWeave.GameInput/InputWeave.GameInput.csproj -c Release -o .
 
 ## 套件檢查
 
-- nupkg 檔名應為 `InputWeave.GameInput.0.0.1.nupkg`。
-- nupkg 不得包含 `GameInputRedist.msi`、`GameInputRedist.dll` 或 `InputWeave.GameInput.Native.dll`。
-- `README.md` 必須包含 redist 安裝責任說明。
+- `.nupkg` 檔名應為 `InputWeave.GameInput.0.0.1.nupkg`。
+- `.nupkg` 不得包含 `GameInputRedist.msi`、`GameInputRedist.dll` 或 `InputWeave.GameInput.Native.dll`。
+- `README.md` 必須包含 GameInput 可轉散發套件的安裝責任說明。
 - `README.md` 必須連到 `docs/gameinput-cookbook.md`。
-- Cookbook 不得暗示 wrapper NuGet 會散佈 `GameInputRedist.msi`、`GameInputRedist.dll` 或 native shim。
-- Redist 文件必須說明 managed loader 的 Microsoft C++ loader parity、DLL hijack 防護邊界與 `GameInputRuntime.TryProbe` 診斷方式。
-- Redist 文件不得暗示 wrapper NuGet 會散佈 `GameInputRedist.msi`、`GameInputRedist.dll` 或 native shim。
+- 常見情境指南不得暗示包裝套件會散佈 `GameInputRedist.msi`、`GameInputRedist.dll` 或原生橋接 DLL。
+- 可轉散發套件文件必須說明受控載入器與 Microsoft C++ 載入器的行為對齊、DLL 劫持防護邊界與 `GameInputRuntime.TryProbe` 診斷方式。
+- 可轉散發套件文件不得暗示包裝套件會散佈 `GameInputRedist.msi`、`GameInputRedist.dll` 或原生橋接 DLL。
 - `docs/gameinput-api-coverage.md` 必須標示缺口為 0。
-- `InputWeave.GameInput.xml` 必須包含 public/protected API 的 summary、param 與 returns；`dotnet test` 會驗證 XML 文件完整性。
+- `InputWeave.GameInput.xml` 必須包含 public/protected API 的 `summary`、`param` 與 `returns`；`dotnet test` 會驗證 XML 文件完整性。
 
-## 硬體 Smoke
+## 硬體抽測
 
-有實體裝置與 GameInput runtime 的機器可加跑：
+有實體裝置與 GameInput 執行階段的機器可加跑：
 
 ```powershell
 $env:INPUTWEAVE_GAMEINPUT_HARDWARE_TESTS = '1'

@@ -1,33 +1,27 @@
 # InputWeave.GameInput
 
-`InputWeave.GameInput v0.0.1` 是 Microsoft GameInput 的 C# 分層包裝程式庫，目標是同時支援 .NET Framework 與最新版 .NET，並讓 GameInput 版本追蹤、繫結產生與發佈檢查可以自動化。
+`InputWeave.GameInput` 是 Microsoft GameInput 的 C# 分層包裝程式庫，支援 .NET Framework `net48` 與 `.NET 10` Windows 應用程式。專案提供由 `GameInput.h` 產生的低階互通層、高階 C# API、執行階段載入診斷與發佈前驗證流程。
 
 ## AI 生成與維護聲明
 
-本專案的程式碼、文件與維護流程主要由 AI 代理產生、整理與更新；人工使用者負責審閱、決策、驗證與發佈。使用本專案時，請將輸出視為需要依照實際環境再次驗證的工程成果。
+本專案的程式碼、文件與維護流程主要由 AI 代理產生、整理與更新；人工使用者負責審閱、決策、驗證與發佈。使用本專案時，請依實際環境再次驗證。
 
 ## 授權
 
-本 repo 自有程式碼與文件以 [CC0 1.0 Universal](LICENSE) 發布。`Microsoft.GameInput`、`GameInputRedist.msi`、GameInput API、Microsoft 商標與其他第三方資產不屬於本專案 CC0 授權範圍，使用與散佈時仍須遵循各自權利人條款。
+本儲存庫自有程式碼與文件以 [CC0 1.0 Universal](LICENSE) 發布。`Microsoft.GameInput`、`GameInputRedist.msi`、GameInput API、Microsoft 商標與其他第三方資產不屬於本專案 CC0 授權範圍。
 
-定位上，本專案不是只做 gamepad polling；目標是覆蓋 GameInput v3.x 的低階 interop 與高階 C# wrapper，並以 `net48;net10.0-windows`、VS2026、最新 `Microsoft.GameInput` baseline、由 `GameInput.h` 產生的 interop 原始碼與 ABI manifest 追版流程，維持可重現的版本追蹤與發佈驗證。
+## 套件資訊
 
-目前專案基準：
+- 套件版本：`0.0.1`
+- 發佈標籤：`v0.0.1`
+- 目標框架：`net48;net10.0-windows`
+- GameInput 基準：`Microsoft.GameInput` `3.4.218`，API 版本 `3`
+- 授權中繼資料：`CC0-1.0`
+- API 覆蓋率：[docs/gameinput-api-coverage.md](docs/gameinput-api-coverage.md)
 
-- Visual Studio 2026 / `.slnx`
-- `net48;net10.0-windows`
-- NuGet / MSBuild 版本：`0.0.1`
-- Git tag / Release 名稱：`v0.0.1`
-- `Microsoft.GameInput` `3.4.218`
-- GameInput API version `3`
-- API coverage：`docs/gameinput-api-coverage.md` 標示缺口為 0
-- 授權：CC0 1.0 Universal
-- 文件、腳本輸出與人工註解使用正體中文台灣用語
-
-## 使用方式
+## 基本使用
 
 ```csharp
-using System;
 using System.Collections.Generic;
 using InputWeave.GameInput;
 using InputWeave.GameInput.Interop;
@@ -42,36 +36,23 @@ if (snapshot is not null)
 }
 
 IReadOnlyList<GameInputDevice> devices = client.EnumerateDevices(GameInputKind.GameInputKindGamepad);
-using GameInputReading? reading = client.GetCurrentReading(GameInputKind.GameInputKindKeyboard);
-GameInputKeyState[] keys = reading?.GetKeyState() ?? Array.Empty<GameInputKeyState>();
 ```
 
-Managed API 也提供裝置 manager、snapshot、safe wait handle、force feedback builder 與 raw report 區段 API：
+裝置管理、快照、分派器、Safe Wait Handle、Force Feedback 與原始報告 API 請參考 [GameInput 常見情境指南](docs/gameinput-cookbook.md)。
 
-```csharp
-using GameInputDeviceManager manager = GameInputDeviceManager.Create();
-IReadOnlyList<GameInputDeviceInfoSnapshot> devices = manager.RefreshDevices();
+## 範例
 
-GameInputForceFeedbackEnvelope envelope = GameInputForceFeedback.Envelope();
-GameInputForceFeedbackMagnitude magnitude = GameInputForceFeedback.Magnitude(normal: 0.5f);
-GameInputForceFeedbackParams parameters = GameInputForceFeedback.Constant(magnitude, envelope);
-```
-
-Quickstart 範例專案在 `samples/InputWeave.GameInput.Samples`，預設只做唯讀的初始化、裝置列舉、gamepad polling、dispatcher safe wait handle 與 callback 示範：
+範例專案位於 `samples/InputWeave.GameInput.Samples`。預設執行只會初始化、列舉裝置、讀取遊戲控制器狀態並示範回呼模式，不會觸發硬體震動。
 
 ```powershell
 dotnet run --project samples/InputWeave.GameInput.Samples
 ```
 
-如需確認支援裝置的 rumble 路徑，可明確傳入 `--rumble`；範例只會短暫輸出低強度震動，並在結束前立即清除震動狀態：
+若要測試支援裝置的震動功能，必須明確傳入 `--rumble`。範例只會短暫輸出低強度震動，並在結束前清除震動狀態。
 
 ```powershell
 dotnet run --project samples/InputWeave.GameInput.Samples -- --rumble
 ```
-
-## 常見情境
-
-更多可搬進應用程式的片段請看 [GameInput 常見情境 Cookbook](docs/gameinput-cookbook.md)，內容涵蓋 gamepad polling loop、device hotplug / callback、rumble opt-in 與 runtime missing troubleshooting。
 
 ## 建置與驗證
 
@@ -86,16 +67,12 @@ pwsh ./eng/Verify-GameInputBindings.ps1
 pwsh ./eng/Verify-GameInputCoverage.ps1
 ```
 
-`Verify-GameInputBindings.ps1` 會重新從目前 baseline 的 `GameInput.h` 產生 enum、constants、HRESULT、IID、callback delegate、struct layout、COM interface 與 ABI manifest，確認 repo 內 `src/InputWeave.GameInput/Interop/Generated/` 的產生檔沒有與目前 header 脫鉤。
+`Verify-GameInputBindings.ps1` 會重新從目前基準的 `GameInput.h` 產生低階互通層與 ABI 資訊清單，確認儲存庫內的產生檔沒有與官方標頭脫鉤。`Verify-GameInputCoverage.ps1` 會確認高階 API 與覆蓋率文件一致。
 
-`Verify-GameInputCoverage.ps1` 會驗證 generated interop、高階 wrapper surface 與 [docs/gameinput-api-coverage.md](docs/gameinput-api-coverage.md) 的 v0.0.1 coverage 報告一致。
+## GameInput 可轉散發套件
 
-## GameInput Redist
+InputWeave 使用受控載入器對齊 Microsoft C++ 載入器的執行階段選擇行為，依序探測 Windows System32 內的 `GameInput.dll`、System32 內的 `GameInputRedist.dll`，以及 `HKLM\SOFTWARE\Microsoft\GameInput\RedistDir` 指向的 `GameInputRedist.dll`。當可轉散發執行階段版本大於或等於 Windows 內建執行階段時，會優先載入可轉散發執行階段。
 
-InputWeave 預設使用 managed loader 對齊 Microsoft C++ loader 的 runtime selection 行為，依序探測 Windows System32 內的 `GameInput.dll`、System32 內的 `GameInputRedist.dll`，以及 `HKLM\SOFTWARE\Microsoft\GameInput\RedistDir` 指向的 `GameInputRedist.dll`。當 redist runtime 版本大於或等於 inbox runtime 時，會優先載入 redist runtime。
+載入流程會避免從應用程式目錄、目前工作目錄或 `PATH` 載入同名 DLL。需要診斷時，可呼叫 `GameInputRuntime.TryProbe(out GameInputRuntimeProbeInfo info)` 檢查候選路徑、選擇結果、HRESULT 與 Win32 錯誤碼。
 
-載入流程仍然維持 DLL hijack 防護：不從應用程式目錄、目前工作目錄或 `PATH` 載入同名 DLL；System32 runtime 只用 System32 搜尋路徑，registry redist runtime 只允許 DLL 所在目錄與 System32 解析相依性。需要診斷時可呼叫 `GameInputRuntime.TryProbe(out GameInputRuntimeProbeInfo info)` 檢查候選路徑、選擇結果、HRESULT 與 Win32 錯誤碼。
-
-`Microsoft.GameInput` NuGet 套件包含 `GameInputRedist.msi`，但不會自動安裝。PC 應用程式發佈時必須把該 redist 納入安裝流程；本 wrapper 只記錄與驗證 redist 雜湊，不會把 MSI、redist DLL 或 native shim 包進 wrapper NuGet。
-
-更多細節請看 [docs/gameinput-redist.md](docs/gameinput-redist.md)。
+本包裝套件不會散佈或安裝 `GameInputRedist.msi`、`GameInputRedist.dll` 或原生橋接 DLL。發佈 Windows PC 應用程式時，應用程式安裝流程仍需負責安裝 Microsoft 支援的 GameInput 可轉散發套件。詳細資訊請參考 [docs/gameinput-redist.md](docs/gameinput-redist.md)。

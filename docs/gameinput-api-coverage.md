@@ -1,40 +1,40 @@
-# InputWeave.GameInput v0.0.1 API Coverage
+# InputWeave.GameInput v0.0.1 API 覆蓋率
 
-本報告定義 `InputWeave.GameInput v0.0.1` 的 100% 完整度標準。範圍鎖定 `Microsoft.GameInput 3.4.218`、GameInput API version `3`，並以 `native/include/GameInput.h` 的公開 surface 為準。
+本報告定義 `InputWeave.GameInput v0.0.1` 的 100% 完整度標準。範圍鎖定 `Microsoft.GameInput 3.4.218`、GameInput API 版本 `3`，並以 `native/include/GameInput.h` 的公開介面範圍為準。
 
 最後核對日期：2026-05-24
 
-## Coverage Summary
+## 覆蓋率摘要
 
-- 低階 interop：100%
-- 高階 wrapper：100%
+- 低階互通層：100%
+- 高階包裝 API：100%
 - 測試與文件：100%
 - 缺口：0
 
-## 低階 Interop
+## 低階互通層
 
 `src/InputWeave.GameInput/Interop/Generated/` 由 `GameInput.h` 產生並由 `eng/Verify-GameInputBindings.ps1` 驗證：
 
-- enum：27 / 27
-- struct：32 / 32
-- callback delegate：4 / 4
-- COM interface：7 / 7
+- 列舉：27 / 27
+- 結構：32 / 32
+- 回呼委派：4 / 4
+- COM Interface：7 / 7
 - HRESULT：10 / 10
-- constants、IID、method order：已驗證
+- 常數、IID、方法順序：已驗證
 
-## 高階 Wrapper
+## 高階包裝 API
 
-主要 GameInput 能力皆有 managed API：
+主要 GameInput 能力皆有受控 API：
 
-- device：`GameInputDevice`、`GameInputDeviceInfoSnapshot`、`GameInputDeviceManager`
-- reading：controller axis/button/switch、keyboard、mouse、sensors、arcade stick、flight stick、gamepad、racing wheel、raw report
-- callback：reading、device、system button、keyboard layout，並由 `GameInputCallbackRegistration` 管理 unregister/dispose
-- dispatcher：`GameInputDispatcher` 與 `GameInputDispatcherWaitHandle`
-- mapper：gamepad、flight stick、racing wheel、arcade stick mapping
-- raw report：`byte[]` 區段 API 與 `net10.0-windows` span API
-- force feedback / haptics：`GameInputForceFeedback` builder、`GameInputForceFeedbackEffect`、`GameInputHapticInfoSnapshot`
-- aggregate device：create / disable
-- runtime loader：`GameInputRuntime` 提供 Microsoft C++ loader parity 的 managed runtime selection 與 probe 診斷
+- 裝置：`GameInputDevice`、`GameInputDeviceInfoSnapshot`、`GameInputDeviceManager`
+- 讀取資料：Controller Axis/Button/Switch、Keyboard、Mouse、Sensors、Arcade Stick、Flight Stick、Gamepad、Racing Wheel、Raw Report
+- 回呼：Reading、Device、System Button、Keyboard Layout，並由 `GameInputCallbackRegistration` 管理 Unregister/Dispose
+- 分派器：`GameInputDispatcher` 與 `GameInputDispatcherWaitHandle`
+- 映射：Gamepad、Flight Stick、Racing Wheel、Arcade Stick Mapping
+- 原始報告：`byte[]` 區段 API 與 `net10.0-windows` Span API
+- Force Feedback / Haptics：`GameInputForceFeedback` Builder、`GameInputForceFeedbackEffect`、`GameInputHapticInfoSnapshot`
+- 聚合裝置：Create / Disable
+- 執行階段載入器：`GameInputRuntime` 提供與 Microsoft C++ 載入器對齊的受控執行階段選擇與探測診斷
 
 ## 測試與驗收
 
@@ -53,8 +53,8 @@ pwsh ./eng/Validate-AgentDocs.ps1
 dotnet pack src/InputWeave.GameInput/InputWeave.GameInput.csproj -c Release
 ```
 
-硬體 smoke 測試以 `INPUTWEAVE_GAMEINPUT_HARDWARE_TESTS=1` 啟用。沒有 GameInput runtime 或實體裝置時，測試必須清楚略過或標示 inconclusive。
+硬體抽測以 `INPUTWEAVE_GAMEINPUT_HARDWARE_TESTS=1` 啟用。沒有 GameInput 執行階段或實體裝置時，測試必須清楚略過或標示未定。
 
-## Documented Exceptions
+## 已知例外
 
-無。`v0.0.1` 的 100% 完整度以目前 baseline 的 GameInput v3.x 公開 header surface 與本報告列出的高階 wrapper 能力為準。
+無。`v0.0.1` 的 100% 完整度以目前基準的 GameInput v3.x 公開標頭介面範圍與本報告列出的高階包裝能力為準。

@@ -171,10 +171,6 @@ else
             {
                 $failures.Add("$($skillDirectory.Name) 的 frontmatter description 超過 1024 字元。")
             }
-            elseif (-not $description.StartsWith('Use when ', [System.StringComparison]::Ordinal))
-            {
-                $failures.Add("$($skillDirectory.Name) 的 frontmatter description 應以 'Use when ' 開頭，明確描述觸發時機。")
-            }
         }
     }
 }

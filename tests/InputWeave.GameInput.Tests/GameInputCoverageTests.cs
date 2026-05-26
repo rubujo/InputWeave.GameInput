@@ -33,10 +33,10 @@ public sealed class GameInputCoverageTests
         string report = File.ReadAllText(FindRepoFile("docs/gameinput-api-coverage.md"));
 
         Assert.Contains("\"apiVersion\": 3", manifest);
-        Assert.Contains("enum：27 / 27", report);
-        Assert.Contains("struct：32 / 32", report);
-        Assert.Contains("callback delegate：4 / 4", report);
-        Assert.Contains("COM interface：7 / 7", report);
+        Assert.Contains("列舉：27 / 27", report);
+        Assert.Contains("結構：32 / 32", report);
+        Assert.Contains("回呼委派：4 / 4", report);
+        Assert.Contains("COM Interface：7 / 7", report);
         Assert.Contains("HRESULT：10 / 10", report);
     }
 
