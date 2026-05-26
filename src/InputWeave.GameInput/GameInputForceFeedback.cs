@@ -134,6 +134,76 @@ public static class GameInputForceFeedback
     }
 
     /// <summary>
+    /// 建立 sine wave force feedback effect 參數。
+    /// </summary>
+    /// <param name="magnitude">Effect 強度。</param>
+    /// <param name="envelope">Effect envelope。</param>
+    /// <param name="frequency">週期頻率。</param>
+    /// <param name="phase">週期相位。</param>
+    /// <param name="bias">週期偏移。</param>
+    /// <returns>操作完成後的查詢或建立結果。</returns>
+    public static GameInputForceFeedbackParams SineWave(GameInputForceFeedbackMagnitude magnitude, GameInputForceFeedbackEnvelope envelope, float frequency, float phase = 0, float bias = 0)
+    {
+        return Periodic(GameInputForceFeedbackEffectKind.GameInputForceFeedbackSineWave, magnitude, envelope, frequency, phase, bias);
+    }
+
+    /// <summary>
+    /// 建立 square wave force feedback effect 參數。
+    /// </summary>
+    /// <param name="magnitude">Effect 強度。</param>
+    /// <param name="envelope">Effect envelope。</param>
+    /// <param name="frequency">週期頻率。</param>
+    /// <param name="phase">週期相位。</param>
+    /// <param name="bias">週期偏移。</param>
+    /// <returns>操作完成後的查詢或建立結果。</returns>
+    public static GameInputForceFeedbackParams SquareWave(GameInputForceFeedbackMagnitude magnitude, GameInputForceFeedbackEnvelope envelope, float frequency, float phase = 0, float bias = 0)
+    {
+        return Periodic(GameInputForceFeedbackEffectKind.GameInputForceFeedbackSquareWave, magnitude, envelope, frequency, phase, bias);
+    }
+
+    /// <summary>
+    /// 建立 triangle wave force feedback effect 參數。
+    /// </summary>
+    /// <param name="magnitude">Effect 強度。</param>
+    /// <param name="envelope">Effect envelope。</param>
+    /// <param name="frequency">週期頻率。</param>
+    /// <param name="phase">週期相位。</param>
+    /// <param name="bias">週期偏移。</param>
+    /// <returns>操作完成後的查詢或建立結果。</returns>
+    public static GameInputForceFeedbackParams TriangleWave(GameInputForceFeedbackMagnitude magnitude, GameInputForceFeedbackEnvelope envelope, float frequency, float phase = 0, float bias = 0)
+    {
+        return Periodic(GameInputForceFeedbackEffectKind.GameInputForceFeedbackTriangleWave, magnitude, envelope, frequency, phase, bias);
+    }
+
+    /// <summary>
+    /// 建立 sawtooth up wave force feedback effect 參數。
+    /// </summary>
+    /// <param name="magnitude">Effect 強度。</param>
+    /// <param name="envelope">Effect envelope。</param>
+    /// <param name="frequency">週期頻率。</param>
+    /// <param name="phase">週期相位。</param>
+    /// <param name="bias">週期偏移。</param>
+    /// <returns>操作完成後的查詢或建立結果。</returns>
+    public static GameInputForceFeedbackParams SawtoothUpWave(GameInputForceFeedbackMagnitude magnitude, GameInputForceFeedbackEnvelope envelope, float frequency, float phase = 0, float bias = 0)
+    {
+        return Periodic(GameInputForceFeedbackEffectKind.GameInputForceFeedbackSawtoothUpWave, magnitude, envelope, frequency, phase, bias);
+    }
+
+    /// <summary>
+    /// 建立 sawtooth down wave force feedback effect 參數。
+    /// </summary>
+    /// <param name="magnitude">Effect 強度。</param>
+    /// <param name="envelope">Effect envelope。</param>
+    /// <param name="frequency">週期頻率。</param>
+    /// <param name="phase">週期相位。</param>
+    /// <param name="bias">週期偏移。</param>
+    /// <returns>操作完成後的查詢或建立結果。</returns>
+    public static GameInputForceFeedbackParams SawtoothDownWave(GameInputForceFeedbackMagnitude magnitude, GameInputForceFeedbackEnvelope envelope, float frequency, float phase = 0, float bias = 0)
+    {
+        return Periodic(GameInputForceFeedbackEffectKind.GameInputForceFeedbackSawtoothDownWave, magnitude, envelope, frequency, phase, bias);
+    }
+
+    /// <summary>
     /// 建立 periodic force feedback effect 參數。
     /// </summary>
     /// <param name="kind">Effect 類型。</param>
@@ -187,6 +257,46 @@ public static class GameInputForceFeedback
         }
 
         return result;
+    }
+
+    /// <summary>
+    /// 建立 spring force feedback effect 參數。
+    /// </summary>
+    /// <param name="condition">Condition effect 參數。</param>
+    /// <returns>操作完成後的查詢或建立結果。</returns>
+    public static GameInputForceFeedbackParams Spring(GameInputForceFeedbackConditionParams condition)
+    {
+        return Condition(GameInputForceFeedbackEffectKind.GameInputForceFeedbackSpring, condition);
+    }
+
+    /// <summary>
+    /// 建立 friction force feedback effect 參數。
+    /// </summary>
+    /// <param name="condition">Condition effect 參數。</param>
+    /// <returns>操作完成後的查詢或建立結果。</returns>
+    public static GameInputForceFeedbackParams Friction(GameInputForceFeedbackConditionParams condition)
+    {
+        return Condition(GameInputForceFeedbackEffectKind.GameInputForceFeedbackFriction, condition);
+    }
+
+    /// <summary>
+    /// 建立 damper force feedback effect 參數。
+    /// </summary>
+    /// <param name="condition">Condition effect 參數。</param>
+    /// <returns>操作完成後的查詢或建立結果。</returns>
+    public static GameInputForceFeedbackParams Damper(GameInputForceFeedbackConditionParams condition)
+    {
+        return Condition(GameInputForceFeedbackEffectKind.GameInputForceFeedbackDamper, condition);
+    }
+
+    /// <summary>
+    /// 建立 inertia force feedback effect 參數。
+    /// </summary>
+    /// <param name="condition">Condition effect 參數。</param>
+    /// <returns>操作完成後的查詢或建立結果。</returns>
+    public static GameInputForceFeedbackParams Inertia(GameInputForceFeedbackConditionParams condition)
+    {
+        return Condition(GameInputForceFeedbackEffectKind.GameInputForceFeedbackInertia, condition);
     }
 
     /// <summary>

@@ -19,26 +19,32 @@
 - 授權中繼資料：`CC0-1.0`
 - API 覆蓋率：[docs/gameinput-api-coverage.md](docs/gameinput-api-coverage.md)
 
+## 支援範圍
+
+本套件支援一般 .NET Framework 與 .NET Windows 應用程式。`net10.0-windows` 與 `net48` 皆維持受控包裝與 COM interop 路徑；目前不宣告 NativeAOT、trimming 或 single-file 發佈相容性，也不包含原生橋接 DLL。若未來需要正式支援這些發佈模式，會另行規劃 native shim 或 ComWrappers source generation。
+
 ## 基本使用
 
 ```csharp
-using System.Collections.Generic;
 using InputWeave.GameInput;
 using InputWeave.GameInput.Interop;
 
-using GameInputClient client = GameInputClient.Create();
-client.SetFocusPolicy(GameInputFocusPolicy.GameInputEnableBackgroundInput);
+using GameInputDeviceManager manager = GameInputDeviceManager.Create();
+manager.RefreshDevices();
 
-GamepadReadingSnapshot? snapshot = client.GetCurrentGamepad();
-if (snapshot is not null)
+if (manager.TryGetFirstGamepad(out GameInputDevice? gamepadDevice, out GameInputDeviceInfoSnapshot? gamepadInfo))
 {
-    GameInputGamepadButtons buttons = snapshot.State.Buttons;
+    GamepadReadingSnapshot? snapshot = manager.GetCurrentGamepad(gamepadDevice);
+    if (snapshot is not null)
+    {
+        GameInputGamepadButtons buttons = snapshot.State.Buttons;
+    }
 }
 
-IReadOnlyList<GameInputDevice> devices = client.EnumerateDevices(GameInputKind.GameInputKindGamepad);
+_ = gamepadInfo?.DisplayName;
 ```
 
-裝置管理、快照、分派器、Safe Wait Handle、Force Feedback 與原始報告 API 請參考 [GameInput 常見情境指南](docs/gameinput-cookbook.md)。
+裝置管理、各輸入種類快照、分派器、Safe Wait Handle、Rumble scope、Force Feedback 與原始報告 API 請參考 [GameInput 常見情境指南](docs/gameinput-cookbook.md)。
 
 ## 範例
 

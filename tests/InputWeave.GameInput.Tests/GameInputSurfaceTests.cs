@@ -20,9 +20,18 @@ public sealed class GameInputSurfaceTests
                 typeof(GameInputCallbackRegistration),
                 typeof(GameInputReading),
                 typeof(GameInputForceFeedback),
+                typeof(GameInputRumbleScope),
                 typeof(GameInputDeviceManager),
                 typeof(GameInputDeviceInfoSnapshot),
                 typeof(GameInputHapticInfoSnapshot),
+                typeof(KeyboardReadingSnapshot),
+                typeof(MouseReadingSnapshot),
+                typeof(SensorsReadingSnapshot),
+                typeof(ControllerReadingSnapshot),
+                typeof(ArcadeStickReadingSnapshot),
+                typeof(FlightStickReadingSnapshot),
+                typeof(RacingWheelReadingSnapshot),
+                typeof(RawDeviceReportSnapshot),
                 typeof(GameInputRuntime),
                 typeof(GameInputRuntimeInfo),
                 typeof(GameInputRuntimeProbeInfo),
@@ -42,6 +51,15 @@ public sealed class GameInputSurfaceTests
         string[] methodNames =
         [
                 nameof(GameInputClient.GetCurrentReading),
+                nameof(GameInputClient.GetCurrentGamepad),
+                nameof(GameInputClient.GetCurrentKeyboard),
+                nameof(GameInputClient.GetCurrentMouse),
+                nameof(GameInputClient.GetCurrentSensors),
+                nameof(GameInputClient.GetCurrentController),
+                nameof(GameInputClient.GetCurrentArcadeStick),
+                nameof(GameInputClient.GetCurrentFlightStick),
+                nameof(GameInputClient.GetCurrentRacingWheel),
+                nameof(GameInputClient.GetCurrentRawReport),
                 nameof(GameInputClient.GetNextReading),
                 nameof(GameInputClient.GetPreviousReading),
                 nameof(GameInputClient.EnumerateDevices),
@@ -70,8 +88,13 @@ public sealed class GameInputSurfaceTests
                     nameof(GameInputDevice.GetDeviceInfoSnapshot),
                     nameof(GameInputDevice.GetHapticInfo),
                     nameof(GameInputDevice.GetHapticInfoSnapshot),
+                    nameof(GameInputDevice.TryGetHapticInfoSnapshot),
                     nameof(GameInputDevice.CreateForceFeedbackEffect),
+                    nameof(GameInputDevice.TryCreateForceFeedbackEffect),
+                    nameof(GameInputDevice.IsForceFeedbackEffectSupported),
                     nameof(GameInputDevice.SetRumbleState),
+                    nameof(GameInputDevice.TrySetRumble),
+                    nameof(GameInputDevice.StartRumbleScope),
                     nameof(GameInputDevice.ClearRumbleState),
                     nameof(GameInputDevice.CreateInputMapper),
                     nameof(GameInputDevice.GetExtraAxisIndexes),
@@ -88,13 +111,22 @@ public sealed class GameInputSurfaceTests
                     nameof(GameInputReading.GetControllerButtonState),
                     nameof(GameInputReading.GetControllerSwitchState),
                     nameof(GameInputReading.GetKeyState),
+                    nameof(GameInputReading.TryGetKeyboardSnapshot),
+                    nameof(GameInputReading.TryGetControllerSnapshot),
                     nameof(GameInputReading.TryGetMouseState),
+                    nameof(GameInputReading.TryGetMouseSnapshot),
                     nameof(GameInputReading.TryGetSensorsState),
+                    nameof(GameInputReading.TryGetSensorsSnapshot),
                     nameof(GameInputReading.TryGetArcadeStickState),
+                    nameof(GameInputReading.TryGetArcadeStickSnapshot),
                     nameof(GameInputReading.TryGetFlightStickState),
+                    nameof(GameInputReading.TryGetFlightStickSnapshot),
                     nameof(GameInputReading.TryGetGamepadState),
+                    nameof(GameInputReading.TryGetGamepadSnapshot),
                     nameof(GameInputReading.TryGetRacingWheelState),
-                    nameof(GameInputReading.TryGetRawReport)
+                    nameof(GameInputReading.TryGetRacingWheelSnapshot),
+                    nameof(GameInputReading.TryGetRawReport),
+                    nameof(GameInputReading.TryGetRawReportSnapshot)
             });
     }
 
@@ -111,7 +143,20 @@ public sealed class GameInputSurfaceTests
                     nameof(GameInputDeviceManager.StopDeviceEvents),
                     nameof(GameInputDeviceManager.TryDequeueEvent),
                     nameof(GameInputDeviceManager.GetCurrentReading),
-                    nameof(GameInputDeviceManager.GetCurrentGamepad)
+                    nameof(GameInputDeviceManager.GetCurrentGamepad),
+                    nameof(GameInputDeviceManager.GetCurrentKeyboard),
+                    nameof(GameInputDeviceManager.GetCurrentMouse),
+                    nameof(GameInputDeviceManager.GetCurrentSensors),
+                    nameof(GameInputDeviceManager.GetCurrentController),
+                    nameof(GameInputDeviceManager.GetCurrentArcadeStick),
+                    nameof(GameInputDeviceManager.GetCurrentFlightStick),
+                    nameof(GameInputDeviceManager.GetCurrentRacingWheel),
+                    nameof(GameInputDeviceManager.GetCurrentRawReport),
+                    nameof(GameInputDeviceManager.TryGetFirstDevice),
+                    nameof(GameInputDeviceManager.TryGetFirstGamepad),
+                    nameof(GameInputDeviceManager.TryGetFirstKeyboard),
+                    nameof(GameInputDeviceManager.TryGetFirstMouse),
+                    nameof(GameInputDeviceManager.TryGetFirstRumbleDevice)
             });
 
         AssertPublicMethods(
@@ -123,7 +168,16 @@ public sealed class GameInputSurfaceTests
                     nameof(GameInputForceFeedback.Magnitude),
                     nameof(GameInputForceFeedback.Constant),
                     nameof(GameInputForceFeedback.Ramp),
+                    nameof(GameInputForceFeedback.SineWave),
+                    nameof(GameInputForceFeedback.SquareWave),
+                    nameof(GameInputForceFeedback.TriangleWave),
+                    nameof(GameInputForceFeedback.SawtoothUpWave),
+                    nameof(GameInputForceFeedback.SawtoothDownWave),
                     nameof(GameInputForceFeedback.Periodic),
+                    nameof(GameInputForceFeedback.Spring),
+                    nameof(GameInputForceFeedback.Friction),
+                    nameof(GameInputForceFeedback.Damper),
+                    nameof(GameInputForceFeedback.Inertia),
                     nameof(GameInputForceFeedback.Condition)
             });
 
@@ -134,6 +188,13 @@ public sealed class GameInputSurfaceTests
                     nameof(GameInputRawDeviceReport.CopyRawData),
                     nameof(GameInputRawDeviceReport.GetRawData),
                     nameof(GameInputRawDeviceReport.SetRawData)
+            });
+
+        AssertPublicMethods(
+            typeof(RawDeviceReportSnapshot),
+            new[]
+            {
+                    nameof(RawDeviceReportSnapshot.GetData)
             });
 
         AssertPublicMethods(

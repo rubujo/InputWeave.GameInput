@@ -8,23 +8,19 @@
 
 ```csharp
 using System;
-using System.Collections.Generic;
 using System.Threading;
 using InputWeave.GameInput;
-using InputWeave.GameInput.Interop;
 
 using GameInputDeviceManager manager = GameInputDeviceManager.Create();
-IReadOnlyList<GameInputDeviceInfoSnapshot> snapshots = manager.RefreshDevices();
+manager.RefreshDevices();
 
-int gamepadIndex = FindFirstGamepad(snapshots);
-if (gamepadIndex < 0)
+if (!manager.TryGetFirstGamepad(out GameInputDevice? gamepadDevice, out GameInputDeviceInfoSnapshot? gamepadInfo))
 {
     Console.WriteLine("目前沒有支援 Gamepad 的 GameInput 裝置。");
     return;
 }
 
-GameInputDevice gamepadDevice = manager.Devices[gamepadIndex];
-Console.WriteLine($"使用裝置：{GetDisplayName(snapshots[gamepadIndex])}");
+Console.WriteLine($"使用裝置：{GetDisplayName(gamepadInfo)}");
 
 for (int frame = 0; frame < 600; frame++)
 {
@@ -44,22 +40,45 @@ for (int frame = 0; frame < 600; frame++)
     Thread.Sleep(16);
 }
 
-static int FindFirstGamepad(IReadOnlyList<GameInputDeviceInfoSnapshot> snapshots)
+static string GetDisplayName(GameInputDeviceInfoSnapshot? snapshot)
 {
-    for (int index = 0; index < snapshots.Count; index++)
-    {
-        if ((snapshots[index].SupportedInput & GameInputKind.GameInputKindGamepad) == GameInputKind.GameInputKindGamepad)
-        {
-            return index;
-        }
-    }
+    return string.IsNullOrWhiteSpace(snapshot?.DisplayName) ? "(未命名裝置)" : snapshot.DisplayName;
+}
+```
 
-    return -1;
+## 多輸入輪詢
+
+高階 current reading API 會在沒有資料時回傳 `null`，不需要把 `GameInputReading` 或 COM 物件保存到下一個 frame。應用程式可以依自己的 frame loop 只取需要的 snapshot。
+
+```csharp
+using System;
+using InputWeave.GameInput;
+
+using GameInputDeviceManager manager = GameInputDeviceManager.Create();
+
+GamepadReadingSnapshot? gamepad = manager.GetCurrentGamepad();
+KeyboardReadingSnapshot? keyboard = manager.GetCurrentKeyboard();
+MouseReadingSnapshot? mouse = manager.GetCurrentMouse();
+SensorsReadingSnapshot? sensors = manager.GetCurrentSensors();
+
+if (gamepad is not null)
+{
+    Console.WriteLine($"Gamepad buttons: {gamepad.State.Buttons}");
 }
 
-static string GetDisplayName(GameInputDeviceInfoSnapshot snapshot)
+if (keyboard is not null)
 {
-    return string.IsNullOrWhiteSpace(snapshot.DisplayName) ? "(未命名裝置)" : snapshot.DisplayName;
+    Console.WriteLine($"Keys: {keyboard.Keys.Count}");
+}
+
+if (mouse is not null)
+{
+    Console.WriteLine($"Mouse: {mouse.State.PositionX}, {mouse.State.PositionY}");
+}
+
+if (sensors is not null)
+{
+    Console.WriteLine($"Orientation W: {sensors.State.OrientationW:F2}");
 }
 ```
 
@@ -107,17 +126,39 @@ static void OnDeviceChanged(
 }
 ```
 
+## Reading callback 轉快照
+
+Callback handler 內收到的 `GameInputReading` 只應在 handler 執行期間使用。若資料要交給其他執行緒或稍後處理，請立即轉成 snapshot。
+
+```csharp
+using System;
+using InputWeave.GameInput;
+using InputWeave.GameInput.Interop;
+
+using GameInputClient client = GameInputClient.Create();
+using GameInputCallbackRegistration registration = client.RegisterReadingCallback(
+    device: null,
+    inputKind: GameInputKind.GameInputKindGamepad,
+    handler: OnReading);
+
+static void OnReading(GameInputReading reading)
+{
+    if (reading.TryGetGamepadSnapshot(out GamepadReadingSnapshot? gamepad))
+    {
+        Console.WriteLine($"Gamepad snapshot: {gamepad.Timestamp} / {gamepad.State.Buttons}");
+    }
+}
+```
+
 ## 明確啟用震動
 
 震動功能應該由使用者明確啟用。這個片段預設不震動，只有傳入 `--rumble` 時才對支援裝置輸出短暫低強度震動，並用 `finally` 清除狀態。
 
 ```csharp
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using InputWeave.GameInput;
-using InputWeave.GameInput.Interop;
 
 bool enableRumble = args.Any(static argument => string.Equals(argument, "--rumble", StringComparison.OrdinalIgnoreCase));
 if (!enableRumble)
@@ -127,61 +168,87 @@ if (!enableRumble)
 }
 
 using GameInputDeviceManager manager = GameInputDeviceManager.Create();
-IReadOnlyList<GameInputDeviceInfoSnapshot> snapshots = manager.RefreshDevices();
+manager.RefreshDevices();
 
-int deviceIndex = FindFirstRumbleDevice(snapshots);
-if (deviceIndex < 0)
+if (!manager.TryGetFirstRumbleDevice(out GameInputDevice? device, out GameInputDeviceInfoSnapshot? snapshot))
 {
     Console.WriteLine("目前沒有宣告支援震動馬達的 GameInput 裝置。");
     return;
 }
 
-GameInputDevice device = manager.Devices[deviceIndex];
-GameInputRumbleMotors motors = snapshots[deviceIndex].SupportedRumbleMotors;
-GameInputRumbleParams rumble = CreateLowIntensityRumble(motors);
-
-try
+using GameInputRumbleScope? rumble = device!.StartRumbleScope(
+    lowFrequency: 0.15f,
+    highFrequency: 0.15f,
+    leftTrigger: 0.10f,
+    rightTrigger: 0.10f);
+if (rumble is null)
 {
-    device.SetRumbleState(rumble);
-    Thread.Sleep(250);
-    Console.WriteLine($"已短暫觸發低強度 Rumble：{motors}");
-}
-finally
-{
-    device.ClearRumbleState();
+    Console.WriteLine("裝置宣告的 rumble 能力不支援這組輸出。");
+    return;
 }
 
-static int FindFirstRumbleDevice(IReadOnlyList<GameInputDeviceInfoSnapshot> snapshots)
-{
-    for (int index = 0; index < snapshots.Count; index++)
-    {
-        if (snapshots[index].SupportedRumbleMotors != GameInputRumbleMotors.GameInputRumbleNone)
-        {
-            return index;
-        }
-    }
+Thread.Sleep(250);
+Console.WriteLine($"已短暫觸發低強度 Rumble：{snapshot.SupportedRumbleMotors}");
+```
 
-    return -1;
+## Force Feedback 明確啟用
+
+Force Feedback 應先檢查裝置能力，再建立 effect。`TryCreateForceFeedbackEffect` 會在不支援時回傳 `false`，避免把能力不足當成一般例外處理。
+
+```csharp
+using System;
+using InputWeave.GameInput;
+using InputWeave.GameInput.Interop;
+
+using GameInputDeviceManager manager = GameInputDeviceManager.Create();
+manager.RefreshDevices();
+
+if (!manager.TryGetFirstGamepad(out GameInputDevice? device, out _))
+{
+    Console.WriteLine("目前沒有可測試 Force Feedback 的裝置。");
+    return;
 }
 
-static GameInputRumbleParams CreateLowIntensityRumble(GameInputRumbleMotors motors)
+GameInputForceFeedbackEnvelope envelope = GameInputForceFeedback.Envelope(sustainDuration: 250_000);
+GameInputForceFeedbackMagnitude magnitude = GameInputForceFeedback.Magnitude(normal: 0.25f);
+GameInputForceFeedbackParams effectParams = GameInputForceFeedback.SineWave(magnitude, envelope, frequency: 20);
+
+if (!device!.TryCreateForceFeedbackEffect(0, effectParams, out GameInputForceFeedbackEffect? effect))
 {
-    float lowFrequency = SupportsRumbleMotor(motors, GameInputRumbleMotors.GameInputRumbleLowFrequency) ? 0.15f : 0;
-    float highFrequency = SupportsRumbleMotor(motors, GameInputRumbleMotors.GameInputRumbleHighFrequency) ? 0.15f : 0;
-    float leftTrigger = SupportsRumbleMotor(motors, GameInputRumbleMotors.GameInputRumbleLeftTrigger) ? 0.10f : 0;
-    float rightTrigger = SupportsRumbleMotor(motors, GameInputRumbleMotors.GameInputRumbleRightTrigger) ? 0.10f : 0;
-    return GameInputForceFeedback.Rumble(lowFrequency, highFrequency, leftTrigger, rightTrigger);
+    Console.WriteLine("裝置不支援指定的 Force Feedback effect。");
+    return;
 }
 
-static bool SupportsRumbleMotor(GameInputRumbleMotors supportedMotors, GameInputRumbleMotors motor)
+using (effect)
 {
-    return (supportedMotors & motor) == motor;
+    effect.State = GameInputFeedbackEffectState.GameInputFeedbackEffectRunning;
 }
+```
+
+## Raw report 複製
+
+Raw report snapshot 會複製資料，不保留原生 report 生命週期。只有在裝置與應用程式都需要低階 HID/Raw report 時才使用這條路徑。
+
+```csharp
+using System;
+using InputWeave.GameInput;
+
+using GameInputDeviceManager manager = GameInputDeviceManager.Create();
+
+RawDeviceReportSnapshot? report = manager.GetCurrentRawReport();
+if (report is null)
+{
+    Console.WriteLine("目前沒有 raw device report。");
+    return;
+}
+
+byte[] data = report.GetData();
+Console.WriteLine($"Raw report {report.Info.Id}: {data.Length} bytes");
 ```
 
 ## 執行階段缺失排除
 
-`GameInputRuntime.TryProbe` 可在建立 client 前檢查目前載入原則、候選執行階段、HRESULT 與 Win32 錯誤碼。InputWeave 會用受控載入器對齊 Microsoft C++ 載入器的執行階段選擇行為，但包裝套件不會散佈或安裝 `GameInputRedist.msi`、`GameInputRedist.dll` 或原生橋接 DLL；應用程式安裝流程仍需負責安裝 Microsoft 支援的 GameInput 可轉散發套件。
+`GameInputRuntime.TryProbe` 可在建立 client 前檢查目前載入原則、候選執行階段、HRESULT 與 Win32 錯誤碼。InputWeave 會用受控載入器對齊 Microsoft C++ 載入器的執行階段選擇行為，但包裝套件不會散佈或安裝 `GameInputRedist.msi`、`GameInputRedist.dll` 或原生橋接 DLL；應用程式安裝流程仍需負責安裝 Microsoft 支援的 GameInput 可轉散發套件。目前也不宣告 NativeAOT、trimming 或 single-file 發佈相容性。
 
 ```csharp
 using System;

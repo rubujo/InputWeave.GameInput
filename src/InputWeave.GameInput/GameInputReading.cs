@@ -159,6 +159,23 @@ public sealed class GameInputReading : IDisposable
     }
 
     /// <summary>
+    /// 嘗試建立不持有原生生命週期的 gamepad 快照。
+    /// </summary>
+    /// <param name="snapshot">成功時接收 gamepad 快照。</param>
+    /// <returns>若 reading 包含 gamepad 狀態，傳回 true；否則傳回 false。</returns>
+    public bool TryGetGamepadSnapshot(out GamepadReadingSnapshot? snapshot)
+    {
+        if (TryGetGamepadState(out GameInputGamepadState state))
+        {
+            snapshot = new GamepadReadingSnapshot(Timestamp, state);
+            return true;
+        }
+
+        snapshot = null;
+        return false;
+    }
+
+    /// <summary>
     /// 嘗試讀取滑鼠狀態。
     /// </summary>
     /// <param name="state">接收狀態資料的輸出欄位。</param>
@@ -166,6 +183,23 @@ public sealed class GameInputReading : IDisposable
     public bool TryGetMouseState(out GameInputMouseState state)
     {
         return Native.GetMouseState(out state);
+    }
+
+    /// <summary>
+    /// 嘗試建立不持有原生生命週期的滑鼠快照。
+    /// </summary>
+    /// <param name="snapshot">成功時接收滑鼠快照。</param>
+    /// <returns>若 reading 包含滑鼠狀態，傳回 true；否則傳回 false。</returns>
+    public bool TryGetMouseSnapshot(out MouseReadingSnapshot? snapshot)
+    {
+        if (TryGetMouseState(out GameInputMouseState state))
+        {
+            snapshot = new MouseReadingSnapshot(Timestamp, state);
+            return true;
+        }
+
+        snapshot = null;
+        return false;
     }
 
     /// <summary>
@@ -179,6 +213,23 @@ public sealed class GameInputReading : IDisposable
     }
 
     /// <summary>
+    /// 嘗試建立不持有原生生命週期的感測器快照。
+    /// </summary>
+    /// <param name="snapshot">成功時接收感測器快照。</param>
+    /// <returns>若 reading 包含感測器狀態，傳回 true；否則傳回 false。</returns>
+    public bool TryGetSensorsSnapshot(out SensorsReadingSnapshot? snapshot)
+    {
+        if (TryGetSensorsState(out GameInputSensorsState state))
+        {
+            snapshot = new SensorsReadingSnapshot(Timestamp, state);
+            return true;
+        }
+
+        snapshot = null;
+        return false;
+    }
+
+    /// <summary>
     /// 嘗試讀取 arcade stick 狀態。
     /// </summary>
     /// <param name="state">接收狀態資料的輸出欄位。</param>
@@ -186,6 +237,23 @@ public sealed class GameInputReading : IDisposable
     public bool TryGetArcadeStickState(out GameInputArcadeStickState state)
     {
         return Native.GetArcadeStickState(out state);
+    }
+
+    /// <summary>
+    /// 嘗試建立不持有原生生命週期的 arcade stick 快照。
+    /// </summary>
+    /// <param name="snapshot">成功時接收 arcade stick 快照。</param>
+    /// <returns>若 reading 包含 arcade stick 狀態，傳回 true；否則傳回 false。</returns>
+    public bool TryGetArcadeStickSnapshot(out ArcadeStickReadingSnapshot? snapshot)
+    {
+        if (TryGetArcadeStickState(out GameInputArcadeStickState state))
+        {
+            snapshot = new ArcadeStickReadingSnapshot(Timestamp, state);
+            return true;
+        }
+
+        snapshot = null;
+        return false;
     }
 
     /// <summary>
@@ -199,6 +267,23 @@ public sealed class GameInputReading : IDisposable
     }
 
     /// <summary>
+    /// 嘗試建立不持有原生生命週期的 flight stick 快照。
+    /// </summary>
+    /// <param name="snapshot">成功時接收 flight stick 快照。</param>
+    /// <returns>若 reading 包含 flight stick 狀態，傳回 true；否則傳回 false。</returns>
+    public bool TryGetFlightStickSnapshot(out FlightStickReadingSnapshot? snapshot)
+    {
+        if (TryGetFlightStickState(out GameInputFlightStickState state))
+        {
+            snapshot = new FlightStickReadingSnapshot(Timestamp, state);
+            return true;
+        }
+
+        snapshot = null;
+        return false;
+    }
+
+    /// <summary>
     /// 嘗試讀取 racing wheel 狀態。
     /// </summary>
     /// <param name="state">接收狀態資料的輸出欄位。</param>
@@ -206,6 +291,23 @@ public sealed class GameInputReading : IDisposable
     public bool TryGetRacingWheelState(out GameInputRacingWheelState state)
     {
         return Native.GetRacingWheelState(out state);
+    }
+
+    /// <summary>
+    /// 嘗試建立不持有原生生命週期的 racing wheel 快照。
+    /// </summary>
+    /// <param name="snapshot">成功時接收 racing wheel 快照。</param>
+    /// <returns>若 reading 包含 racing wheel 狀態，傳回 true；否則傳回 false。</returns>
+    public bool TryGetRacingWheelSnapshot(out RacingWheelReadingSnapshot? snapshot)
+    {
+        if (TryGetRacingWheelState(out GameInputRacingWheelState state))
+        {
+            snapshot = new RacingWheelReadingSnapshot(Timestamp, state);
+            return true;
+        }
+
+        snapshot = null;
+        return false;
     }
 
     /// <summary>
@@ -223,6 +325,64 @@ public sealed class GameInputReading : IDisposable
 
         report = null;
         return false;
+    }
+
+    /// <summary>
+    /// 嘗試建立不持有原生生命週期的 keyboard 快照。
+    /// </summary>
+    /// <param name="snapshot">成功時接收 keyboard 快照。</param>
+    /// <returns>若 reading 包含 keyboard 狀態，傳回 true；否則傳回 false。</returns>
+    public bool TryGetKeyboardSnapshot(out KeyboardReadingSnapshot? snapshot)
+    {
+        if (!HasAnyInputKind(GameInputKind.GameInputKindKeyboard))
+        {
+            snapshot = null;
+            return false;
+        }
+
+        snapshot = new KeyboardReadingSnapshot(Timestamp, GetKeyState());
+        return true;
+    }
+
+    /// <summary>
+    /// 嘗試建立不持有原生生命週期的 controller 快照。
+    /// </summary>
+    /// <param name="snapshot">成功時接收 controller 快照。</param>
+    /// <returns>若 reading 包含 controller 狀態，傳回 true；否則傳回 false。</returns>
+    public bool TryGetControllerSnapshot(out ControllerReadingSnapshot? snapshot)
+    {
+        if (!HasAnyInputKind(GameInputKind.GameInputKindController))
+        {
+            snapshot = null;
+            return false;
+        }
+
+        snapshot = new ControllerReadingSnapshot(
+            Timestamp,
+            GetControllerAxisState(),
+            GetControllerButtonState(),
+            GetControllerSwitchState());
+        return true;
+    }
+
+    /// <summary>
+    /// 嘗試建立不持有原生 raw report 生命週期的快照。
+    /// </summary>
+    /// <param name="snapshot">成功時接收 raw report 快照。</param>
+    /// <returns>若 reading 包含 raw report，傳回 true；否則傳回 false。</returns>
+    public bool TryGetRawReportSnapshot(out RawDeviceReportSnapshot? snapshot)
+    {
+        if (!TryGetRawReport(out GameInputRawDeviceReport? report))
+        {
+            snapshot = null;
+            return false;
+        }
+
+        using (report)
+        {
+            snapshot = new RawDeviceReportSnapshot(Timestamp, report!.GetReportInfo(), report.GetRawData());
+            return true;
+        }
     }
 
     /// <summary>
@@ -253,5 +413,10 @@ public sealed class GameInputReading : IDisposable
                 ? throw new ObjectDisposedException(nameof(GameInputReading))
                 : _native ?? throw new ObjectDisposedException(nameof(GameInputReading));
         }
+    }
+
+    private bool HasAnyInputKind(GameInputKind inputKind)
+    {
+        return (InputKind & inputKind) != 0;
     }
 }

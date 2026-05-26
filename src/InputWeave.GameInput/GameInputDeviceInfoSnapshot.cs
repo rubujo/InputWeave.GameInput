@@ -213,8 +213,8 @@ public sealed class GameInputDeviceInfoSnapshot
     {
         return new GameInputDeviceInfoSnapshot(
             native,
-            PtrToAnsiString(native.DisplayName),
-            PtrToAnsiString(native.PnpPath),
+            NativeUtf8String.FromNullTerminated(native.DisplayName),
+            NativeUtf8String.FromNullTerminated(native.PnpPath),
             PtrToNullableStructure<GameInputKeyboardInfo>(native.KeyboardInfo),
             PtrToNullableStructure<GameInputMouseInfo>(native.MouseInfo),
             PtrToNullableStructure<GameInputSensorsInfo>(native.SensorsInfo),
@@ -226,11 +226,6 @@ public sealed class GameInputDeviceInfoSnapshot
             ReadArray<GameInputForceFeedbackMotorInfo>(native.ForceFeedbackMotorInfo, native.ForceFeedbackMotorCount),
             ReadArray<GameInputRawDeviceReportInfo>(native.InputReportInfo, native.InputReportCount),
             ReadArray<GameInputRawDeviceReportInfo>(native.OutputReportInfo, native.OutputReportCount));
-    }
-
-    private static string? PtrToAnsiString(IntPtr pointer)
-    {
-        return pointer == IntPtr.Zero ? null : Marshal.PtrToStringAnsi(pointer);
     }
 
     private static T? PtrToNullableStructure<T>(IntPtr pointer)
@@ -247,14 +242,49 @@ public sealed class GameInputDeviceInfoSnapshot
             return Array.Empty<T>();
         }
 
-        int itemSize = Marshal.SizeOf<T>();
+        int itemSize = SizeOf<T>();
         T[] values = new T[checked((int)count)];
         for (int index = 0; index < values.Length; index++)
         {
-            values[index] = Marshal.PtrToStructure<T>(IntPtr.Add(pointer, checked(index * itemSize)));
+            values[index] = ReadElement<T>(IntPtr.Add(pointer, checked(index * itemSize)));
         }
 
         return values;
+    }
+
+    private static int SizeOf<T>()
+        where T : struct
+    {
+        Type type = typeof(T);
+        return type.IsEnum
+            ? Marshal.SizeOf(Enum.GetUnderlyingType(type))
+            : Marshal.SizeOf<T>();
+    }
+
+    private static T ReadElement<T>(IntPtr pointer)
+        where T : struct
+    {
+        Type type = typeof(T);
+        if (!type.IsEnum)
+        {
+            return Marshal.PtrToStructure<T>(pointer);
+        }
+
+        Type underlyingType = Enum.GetUnderlyingType(type);
+        object value = Type.GetTypeCode(underlyingType) switch
+        {
+            TypeCode.Byte => Marshal.ReadByte(pointer),
+            TypeCode.SByte => unchecked((sbyte)Marshal.ReadByte(pointer)),
+            TypeCode.Int16 => unchecked((short)Marshal.ReadInt16(pointer)),
+            TypeCode.UInt16 => unchecked((ushort)Marshal.ReadInt16(pointer)),
+            TypeCode.Int32 => Marshal.ReadInt32(pointer),
+            TypeCode.UInt32 => unchecked((uint)Marshal.ReadInt32(pointer)),
+            TypeCode.Int64 => Marshal.ReadInt64(pointer),
+            TypeCode.UInt64 => unchecked((ulong)Marshal.ReadInt64(pointer)),
+            _ => throw new NotSupportedException($"不支援的 enum underlying type：{underlyingType.FullName}。")
+        };
+
+        return (T)Enum.ToObject(type, value);
     }
 }
 

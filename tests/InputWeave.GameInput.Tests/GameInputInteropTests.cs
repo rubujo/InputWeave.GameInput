@@ -1,5 +1,6 @@
 using System.Reflection;
 using System.Runtime.InteropServices;
+using System.Text;
 using InputWeave.GameInput.Interop;
 
 namespace InputWeave.GameInput.Tests;
@@ -48,15 +49,75 @@ public sealed class GameInputInteropTests
     }
 
     [TestMethod]
+    public void DeviceInfoSnapshotDecodesUtf8DeviceStrings()
+    {
+        IntPtr displayName = AllocUtf8String("控制器 Ω");
+        IntPtr pnpPath = AllocUtf8String(@"USB\裝置\測試");
+        try
+        {
+            GameInputDeviceInfo native = new()
+            {
+                DisplayName = displayName,
+                PnpPath = pnpPath
+            };
+
+            GameInputDeviceInfoSnapshot snapshot = GameInputDeviceInfoSnapshot.FromNative(native);
+
+            Assert.AreEqual("控制器 Ω", snapshot.DisplayName);
+            Assert.AreEqual(@"USB\裝置\測試", snapshot.PnpPath);
+        }
+        finally
+        {
+            Marshal.FreeHGlobal(displayName);
+            Marshal.FreeHGlobal(pnpPath);
+        }
+    }
+
+    [TestMethod]
+    public void DeviceInfoSnapshotKeepsNullDeviceStringsAsNull()
+    {
+        GameInputDeviceInfoSnapshot snapshot = GameInputDeviceInfoSnapshot.FromNative(default);
+
+        Assert.IsNull(snapshot.DisplayName);
+        Assert.IsNull(snapshot.PnpPath);
+    }
+
+    [TestMethod]
+    public void DeviceInfoSnapshotReadsEnumArrays()
+    {
+        GameInputLabel[] labels =
+        [
+            GameInputLabel.GameInputLabelXboxA,
+            GameInputLabel.GameInputLabelXboxB
+        ];
+        IntPtr pointer = Marshal.AllocHGlobal(sizeof(int) * labels.Length);
+        try
+        {
+            for (int index = 0; index < labels.Length; index++)
+            {
+                Marshal.WriteInt32(pointer, index * sizeof(int), (int)labels[index]);
+            }
+
+            IReadOnlyList<GameInputLabel> result = GameInputDeviceInfoSnapshot.ReadArray<GameInputLabel>(pointer, (uint)labels.Length);
+
+            CollectionAssert.AreEqual(labels, result.ToArray());
+        }
+        finally
+        {
+            Marshal.FreeHGlobal(pointer);
+        }
+    }
+
+    [TestMethod]
     public void GeneratedCallbackDelegatesUseWinapiCallingConvention()
     {
         Type[] callbackTypes =
         [
-                typeof(GameInputReadingCallback),
-                typeof(GameInputDeviceCallback),
-                typeof(GameInputSystemButtonCallback),
-                typeof(GameInputKeyboardLayoutCallback)
-            ];
+            typeof(GameInputReadingCallback),
+            typeof(GameInputDeviceCallback),
+            typeof(GameInputSystemButtonCallback),
+            typeof(GameInputKeyboardLayoutCallback)
+        ];
 
         foreach (Type callbackType in callbackTypes)
         {
@@ -64,6 +125,33 @@ public sealed class GameInputInteropTests
 
             Assert.IsNotNull(attribute, $"{callbackType.Name} 應明確標示 unmanaged calling convention。");
             Assert.AreEqual(CallingConvention.Winapi, attribute.CallingConvention);
+        }
+    }
+
+    [TestMethod]
+    public void GeneratedComCallbackParametersMarshalAsFunctionPointers()
+    {
+        (string MethodName, Type CallbackType)[] callbackMethods =
+        [
+            (nameof(IGameInput.RegisterReadingCallback), typeof(GameInputReadingCallback)),
+            (nameof(IGameInput.RegisterDeviceCallback), typeof(GameInputDeviceCallback)),
+            (nameof(IGameInput.RegisterSystemButtonCallback), typeof(GameInputSystemButtonCallback)),
+            (nameof(IGameInput.RegisterKeyboardLayoutCallback), typeof(GameInputKeyboardLayoutCallback))
+        ];
+
+        foreach ((string methodName, Type callbackType) in callbackMethods)
+        {
+            MethodInfo? method = typeof(IGameInput).GetMethod(methodName);
+            Assert.IsNotNull(method, $"IGameInput.{methodName} 應存在。");
+
+            ParameterInfo? callbackParameter = method.GetParameters()
+                .SingleOrDefault(static parameter => parameter.Name == "callbackFunc");
+            Assert.IsNotNull(callbackParameter, $"IGameInput.{methodName} 應包含 callbackFunc 參數。");
+            Assert.AreEqual(callbackType, callbackParameter.ParameterType, $"IGameInput.{methodName}.callbackFunc 應保留原生 callback delegate 型別。");
+
+            MarshalAsAttribute? attribute = callbackParameter.GetCustomAttribute<MarshalAsAttribute>();
+            Assert.IsNotNull(attribute, $"IGameInput.{methodName}.callbackFunc 應明確標示 unmanaged function pointer marshaling。");
+            Assert.AreEqual(UnmanagedType.FunctionPtr, attribute.Value);
         }
     }
 
@@ -187,6 +275,15 @@ public sealed class GameInputInteropTests
         Assert.IsFalse(
             source.Contains("DllImport(GameInputConstants.DllName", StringComparison.Ordinal),
             $"{relativePath} 不應直接 DllImport GameInput.dll。");
+    }
+
+    private static IntPtr AllocUtf8String(string value)
+    {
+        byte[] bytes = Encoding.UTF8.GetBytes(value);
+        IntPtr pointer = Marshal.AllocHGlobal(bytes.Length + 1);
+        Marshal.Copy(bytes, 0, pointer, bytes.Length);
+        Marshal.WriteByte(pointer, bytes.Length, 0);
+        return pointer;
     }
 
     private static string FindRepositoryRoot()

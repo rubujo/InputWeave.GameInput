@@ -77,22 +77,114 @@ public sealed class GameInputClient : IDisposable
     /// <returns>操作完成後的查詢或建立結果。</returns>
     public GamepadReadingSnapshot? GetCurrentGamepad(GameInputDevice? device = null)
     {
-        int hResult = Native.GetCurrentReading(GameInputKind.GameInputKindGamepad, device?.NativeInterface, out IGameInputReading? nativeReading);
-        if (hResult == GameInputHResult.ReadingNotFound || hResult == GameInputHResult.InputKindNotPresent)
-        {
-            return null;
-        }
+        return GetCurrentSnapshot(
+            GameInputKind.GameInputKindGamepad,
+            device,
+            static (GameInputReading reading, out GamepadReadingSnapshot? snapshot) => reading.TryGetGamepadSnapshot(out snapshot));
+    }
 
-        GameInputException.ThrowIfFailed(hResult);
-        if (nativeReading is null)
-        {
-            return null;
-        }
+    /// <summary>
+    /// 取得目前 keyboard 快照。
+    /// </summary>
+    /// <param name="device">選用的 GameInput 裝置篩選。</param>
+    /// <returns>操作完成後的查詢或建立結果。</returns>
+    public KeyboardReadingSnapshot? GetCurrentKeyboard(GameInputDevice? device = null)
+    {
+        return GetCurrentSnapshot(
+            GameInputKind.GameInputKindKeyboard,
+            device,
+            static (GameInputReading reading, out KeyboardReadingSnapshot? snapshot) => reading.TryGetKeyboardSnapshot(out snapshot));
+    }
 
-        using GameInputReading reading = new(nativeReading);
-        return reading.TryGetGamepadState(out GameInputGamepadState state)
-            ? new GamepadReadingSnapshot(reading.Timestamp, state)
-            : null;
+    /// <summary>
+    /// 取得目前 mouse 快照。
+    /// </summary>
+    /// <param name="device">選用的 GameInput 裝置篩選。</param>
+    /// <returns>操作完成後的查詢或建立結果。</returns>
+    public MouseReadingSnapshot? GetCurrentMouse(GameInputDevice? device = null)
+    {
+        return GetCurrentSnapshot(
+            GameInputKind.GameInputKindMouse,
+            device,
+            static (GameInputReading reading, out MouseReadingSnapshot? snapshot) => reading.TryGetMouseSnapshot(out snapshot));
+    }
+
+    /// <summary>
+    /// 取得目前 sensors 快照。
+    /// </summary>
+    /// <param name="device">選用的 GameInput 裝置篩選。</param>
+    /// <returns>操作完成後的查詢或建立結果。</returns>
+    public SensorsReadingSnapshot? GetCurrentSensors(GameInputDevice? device = null)
+    {
+        return GetCurrentSnapshot(
+            GameInputKind.GameInputKindSensors,
+            device,
+            static (GameInputReading reading, out SensorsReadingSnapshot? snapshot) => reading.TryGetSensorsSnapshot(out snapshot));
+    }
+
+    /// <summary>
+    /// 取得目前一般 controller 快照。
+    /// </summary>
+    /// <param name="device">選用的 GameInput 裝置篩選。</param>
+    /// <returns>操作完成後的查詢或建立結果。</returns>
+    public ControllerReadingSnapshot? GetCurrentController(GameInputDevice? device = null)
+    {
+        return GetCurrentSnapshot(
+            GameInputKind.GameInputKindController,
+            device,
+            static (GameInputReading reading, out ControllerReadingSnapshot? snapshot) => reading.TryGetControllerSnapshot(out snapshot));
+    }
+
+    /// <summary>
+    /// 取得目前 arcade stick 快照。
+    /// </summary>
+    /// <param name="device">選用的 GameInput 裝置篩選。</param>
+    /// <returns>操作完成後的查詢或建立結果。</returns>
+    public ArcadeStickReadingSnapshot? GetCurrentArcadeStick(GameInputDevice? device = null)
+    {
+        return GetCurrentSnapshot(
+            GameInputKind.GameInputKindArcadeStick,
+            device,
+            static (GameInputReading reading, out ArcadeStickReadingSnapshot? snapshot) => reading.TryGetArcadeStickSnapshot(out snapshot));
+    }
+
+    /// <summary>
+    /// 取得目前 flight stick 快照。
+    /// </summary>
+    /// <param name="device">選用的 GameInput 裝置篩選。</param>
+    /// <returns>操作完成後的查詢或建立結果。</returns>
+    public FlightStickReadingSnapshot? GetCurrentFlightStick(GameInputDevice? device = null)
+    {
+        return GetCurrentSnapshot(
+            GameInputKind.GameInputKindFlightStick,
+            device,
+            static (GameInputReading reading, out FlightStickReadingSnapshot? snapshot) => reading.TryGetFlightStickSnapshot(out snapshot));
+    }
+
+    /// <summary>
+    /// 取得目前 racing wheel 快照。
+    /// </summary>
+    /// <param name="device">選用的 GameInput 裝置篩選。</param>
+    /// <returns>操作完成後的查詢或建立結果。</returns>
+    public RacingWheelReadingSnapshot? GetCurrentRacingWheel(GameInputDevice? device = null)
+    {
+        return GetCurrentSnapshot(
+            GameInputKind.GameInputKindRacingWheel,
+            device,
+            static (GameInputReading reading, out RacingWheelReadingSnapshot? snapshot) => reading.TryGetRacingWheelSnapshot(out snapshot));
+    }
+
+    /// <summary>
+    /// 取得目前 raw device report 快照。
+    /// </summary>
+    /// <param name="device">選用的 GameInput 裝置篩選。</param>
+    /// <returns>操作完成後的查詢或建立結果。</returns>
+    public RawDeviceReportSnapshot? GetCurrentRawReport(GameInputDevice? device = null)
+    {
+        return GetCurrentSnapshot(
+            GameInputKind.GameInputKindRawDeviceReport,
+            device,
+            static (GameInputReading reading, out RawDeviceReportSnapshot? snapshot) => reading.TryGetRawReportSnapshot(out snapshot));
     }
 
     /// <summary>
@@ -503,6 +595,21 @@ public sealed class GameInputClient : IDisposable
         }
     }
 
+    private TSnapshot? GetCurrentSnapshot<TSnapshot>(
+        GameInputKind inputKind,
+        GameInputDevice? device,
+        TryCreateReadingSnapshot<TSnapshot> tryCreateSnapshot)
+        where TSnapshot : class
+    {
+        using GameInputReading? reading = GetCurrentReading(inputKind, device);
+        if (reading is null)
+        {
+            return null;
+        }
+
+        return tryCreateSnapshot(reading, out TSnapshot? snapshot) ? snapshot : null;
+    }
+
     private IGameInput Native
     {
         get
@@ -512,6 +619,9 @@ public sealed class GameInputClient : IDisposable
                 : _native ?? throw new ObjectDisposedException(nameof(GameInputClient));
         }
     }
+
+    private delegate bool TryCreateReadingSnapshot<TSnapshot>(GameInputReading reading, out TSnapshot? snapshot)
+        where TSnapshot : class;
 
     private static void OnReadingCallback(ulong callbackToken, IntPtr context, IGameInputReading reading)
     {

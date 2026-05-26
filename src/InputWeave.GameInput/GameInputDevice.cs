@@ -53,7 +53,7 @@ public sealed class GameInputDevice : IDisposable
     public string? GetDisplayName()
     {
         GameInputDeviceInfo info = GetDeviceInfo();
-        return info.DisplayName == IntPtr.Zero ? null : Marshal.PtrToStringAnsi(info.DisplayName);
+        return NativeUtf8String.FromNullTerminated(info.DisplayName);
     }
 
     /// <summary>
@@ -63,7 +63,7 @@ public sealed class GameInputDevice : IDisposable
     public string? GetPnpPath()
     {
         GameInputDeviceInfo info = GetDeviceInfo();
-        return info.PnpPath == IntPtr.Zero ? null : Marshal.PtrToStringAnsi(info.PnpPath);
+        return NativeUtf8String.FromNullTerminated(info.PnpPath);
     }
 
     /// <summary>
@@ -110,6 +110,17 @@ public sealed class GameInputDevice : IDisposable
     }
 
     /// <summary>
+    /// 嘗試取得不持有原生緩衝區的觸覺資訊快照。
+    /// </summary>
+    /// <param name="snapshot">成功時接收觸覺資訊快照。</param>
+    /// <returns>若裝置提供觸覺資訊，傳回 true；否則傳回 false。</returns>
+    public bool TryGetHapticInfoSnapshot(out GameInputHapticInfoSnapshot? snapshot)
+    {
+        snapshot = GetHapticInfoSnapshot();
+        return snapshot is not null;
+    }
+
+    /// <summary>
     /// 建立 force feedback effect。
     /// </summary>
     /// <param name="motorIndex">force feedback motor 索引。</param>
@@ -142,6 +153,63 @@ public sealed class GameInputDevice : IDisposable
     public GameInputForceFeedbackEffect CreateForceFeedbackEffect(uint motorIndex, GameInputForceFeedbackParams parameters)
     {
         return CreateForceFeedbackEffect(motorIndex, in parameters);
+    }
+
+    /// <summary>
+    /// 嘗試建立 force feedback effect；不支援時不擲出例外。
+    /// </summary>
+    /// <param name="motorIndex">force feedback motor 索引。</param>
+    /// <param name="parameters">GameInput 原生參數。</param>
+    /// <param name="effect">成功時接收 force feedback effect。</param>
+    /// <returns>若裝置支援並成功建立 effect，傳回 true；否則傳回 false。</returns>
+    public bool TryCreateForceFeedbackEffect(uint motorIndex, in GameInputForceFeedbackParams parameters, out GameInputForceFeedbackEffect? effect)
+    {
+        if (!IsForceFeedbackEffectSupported(motorIndex, parameters.Kind))
+        {
+            effect = null;
+            return false;
+        }
+
+        try
+        {
+            effect = CreateForceFeedbackEffect(motorIndex, in parameters);
+            return true;
+        }
+        catch (GameInputException ex) when (ex.HResult == GameInputHResult.FeedbackNotSupported)
+        {
+            effect = null;
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// 嘗試建立 force feedback effect；不支援時不擲出例外。
+    /// </summary>
+    /// <param name="motorIndex">force feedback motor 索引。</param>
+    /// <param name="parameters">GameInput 原生參數。</param>
+    /// <param name="effect">成功時接收 force feedback effect。</param>
+    /// <returns>若裝置支援並成功建立 effect，傳回 true；否則傳回 false。</returns>
+    public bool TryCreateForceFeedbackEffect(uint motorIndex, GameInputForceFeedbackParams parameters, out GameInputForceFeedbackEffect? effect)
+    {
+        return TryCreateForceFeedbackEffect(motorIndex, in parameters, out effect);
+    }
+
+    /// <summary>
+    /// 檢查指定 force feedback motor 是否支援指定 effect 類型。
+    /// </summary>
+    /// <param name="motorIndex">force feedback motor 索引。</param>
+    /// <param name="effectKind">要檢查的 force feedback effect 類型。</param>
+    /// <returns>若裝置宣告支援指定 effect，傳回 true；否則傳回 false。</returns>
+    public bool IsForceFeedbackEffectSupported(uint motorIndex, GameInputForceFeedbackEffectKind effectKind)
+    {
+        GameInputDeviceInfoSnapshot snapshot = GetDeviceInfoSnapshot();
+        if (motorIndex >= snapshot.ForceFeedbackMotors.Count)
+        {
+            return false;
+        }
+
+        GameInputForceFeedbackMotorInfo motor = snapshot.ForceFeedbackMotors[checked((int)motorIndex)];
+        return IsForceFeedbackEffectSupported(motor, effectKind);
     }
 
     /// <summary>
@@ -180,6 +248,64 @@ public sealed class GameInputDevice : IDisposable
         {
             Marshal.FreeHGlobal(pointer);
         }
+    }
+
+    /// <summary>
+    /// 嘗試依裝置能力設定 rumble 狀態。
+    /// </summary>
+    /// <param name="parameters">GameInput rumble 參數，強度必須介於 0.0 到 1.0。</param>
+    /// <returns>若裝置支援要求的 rumble motor 並已設定狀態，傳回 true；否則傳回 false。</returns>
+    public bool TrySetRumble(in GameInputRumbleParams parameters)
+    {
+        ValidateRumbleStrength(parameters);
+
+        GameInputRumbleMotors supportedMotors = GetDeviceInfoSnapshot().SupportedRumbleMotors;
+        GameInputRumbleParams masked = MaskRumble(parameters, supportedMotors);
+        if (!HasActiveRumble(masked))
+        {
+            return false;
+        }
+
+        SetRumbleState(masked);
+        return true;
+    }
+
+    /// <summary>
+    /// 嘗試依裝置能力設定 rumble 狀態。
+    /// </summary>
+    /// <param name="lowFrequency">低頻馬達強度，必須介於 0.0 到 1.0。</param>
+    /// <param name="highFrequency">高頻馬達強度，必須介於 0.0 到 1.0。</param>
+    /// <param name="leftTrigger">左 trigger 馬達強度，必須介於 0.0 到 1.0。</param>
+    /// <param name="rightTrigger">右 trigger 馬達強度，必須介於 0.0 到 1.0。</param>
+    /// <returns>若裝置支援要求的 rumble motor 並已設定狀態，傳回 true；否則傳回 false。</returns>
+    public bool TrySetRumble(float lowFrequency, float highFrequency, float leftTrigger = 0, float rightTrigger = 0)
+    {
+        GameInputRumbleParams parameters = GameInputForceFeedback.Rumble(lowFrequency, highFrequency, leftTrigger, rightTrigger);
+        return TrySetRumble(in parameters);
+    }
+
+    /// <summary>
+    /// 嘗試啟動 rumble scope，釋放 scope 時會清除 rumble 狀態。
+    /// </summary>
+    /// <param name="parameters">GameInput rumble 參數，強度必須介於 0.0 到 1.0。</param>
+    /// <returns>若已啟動 rumble，傳回需要釋放的 scope；若不支援，傳回 null。</returns>
+    public GameInputRumbleScope? StartRumbleScope(in GameInputRumbleParams parameters)
+    {
+        return TrySetRumble(in parameters) ? new GameInputRumbleScope(ClearRumbleState) : null;
+    }
+
+    /// <summary>
+    /// 嘗試啟動 rumble scope，釋放 scope 時會清除 rumble 狀態。
+    /// </summary>
+    /// <param name="lowFrequency">低頻馬達強度，必須介於 0.0 到 1.0。</param>
+    /// <param name="highFrequency">高頻馬達強度，必須介於 0.0 到 1.0。</param>
+    /// <param name="leftTrigger">左 trigger 馬達強度，必須介於 0.0 到 1.0。</param>
+    /// <param name="rightTrigger">右 trigger 馬達強度，必須介於 0.0 到 1.0。</param>
+    /// <returns>若已啟動 rumble，傳回需要釋放的 scope；若不支援，傳回 null。</returns>
+    public GameInputRumbleScope? StartRumbleScope(float lowFrequency, float highFrequency, float leftTrigger = 0, float rightTrigger = 0)
+    {
+        GameInputRumbleParams parameters = GameInputForceFeedback.Rumble(lowFrequency, highFrequency, leftTrigger, rightTrigger);
+        return StartRumbleScope(in parameters);
     }
 
     /// <summary>
@@ -346,6 +472,65 @@ public sealed class GameInputDevice : IDisposable
             return _disposed
                 ? throw new ObjectDisposedException(nameof(GameInputDevice))
                 : _native ?? throw new ObjectDisposedException(nameof(GameInputDevice));
+        }
+    }
+
+    internal static bool IsForceFeedbackEffectSupported(GameInputForceFeedbackMotorInfo motor, GameInputForceFeedbackEffectKind effectKind)
+    {
+        return effectKind switch
+        {
+            GameInputForceFeedbackEffectKind.GameInputForceFeedbackConstant => motor.IsConstantEffectSupported,
+            GameInputForceFeedbackEffectKind.GameInputForceFeedbackRamp => motor.IsRampEffectSupported,
+            GameInputForceFeedbackEffectKind.GameInputForceFeedbackSineWave => motor.IsSineWaveEffectSupported,
+            GameInputForceFeedbackEffectKind.GameInputForceFeedbackSquareWave => motor.IsSquareWaveEffectSupported,
+            GameInputForceFeedbackEffectKind.GameInputForceFeedbackTriangleWave => motor.IsTriangleWaveEffectSupported,
+            GameInputForceFeedbackEffectKind.GameInputForceFeedbackSawtoothUpWave => motor.IsSawtoothUpWaveEffectSupported,
+            GameInputForceFeedbackEffectKind.GameInputForceFeedbackSawtoothDownWave => motor.IsSawtoothDownWaveEffectSupported,
+            GameInputForceFeedbackEffectKind.GameInputForceFeedbackSpring => motor.IsSpringEffectSupported,
+            GameInputForceFeedbackEffectKind.GameInputForceFeedbackFriction => motor.IsFrictionEffectSupported,
+            GameInputForceFeedbackEffectKind.GameInputForceFeedbackDamper => motor.IsDamperEffectSupported,
+            GameInputForceFeedbackEffectKind.GameInputForceFeedbackInertia => motor.IsInertiaEffectSupported,
+            _ => false
+        };
+    }
+
+    internal static GameInputRumbleParams MaskRumble(GameInputRumbleParams parameters, GameInputRumbleMotors supportedMotors)
+    {
+        return new GameInputRumbleParams
+        {
+            LowFrequency = SupportsRumbleMotor(supportedMotors, GameInputRumbleMotors.GameInputRumbleLowFrequency) ? parameters.LowFrequency : 0,
+            HighFrequency = SupportsRumbleMotor(supportedMotors, GameInputRumbleMotors.GameInputRumbleHighFrequency) ? parameters.HighFrequency : 0,
+            LeftTrigger = SupportsRumbleMotor(supportedMotors, GameInputRumbleMotors.GameInputRumbleLeftTrigger) ? parameters.LeftTrigger : 0,
+            RightTrigger = SupportsRumbleMotor(supportedMotors, GameInputRumbleMotors.GameInputRumbleRightTrigger) ? parameters.RightTrigger : 0
+        };
+    }
+
+    internal static bool HasActiveRumble(GameInputRumbleParams parameters)
+    {
+        return parameters.LowFrequency > 0
+            || parameters.HighFrequency > 0
+            || parameters.LeftTrigger > 0
+            || parameters.RightTrigger > 0;
+    }
+
+    private static bool SupportsRumbleMotor(GameInputRumbleMotors supportedMotors, GameInputRumbleMotors motor)
+    {
+        return (supportedMotors & motor) == motor;
+    }
+
+    private static void ValidateRumbleStrength(GameInputRumbleParams parameters)
+    {
+        ValidateRumbleStrength(parameters.LowFrequency, nameof(parameters.LowFrequency));
+        ValidateRumbleStrength(parameters.HighFrequency, nameof(parameters.HighFrequency));
+        ValidateRumbleStrength(parameters.LeftTrigger, nameof(parameters.LeftTrigger));
+        ValidateRumbleStrength(parameters.RightTrigger, nameof(parameters.RightTrigger));
+    }
+
+    private static void ValidateRumbleStrength(float value, string parameterName)
+    {
+        if (value < 0 || value > 1)
+        {
+            throw new ArgumentOutOfRangeException(parameterName, value, "Rumble 強度必須介於 0.0 到 1.0。");
         }
     }
 }

@@ -2,7 +2,7 @@
 
 本報告定義 `InputWeave.GameInput v0.0.1` 的 100% 完整度標準。範圍鎖定 `Microsoft.GameInput 3.4.218`、GameInput API 版本 `3`，並以 `native/include/GameInput.h` 的公開介面範圍為準。
 
-最後核對日期：2026-05-24
+最後核對日期：2026-05-27
 
 ## 覆蓋率摘要
 
@@ -26,15 +26,17 @@
 
 主要 GameInput 能力皆有受控 API：
 
-- 裝置：`GameInputDevice`、`GameInputDeviceInfoSnapshot`、`GameInputDeviceManager`
-- 讀取資料：Controller Axis/Button/Switch、Keyboard、Mouse、Sensors、Arcade Stick、Flight Stick、Gamepad、Racing Wheel、Raw Report
+- 裝置：`GameInputDevice`、`GameInputDeviceInfoSnapshot`、`GameInputDeviceManager`，並提供依能力選擇第一個裝置的 helper
+- 讀取資料：Controller Axis/Button/Switch、Keyboard、Mouse、Sensors、Arcade Stick、Flight Stick、Gamepad、Racing Wheel、Raw Report，並提供不持有原生生命週期的 snapshot
 - 回呼：Reading、Device、System Button、Keyboard Layout，並由 `GameInputCallbackRegistration` 管理 Unregister/Dispose
 - 分派器：`GameInputDispatcher` 與 `GameInputDispatcherWaitHandle`
 - 映射：Gamepad、Flight Stick、Racing Wheel、Arcade Stick Mapping
-- 原始報告：`byte[]` 區段 API 與 `net10.0-windows` Span API
-- Force Feedback / Haptics：`GameInputForceFeedback` Builder、`GameInputForceFeedbackEffect`、`GameInputHapticInfoSnapshot`
+- 原始報告：`byte[]` 區段 API、`net10.0-windows` Span API 與 `RawDeviceReportSnapshot`
+- Force Feedback / Haptics：`GameInputForceFeedback` Builder、具名 effect helper、`GameInputForceFeedbackEffect`、`GameInputHapticInfoSnapshot`
+- Rumble：依能力遮罩的 opt-in helper 與 `GameInputRumbleScope`
 - 聚合裝置：Create / Disable
 - 執行階段載入器：`GameInputRuntime` 提供與 Microsoft C++ 載入器對齊的受控執行階段選擇與探測診斷
+- 發佈支援界線：目前不宣告 NativeAOT、trimming 或 single-file 發佈相容性，不包含原生橋接 DLL
 
 ## 測試與驗收
 

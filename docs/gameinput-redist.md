@@ -2,6 +2,8 @@
 
 Microsoft 官方 `Microsoft.GameInput` NuGet 套件會提供最新 `GameInput.h`、原生程式庫與 Windows PC 用 `GameInputRedist.msi`。這個包裝套件不會重新散佈 MSI、可轉散發 DLL 或任何原生橋接 DLL，也不會在使用者電腦上自動安裝可轉散發套件。
 
+InputWeave 目前支援一般 .NET Framework 與 .NET Windows 應用程式，不宣告 NativeAOT、trimming 或 single-file 發佈相容性。若未來需要正式支援這些發佈模式，會另行規劃 native shim 或 ComWrappers source generation；這不是目前套件形狀的一部分。
+
 InputWeave 目前採取純受控載入器，預設對齊 Microsoft C++ 載入器的執行階段選擇行為。載入候選來源如下：
 
 - Windows System32 內建的 `GameInput.dll`。
@@ -17,4 +19,4 @@ InputWeave 目前採取純受控載入器，預設對齊 Microsoft C++ 載入器
 - 發佈端安裝程式必須安裝 `GameInputRedist.msi`，讓目標機器取得最新 GameInput 執行階段。
 - 若目標機器已安裝較新的 GameInput 執行階段，Microsoft 可轉散發套件會避免降版。
 - 這個儲存庫的 `eng/gameinput-baseline.json` 只保存可轉散發套件的 SHA256，供發佈與追版流程確認來源一致。
-- 若未來受控載入器在特定發佈模式中不足，例如單檔發佈或更深入的原生診斷需求，再另行規劃解析器或原生橋接 DLL；原生橋接 DLL 不是目前預設發佈形狀。
+- 若未來受控載入器在特定發佈模式中不足，例如 NativeAOT、trimming、single-file 或更深入的原生診斷需求，再另行規劃解析器或原生橋接 DLL；原生橋接 DLL 不是目前預設發佈形狀。

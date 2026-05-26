@@ -173,6 +173,154 @@ public sealed class GameInputDeviceManager : IDisposable
     }
 
     /// <summary>
+    /// 取得目前 keyboard 快照。
+    /// </summary>
+    /// <param name="device">選用的 GameInput 裝置篩選。</param>
+    /// <returns>操作完成後的查詢或建立結果。</returns>
+    public KeyboardReadingSnapshot? GetCurrentKeyboard(GameInputDevice? device = null)
+    {
+        ThrowIfDisposed();
+        return _client.GetCurrentKeyboard(device);
+    }
+
+    /// <summary>
+    /// 取得目前 mouse 快照。
+    /// </summary>
+    /// <param name="device">選用的 GameInput 裝置篩選。</param>
+    /// <returns>操作完成後的查詢或建立結果。</returns>
+    public MouseReadingSnapshot? GetCurrentMouse(GameInputDevice? device = null)
+    {
+        ThrowIfDisposed();
+        return _client.GetCurrentMouse(device);
+    }
+
+    /// <summary>
+    /// 取得目前 sensors 快照。
+    /// </summary>
+    /// <param name="device">選用的 GameInput 裝置篩選。</param>
+    /// <returns>操作完成後的查詢或建立結果。</returns>
+    public SensorsReadingSnapshot? GetCurrentSensors(GameInputDevice? device = null)
+    {
+        ThrowIfDisposed();
+        return _client.GetCurrentSensors(device);
+    }
+
+    /// <summary>
+    /// 取得目前一般 controller 快照。
+    /// </summary>
+    /// <param name="device">選用的 GameInput 裝置篩選。</param>
+    /// <returns>操作完成後的查詢或建立結果。</returns>
+    public ControllerReadingSnapshot? GetCurrentController(GameInputDevice? device = null)
+    {
+        ThrowIfDisposed();
+        return _client.GetCurrentController(device);
+    }
+
+    /// <summary>
+    /// 取得目前 arcade stick 快照。
+    /// </summary>
+    /// <param name="device">選用的 GameInput 裝置篩選。</param>
+    /// <returns>操作完成後的查詢或建立結果。</returns>
+    public ArcadeStickReadingSnapshot? GetCurrentArcadeStick(GameInputDevice? device = null)
+    {
+        ThrowIfDisposed();
+        return _client.GetCurrentArcadeStick(device);
+    }
+
+    /// <summary>
+    /// 取得目前 flight stick 快照。
+    /// </summary>
+    /// <param name="device">選用的 GameInput 裝置篩選。</param>
+    /// <returns>操作完成後的查詢或建立結果。</returns>
+    public FlightStickReadingSnapshot? GetCurrentFlightStick(GameInputDevice? device = null)
+    {
+        ThrowIfDisposed();
+        return _client.GetCurrentFlightStick(device);
+    }
+
+    /// <summary>
+    /// 取得目前 racing wheel 快照。
+    /// </summary>
+    /// <param name="device">選用的 GameInput 裝置篩選。</param>
+    /// <returns>操作完成後的查詢或建立結果。</returns>
+    public RacingWheelReadingSnapshot? GetCurrentRacingWheel(GameInputDevice? device = null)
+    {
+        ThrowIfDisposed();
+        return _client.GetCurrentRacingWheel(device);
+    }
+
+    /// <summary>
+    /// 取得目前 raw device report 快照。
+    /// </summary>
+    /// <param name="device">選用的 GameInput 裝置篩選。</param>
+    /// <returns>操作完成後的查詢或建立結果。</returns>
+    public RawDeviceReportSnapshot? GetCurrentRawReport(GameInputDevice? device = null)
+    {
+        ThrowIfDisposed();
+        return _client.GetCurrentRawReport(device);
+    }
+
+    /// <summary>
+    /// 從目前快取中尋找第一個支援指定輸入種類的裝置。
+    /// </summary>
+    /// <param name="inputKind">要查詢或篩選的 GameInput 輸入種類。</param>
+    /// <param name="device">成功時接收裝置包裝。</param>
+    /// <param name="snapshot">成功時接收對應的裝置資訊快照。</param>
+    /// <returns>若目前快取中有符合條件的裝置，傳回 true；否則傳回 false。</returns>
+    public bool TryGetFirstDevice(GameInputKind inputKind, out GameInputDevice? device, out GameInputDeviceInfoSnapshot? snapshot)
+    {
+        ThrowIfDisposed();
+        int index = FindFirstDeviceIndex(_snapshots, inputKind);
+        return TryGetCachedDevice(index, out device, out snapshot);
+    }
+
+    /// <summary>
+    /// 從目前快取中尋找第一個支援 gamepad 的裝置。
+    /// </summary>
+    /// <param name="device">成功時接收裝置包裝。</param>
+    /// <param name="snapshot">成功時接收對應的裝置資訊快照。</param>
+    /// <returns>若目前快取中有支援 gamepad 的裝置，傳回 true；否則傳回 false。</returns>
+    public bool TryGetFirstGamepad(out GameInputDevice? device, out GameInputDeviceInfoSnapshot? snapshot)
+    {
+        return TryGetFirstDevice(GameInputKind.GameInputKindGamepad, out device, out snapshot);
+    }
+
+    /// <summary>
+    /// 從目前快取中尋找第一個支援 keyboard 的裝置。
+    /// </summary>
+    /// <param name="device">成功時接收裝置包裝。</param>
+    /// <param name="snapshot">成功時接收對應的裝置資訊快照。</param>
+    /// <returns>若目前快取中有支援 keyboard 的裝置，傳回 true；否則傳回 false。</returns>
+    public bool TryGetFirstKeyboard(out GameInputDevice? device, out GameInputDeviceInfoSnapshot? snapshot)
+    {
+        return TryGetFirstDevice(GameInputKind.GameInputKindKeyboard, out device, out snapshot);
+    }
+
+    /// <summary>
+    /// 從目前快取中尋找第一個支援 mouse 的裝置。
+    /// </summary>
+    /// <param name="device">成功時接收裝置包裝。</param>
+    /// <param name="snapshot">成功時接收對應的裝置資訊快照。</param>
+    /// <returns>若目前快取中有支援 mouse 的裝置，傳回 true；否則傳回 false。</returns>
+    public bool TryGetFirstMouse(out GameInputDevice? device, out GameInputDeviceInfoSnapshot? snapshot)
+    {
+        return TryGetFirstDevice(GameInputKind.GameInputKindMouse, out device, out snapshot);
+    }
+
+    /// <summary>
+    /// 從目前快取中尋找第一個宣告支援 rumble motor 的裝置。
+    /// </summary>
+    /// <param name="device">成功時接收裝置包裝。</param>
+    /// <param name="snapshot">成功時接收對應的裝置資訊快照。</param>
+    /// <returns>若目前快取中有支援 rumble 的裝置，傳回 true；否則傳回 false。</returns>
+    public bool TryGetFirstRumbleDevice(out GameInputDevice? device, out GameInputDeviceInfoSnapshot? snapshot)
+    {
+        ThrowIfDisposed();
+        int index = FindFirstRumbleDeviceIndex(_snapshots);
+        return TryGetCachedDevice(index, out device, out snapshot);
+    }
+
+    /// <summary>
     /// 停止裝置事件並釋放 manager 持有的 GameInput 資源。
     /// </summary>
     public void Dispose()
@@ -207,6 +355,46 @@ public sealed class GameInputDeviceManager : IDisposable
 
         _devices.Clear();
         _snapshots.Clear();
+    }
+
+    private bool TryGetCachedDevice(int index, out GameInputDevice? device, out GameInputDeviceInfoSnapshot? snapshot)
+    {
+        if (index < 0 || index >= _devices.Count || index >= _snapshots.Count)
+        {
+            device = null;
+            snapshot = null;
+            return false;
+        }
+
+        device = _devices[index];
+        snapshot = _snapshots[index];
+        return true;
+    }
+
+    internal static int FindFirstDeviceIndex(IReadOnlyList<GameInputDeviceInfoSnapshot> snapshots, GameInputKind inputKind)
+    {
+        for (int index = 0; index < snapshots.Count; index++)
+        {
+            if ((snapshots[index].SupportedInput & inputKind) != 0)
+            {
+                return index;
+            }
+        }
+
+        return -1;
+    }
+
+    internal static int FindFirstRumbleDeviceIndex(IReadOnlyList<GameInputDeviceInfoSnapshot> snapshots)
+    {
+        for (int index = 0; index < snapshots.Count; index++)
+        {
+            if (snapshots[index].SupportedRumbleMotors != GameInputRumbleMotors.GameInputRumbleNone)
+            {
+                return index;
+            }
+        }
+
+        return -1;
     }
 
     private void ThrowIfDisposed()

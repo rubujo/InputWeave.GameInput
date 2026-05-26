@@ -31,10 +31,10 @@ try
     IReadOnlyList<GameInputDeviceInfoSnapshot> snapshots = manager.RefreshDevices();
 
     PrintDevices(manager, snapshots);
-    int preferredDeviceIndex = FindPreferredDeviceIndex(snapshots);
-    PrintGamepadSnapshot(manager, snapshots, preferredDeviceIndex);
+    PrintGamepadSnapshot(manager);
+    PrintOtherInputSnapshots(manager);
     DemonstrateDispatcherAndCallback();
-    DemonstrateHapticsAndRumble(manager, snapshots, preferredDeviceIndex, enableRumble);
+    DemonstrateHapticsAndRumble(manager, enableRumble);
 }
 catch (DllNotFoundException ex)
 {
@@ -95,31 +95,63 @@ static void PrintDevices(GameInputDeviceManager manager, IReadOnlyList<GameInput
     }
 }
 
-static void PrintGamepadSnapshot(GameInputDeviceManager manager, IReadOnlyList<GameInputDeviceInfoSnapshot> snapshots, int preferredDeviceIndex)
+static void PrintGamepadSnapshot(GameInputDeviceManager manager)
 {
     WriteSection("Gamepad polling");
 
-    if (preferredDeviceIndex < 0)
+    if (!manager.TryGetFirstGamepad(out GameInputDevice? device, out GameInputDeviceInfoSnapshot? snapshot))
     {
         Console.WriteLine("目前沒有支援 gamepad input kind 的裝置；略過 gamepad snapshot。");
         return;
     }
 
-    GameInputDevice device = manager.Devices[preferredDeviceIndex];
     GamepadReadingSnapshot? gamepad = manager.GetCurrentGamepad(device);
     if (gamepad is null)
     {
-        Console.WriteLine($"已找到 gamepad 裝置「{GetDisplayName(snapshots[preferredDeviceIndex])}」，但目前沒有可讀取的 gamepad snapshot。");
+        Console.WriteLine($"已找到 gamepad 裝置「{GetDisplayName(snapshot)}」，但目前沒有可讀取的 gamepad snapshot。");
         Console.WriteLine("如果應用程式需要背景輸入，請在實際程式中設定合適的 focus policy。");
         return;
     }
 
     GameInputGamepadState state = gamepad.State;
-    Console.WriteLine($"裝置：{GetDisplayName(snapshots[preferredDeviceIndex])}");
+    Console.WriteLine($"裝置：{GetDisplayName(snapshot)}");
     Console.WriteLine($"Timestamp：{gamepad.Timestamp}");
     Console.WriteLine($"Buttons：{state.Buttons}");
     Console.WriteLine($"Triggers：L={state.LeftTrigger:F2}, R={state.RightTrigger:F2}");
     Console.WriteLine($"Thumbsticks：L=({state.LeftThumbstickX:F2}, {state.LeftThumbstickY:F2}), R=({state.RightThumbstickX:F2}, {state.RightThumbstickY:F2})");
+}
+
+static void PrintOtherInputSnapshots(GameInputDeviceManager manager)
+{
+    WriteSection("其他輸入快照");
+
+    KeyboardReadingSnapshot? keyboard = manager.GetCurrentKeyboard();
+    MouseReadingSnapshot? mouse = manager.GetCurrentMouse();
+    SensorsReadingSnapshot? sensors = manager.GetCurrentSensors();
+
+    bool printed = false;
+    if (keyboard is not null)
+    {
+        Console.WriteLine($"Keyboard：目前作用中按鍵 {keyboard.Keys.Count} 個。");
+        printed = true;
+    }
+
+    if (mouse is not null)
+    {
+        Console.WriteLine($"Mouse：Buttons={mouse.State.Buttons}, Position=({mouse.State.PositionX}, {mouse.State.PositionY})。");
+        printed = true;
+    }
+
+    if (sensors is not null)
+    {
+        Console.WriteLine($"Sensors：OrientationW={sensors.State.OrientationW:F2}, Heading={sensors.State.HeadingInDegreesFromMagneticNorth:F2}。");
+        printed = true;
+    }
+
+    if (!printed)
+    {
+        Console.WriteLine("目前沒有 keyboard、mouse 或 sensors snapshot；沒有對應輸入或暫時沒有資料時這是正常結果。");
+    }
 }
 
 static void DemonstrateDispatcherAndCallback()
@@ -130,22 +162,40 @@ static void DemonstrateDispatcherAndCallback()
     using GameInputDispatcher dispatcher = client.CreateDispatcher();
     using GameInputDispatcherWaitHandle waitHandle = dispatcher.OpenSafeWaitHandle();
 
-    int callbackCount = 0;
-    using GameInputCallbackRegistration registration = client.RegisterDeviceCallback(
+    int deviceCallbackCount = 0;
+    int readingCallbackCount = 0;
+    using GameInputCallbackRegistration deviceRegistration = client.RegisterDeviceCallback(
         null,
         GameInputKind.GameInputKindGamepad,
         GameInputDeviceStatus.GameInputDeviceAnyStatus,
         GameInputEnumerationKind.GameInputAsyncEnumeration,
         (device, timestamp, current, previous) =>
         {
-            _ = Interlocked.Increment(ref callbackCount);
+            _ = Interlocked.Increment(ref deviceCallbackCount);
             Console.WriteLine($"Device callback：{timestamp} {previous} -> {current} {device.GetDisplayName() ?? "(未命名裝置)"}");
+        });
+    using GameInputCallbackRegistration readingRegistration = client.RegisterReadingCallback(
+        null,
+        GameInputKind.GameInputKindGamepad,
+        reading =>
+        {
+            if (!reading.TryGetGamepadSnapshot(out GamepadReadingSnapshot? snapshot))
+            {
+                return;
+            }
+
+            int count = Interlocked.Increment(ref readingCallbackCount);
+            if (count <= 3)
+            {
+                Console.WriteLine($"Reading callback：{snapshot!.Timestamp} Buttons={snapshot.State.Buttons}");
+            }
         });
 
     Console.WriteLine(waitHandle.IsInvalid
         ? "Dispatcher safe wait handle 無效；本次僅示範直接 Dispatch。"
         : "Dispatcher safe wait handle 已建立。");
-    Console.WriteLine($"Callback token：{registration.Token}");
+    Console.WriteLine($"Device callback token：{deviceRegistration.Token}");
+    Console.WriteLine($"Reading callback token：{readingRegistration.Token}");
 
     Stopwatch stopwatch = Stopwatch.StartNew();
     while (stopwatch.ElapsedMilliseconds < 250)
@@ -154,35 +204,33 @@ static void DemonstrateDispatcherAndCallback()
         Thread.Sleep(25);
     }
 
-    if (callbackCount == 0)
+    if (deviceCallbackCount == 0)
     {
         Console.WriteLine("這次沒有收到裝置事件；沒有插拔或狀態變化時這是正常結果。");
     }
+
+    if (readingCallbackCount == 0)
+    {
+        Console.WriteLine("這次沒有收到 gamepad reading callback；沒有輸入事件或沒有 gamepad 時這是正常結果。");
+    }
 }
 
-static void DemonstrateHapticsAndRumble(
-    GameInputDeviceManager manager,
-    IReadOnlyList<GameInputDeviceInfoSnapshot> snapshots,
-    int preferredDeviceIndex,
-    bool enableRumble)
+static void DemonstrateHapticsAndRumble(GameInputDeviceManager manager, bool enableRumble)
 {
     WriteSection("Haptics 與 rumble");
 
-    int deviceIndex = preferredDeviceIndex >= 0 ? preferredDeviceIndex : snapshots.Count > 0 ? 0 : -1;
-    if (deviceIndex < 0)
+    if (!manager.TryGetFirstRumbleDevice(out GameInputDevice? device, out GameInputDeviceInfoSnapshot? snapshot) &&
+        !manager.TryGetFirstGamepad(out device, out snapshot))
     {
         Console.WriteLine("沒有可用裝置；略過 haptics 與 rumble。");
         return;
     }
 
-    GameInputDevice device = manager.Devices[deviceIndex];
-    GameInputDeviceInfoSnapshot snapshot = snapshots[deviceIndex];
     Console.WriteLine($"選用裝置：{GetDisplayName(snapshot)}");
 
-    GameInputHapticInfoSnapshot? haptic = device.GetHapticInfoSnapshot();
-    Console.WriteLine(haptic is null
-        ? "此裝置沒有 haptic 資訊。"
-        : $"Haptic endpoint：{haptic.AudioEndpointId} / Locations：{haptic.Locations.Count}");
+    Console.WriteLine(device!.TryGetHapticInfoSnapshot(out GameInputHapticInfoSnapshot? haptic)
+        ? $"Haptic endpoint：{haptic!.AudioEndpointId} / Locations：{haptic.Locations.Count}"
+        : "此裝置沒有 haptic 資訊。");
 
     if (!enableRumble)
     {
@@ -190,16 +238,25 @@ static void DemonstrateHapticsAndRumble(
         return;
     }
 
-    if (snapshot.SupportedRumbleMotors == GameInputRumbleMotors.GameInputRumbleNone)
+    if (snapshot!.SupportedRumbleMotors == GameInputRumbleMotors.GameInputRumbleNone)
     {
         Console.WriteLine("此裝置未宣告支援 rumble motor；略過震動測試。");
         return;
     }
 
-    GameInputRumbleParams rumble = CreateLowIntensityRumble(snapshot.SupportedRumbleMotors);
     try
     {
-        device.SetRumbleState(rumble);
+        using GameInputRumbleScope? rumble = device.StartRumbleScope(
+            lowFrequency: 0.15f,
+            highFrequency: 0.15f,
+            leftTrigger: 0.10f,
+            rightTrigger: 0.10f);
+        if (rumble is null)
+        {
+            Console.WriteLine("裝置不支援這組 rumble 輸出；略過震動測試。");
+            return;
+        }
+
         Thread.Sleep(250);
         Console.WriteLine($"已對支援馬達輸出短暫低強度震動：{snapshot.SupportedRumbleMotors}");
     }
@@ -207,54 +264,11 @@ static void DemonstrateHapticsAndRumble(
     {
         Console.WriteLine($"震動測試失敗：0x{ex.HResult:X8} {ex.Message}");
     }
-    finally
-    {
-        try
-        {
-            device.ClearRumbleState();
-        }
-        catch (GameInputException ex)
-        {
-            Console.WriteLine($"清除震動狀態失敗：0x{ex.HResult:X8} {ex.Message}");
-        }
-    }
 }
 
-static int FindPreferredDeviceIndex(IReadOnlyList<GameInputDeviceInfoSnapshot> snapshots)
+static string GetDisplayName(GameInputDeviceInfoSnapshot? snapshot)
 {
-    for (int index = 0; index < snapshots.Count; index++)
-    {
-        if (SupportsGamepad(snapshots[index]))
-        {
-            return index;
-        }
-    }
-
-    return -1;
-}
-
-static bool SupportsGamepad(GameInputDeviceInfoSnapshot snapshot)
-{
-    return (snapshot.SupportedInput & GameInputKind.GameInputKindGamepad) == GameInputKind.GameInputKindGamepad;
-}
-
-static GameInputRumbleParams CreateLowIntensityRumble(GameInputRumbleMotors motors)
-{
-    float lowFrequency = SupportsRumbleMotor(motors, GameInputRumbleMotors.GameInputRumbleLowFrequency) ? 0.15f : 0;
-    float highFrequency = SupportsRumbleMotor(motors, GameInputRumbleMotors.GameInputRumbleHighFrequency) ? 0.15f : 0;
-    float leftTrigger = SupportsRumbleMotor(motors, GameInputRumbleMotors.GameInputRumbleLeftTrigger) ? 0.10f : 0;
-    float rightTrigger = SupportsRumbleMotor(motors, GameInputRumbleMotors.GameInputRumbleRightTrigger) ? 0.10f : 0;
-    return GameInputForceFeedback.Rumble(lowFrequency, highFrequency, leftTrigger, rightTrigger);
-}
-
-static bool SupportsRumbleMotor(GameInputRumbleMotors supportedMotors, GameInputRumbleMotors motor)
-{
-    return (supportedMotors & motor) == motor;
-}
-
-static string GetDisplayName(GameInputDeviceInfoSnapshot snapshot)
-{
-    return string.IsNullOrWhiteSpace(snapshot.DisplayName) ? "(未命名裝置)" : snapshot.DisplayName;
+    return string.IsNullOrWhiteSpace(snapshot?.DisplayName) ? "(未命名裝置)" : snapshot.DisplayName;
 }
 
 static void WriteSection(string title)

@@ -64,7 +64,7 @@ public interface IGameInput
     /// <param name="callbackToken">GameInput 指派的 callback token。</param>
     /// <returns>原生 HRESULT 值。</returns>
     [PreserveSig]
-    int RegisterReadingCallback(IGameInputDevice? device, GameInputKind inputKind, IntPtr context, GameInputReadingCallback callbackFunc, out ulong callbackToken);
+    int RegisterReadingCallback(IGameInputDevice? device, GameInputKind inputKind, IntPtr context, [MarshalAs(UnmanagedType.FunctionPtr)] GameInputReadingCallback callbackFunc, out ulong callbackToken);
 
     /// <summary>
     /// 呼叫 IGameInput.RegisterDeviceCallback 對應的 GameInput 原生 COM 方法。
@@ -78,7 +78,7 @@ public interface IGameInput
     /// <param name="callbackToken">GameInput 指派的 callback token。</param>
     /// <returns>原生 HRESULT 值。</returns>
     [PreserveSig]
-    int RegisterDeviceCallback(IGameInputDevice? device, GameInputKind inputKind, GameInputDeviceStatus statusFilter, GameInputEnumerationKind enumerationKind, IntPtr context, GameInputDeviceCallback callbackFunc, out ulong callbackToken);
+    int RegisterDeviceCallback(IGameInputDevice? device, GameInputKind inputKind, GameInputDeviceStatus statusFilter, GameInputEnumerationKind enumerationKind, IntPtr context, [MarshalAs(UnmanagedType.FunctionPtr)] GameInputDeviceCallback callbackFunc, out ulong callbackToken);
 
     /// <summary>
     /// 呼叫 IGameInput.RegisterSystemButtonCallback 對應的 GameInput 原生 COM 方法。
@@ -90,7 +90,7 @@ public interface IGameInput
     /// <param name="callbackToken">GameInput 指派的 callback token。</param>
     /// <returns>原生 HRESULT 值。</returns>
     [PreserveSig]
-    int RegisterSystemButtonCallback(IGameInputDevice? device, GameInputSystemButtons buttonFilter, IntPtr context, GameInputSystemButtonCallback callbackFunc, out ulong callbackToken);
+    int RegisterSystemButtonCallback(IGameInputDevice? device, GameInputSystemButtons buttonFilter, IntPtr context, [MarshalAs(UnmanagedType.FunctionPtr)] GameInputSystemButtonCallback callbackFunc, out ulong callbackToken);
 
     /// <summary>
     /// 呼叫 IGameInput.RegisterKeyboardLayoutCallback 對應的 GameInput 原生 COM 方法。
@@ -101,7 +101,7 @@ public interface IGameInput
     /// <param name="callbackToken">GameInput 指派的 callback token。</param>
     /// <returns>原生 HRESULT 值。</returns>
     [PreserveSig]
-    int RegisterKeyboardLayoutCallback(IGameInputDevice? device, IntPtr context, GameInputKeyboardLayoutCallback callbackFunc, out ulong callbackToken);
+    int RegisterKeyboardLayoutCallback(IGameInputDevice? device, IntPtr context, [MarshalAs(UnmanagedType.FunctionPtr)] GameInputKeyboardLayoutCallback callbackFunc, out ulong callbackToken);
 
     /// <summary>
     /// 呼叫 IGameInput.StopCallback 對應的 GameInput 原生 COM 方法。
