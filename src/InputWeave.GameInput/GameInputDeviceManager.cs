@@ -19,6 +19,11 @@ public sealed class GameInputDeviceManager : IDisposable
         | GameInputKind.GameInputKindRacingWheel;
 
     private readonly GameInputClient _client;
+#if NET10_0_OR_GREATER
+    private readonly System.Threading.Lock _cacheLock = new();
+#else
+    private readonly object _cacheLock = new();
+#endif
     private readonly List<GameInputDevice> _devices = [];
     private readonly List<GameInputDeviceInfoSnapshot> _snapshots = [];
     private readonly Queue<GameInputDeviceManagerEvent> _events = new();
@@ -40,26 +45,32 @@ public sealed class GameInputDeviceManager : IDisposable
     }
 
     /// <summary>
-    /// 已快取的裝置包裝。呼叫重新整理方法會釋放舊快取。
+    /// 已快取的裝置包裝快照複本。呼叫重新整理方法會釋放舊快取。
     /// </summary>
     public IReadOnlyList<GameInputDevice> Devices
     {
         get
         {
             ThrowIfDisposed();
-            return _devices.AsReadOnly();
+            lock (_cacheLock)
+            {
+                return [.. _devices];
+            }
         }
     }
 
     /// <summary>
-    /// 不持有原生生命週期的裝置資訊快照。
+    /// 不持有原生生命週期的裝置資訊快照複本。
     /// </summary>
     public IReadOnlyList<GameInputDeviceInfoSnapshot> DeviceSnapshots
     {
         get
         {
             ThrowIfDisposed();
-            return _snapshots.AsReadOnly();
+            lock (_cacheLock)
+            {
+                return [.. _snapshots];
+            }
         }
     }
 
@@ -72,16 +83,20 @@ public sealed class GameInputDeviceManager : IDisposable
     public IReadOnlyList<GameInputDeviceInfoSnapshot> RefreshDevices(GameInputKind inputKind, GameInputDeviceStatus statusFilter = GameInputDeviceStatus.GameInputDeviceConnected)
     {
         ThrowIfDisposed();
-        ClearDevices();
 
         IReadOnlyList<GameInputDevice> devices = _client.EnumerateDevices(inputKind, statusFilter);
+        List<GameInputDeviceInfoSnapshot> snapshots = new(devices.Count);
         foreach (GameInputDevice device in devices)
         {
-            _devices.Add(device);
-            _snapshots.Add(device.GetDeviceInfoSnapshot());
+            snapshots.Add(device.GetDeviceInfoSnapshot());
         }
 
-        return _snapshots.AsReadOnly();
+        foreach (GameInputDevice previousDevice in ReplaceDevices(devices, snapshots))
+        {
+            previousDevice.Dispose();
+        }
+
+        return snapshots.AsReadOnly();
     }
 
     /// <summary>
@@ -270,8 +285,11 @@ public sealed class GameInputDeviceManager : IDisposable
     public bool TryGetFirstDevice(GameInputKind inputKind, out GameInputDevice? device, out GameInputDeviceInfoSnapshot? snapshot)
     {
         ThrowIfDisposed();
-        int index = FindFirstDeviceIndex(_snapshots, inputKind);
-        return TryGetCachedDevice(index, out device, out snapshot);
+        lock (_cacheLock)
+        {
+            int index = FindFirstDeviceIndex(_snapshots, inputKind);
+            return TryGetCachedDevice(index, out device, out snapshot);
+        }
     }
 
     /// <summary>
@@ -316,13 +334,19 @@ public sealed class GameInputDeviceManager : IDisposable
     public bool TryGetFirstRumbleDevice(out GameInputDevice? device, out GameInputDeviceInfoSnapshot? snapshot)
     {
         ThrowIfDisposed();
-        int index = FindFirstRumbleDeviceIndex(_snapshots);
-        return TryGetCachedDevice(index, out device, out snapshot);
+        lock (_cacheLock)
+        {
+            int index = FindFirstRumbleDeviceIndex(_snapshots);
+            return TryGetCachedDevice(index, out device, out snapshot);
+        }
     }
 
     /// <summary>
     /// 停止裝置事件並釋放 manager 持有的 GameInput 資源。
     /// </summary>
+    /// <exception cref="InvalidOperationException">
+    /// 裝置事件註冊因為在自身的原生回呼執行緒中被同步釋放而無法停止；此時其餘資源仍會完成釋放。
+    /// </exception>
     public void Dispose()
     {
         if (_disposed)
@@ -330,11 +354,29 @@ public sealed class GameInputDeviceManager : IDisposable
             return;
         }
 
-        StopDeviceEvents();
-        ClearDevices();
+        InvalidOperationException? stopDeviceEventsFailure = null;
+        try
+        {
+            StopDeviceEvents();
+        }
+        catch (InvalidOperationException ex)
+        {
+            stopDeviceEventsFailure = ex;
+        }
+
+        foreach (GameInputDevice previousDevice in ReplaceDevices([], []))
+        {
+            previousDevice.Dispose();
+        }
+
         _client.Dispose();
         _disposed = true;
         GC.SuppressFinalize(this);
+
+        if (stopDeviceEventsFailure is not null)
+        {
+            throw stopDeviceEventsFailure;
+        }
     }
 
     private void EnqueueDeviceEvent(GameInputDevice device, ulong timestamp, GameInputDeviceStatus currentStatus, GameInputDeviceStatus previousStatus)
@@ -346,15 +388,19 @@ public sealed class GameInputDeviceManager : IDisposable
         }
     }
 
-    private void ClearDevices()
+    private List<GameInputDevice> ReplaceDevices(IReadOnlyList<GameInputDevice> devices, IReadOnlyList<GameInputDeviceInfoSnapshot> snapshots)
     {
-        foreach (GameInputDevice device in _devices)
+        lock (_cacheLock)
         {
-            device.Dispose();
-        }
+            List<GameInputDevice> previousDevices = [.. _devices];
 
-        _devices.Clear();
-        _snapshots.Clear();
+            _devices.Clear();
+            _devices.AddRange(devices);
+            _snapshots.Clear();
+            _snapshots.AddRange(snapshots);
+
+            return previousDevices;
+        }
     }
 
     private bool TryGetCachedDevice(int index, out GameInputDevice? device, out GameInputDeviceInfoSnapshot? snapshot)
@@ -373,22 +419,25 @@ public sealed class GameInputDeviceManager : IDisposable
 
     internal static int FindFirstDeviceIndex(IReadOnlyList<GameInputDeviceInfoSnapshot> snapshots, GameInputKind inputKind)
     {
-        for (int index = 0; index < snapshots.Count; index++)
-        {
-            if ((snapshots[index].SupportedInput & inputKind) != 0)
-            {
-                return index;
-            }
-        }
-
-        return -1;
+        return FindFirstIndex(snapshots, inputKind, static (snapshot, kind) => (snapshot.SupportedInput & kind) == kind);
     }
 
     internal static int FindFirstRumbleDeviceIndex(IReadOnlyList<GameInputDeviceInfoSnapshot> snapshots)
     {
+        return FindFirstIndex(
+            snapshots,
+            GameInputRumbleMotors.GameInputRumbleNone,
+            static (snapshot, none) => snapshot.SupportedRumbleMotors != none);
+    }
+
+    private static int FindFirstIndex<TState>(
+        IReadOnlyList<GameInputDeviceInfoSnapshot> snapshots,
+        TState state,
+        Func<GameInputDeviceInfoSnapshot, TState, bool> predicate)
+    {
         for (int index = 0; index < snapshots.Count; index++)
         {
-            if (snapshots[index].SupportedRumbleMotors != GameInputRumbleMotors.GameInputRumbleNone)
+            if (predicate(snapshots[index], state))
             {
                 return index;
             }

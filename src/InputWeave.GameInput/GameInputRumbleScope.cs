@@ -13,18 +13,46 @@ public sealed class GameInputRumbleScope : IDisposable
     }
 
     /// <summary>
+    /// 此 scope 是否已釋放。
+    /// </summary>
+    public bool IsDisposed { get; private set; }
+
+    /// <summary>
     /// 清除 rumble 狀態並結束此 scope。
     /// </summary>
+    /// <remarks>
+    /// 若裝置已中斷連線或已被釋放，清除動作可能失敗；依 <see cref="IDisposable.Dispose"/> 不應拋出例外的慣例，
+    /// 此處會吞下 <see cref="GameInputException"/> 與 <see cref="ObjectDisposedException"/>，不中斷呼叫端的釋放流程。
+    /// </remarks>
     public void Dispose()
     {
+        if (IsDisposed)
+        {
+            return;
+        }
+
+        IsDisposed = true;
+
         Action? clear = _clearRumbleState;
+        _clearRumbleState = null;
         if (clear is null)
         {
             return;
         }
 
-        _clearRumbleState = null;
-        clear();
-        GC.SuppressFinalize(this);
+        try
+        {
+            clear();
+        }
+        catch (GameInputException)
+        {
+        }
+        catch (ObjectDisposedException)
+        {
+        }
+        finally
+        {
+            GC.SuppressFinalize(this);
+        }
     }
 }

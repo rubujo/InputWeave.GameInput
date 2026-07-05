@@ -8,6 +8,11 @@ namespace InputWeave.GameInput;
 /// </summary>
 public sealed class GameInputClient : IDisposable
 {
+    /// <summary>
+    /// 當原生回呼執行使用者委派時發生未攔截例外時觸發；例外不會繼續拋出至原生呼叫端。
+    /// </summary>
+    public static event EventHandler<GameInputCallbackExceptionEventArgs>? UnhandledCallbackException;
+
     private static readonly GameInputReadingCallback s_readingCallback = OnReadingCallback;
     private static readonly GameInputDeviceCallback s_deviceCallback = OnDeviceCallback;
     private static readonly GameInputSystemButtonCallback s_systemButtonCallback = OnSystemButtonCallback;
@@ -530,6 +535,9 @@ public sealed class GameInputClient : IDisposable
     /// <summary>
     /// 釋放 GameInput 用戶端與尚未解除註冊的 callback。
     /// </summary>
+    /// <exception cref="InvalidOperationException">
+    /// 有一個或多個回呼註冊因為在自身的原生回呼執行緒中被同步釋放而無法取消註冊；此時其餘資源仍會完成釋放。
+    /// </exception>
     public void Dispose()
     {
         if (_disposed)
@@ -544,9 +552,17 @@ public sealed class GameInputClient : IDisposable
             _registrations.Clear();
         }
 
+        List<Exception>? disposeFailures = null;
         foreach (GameInputCallbackRegistration registration in registrations)
         {
-            registration.Dispose();
+            try
+            {
+                registration.Dispose();
+            }
+            catch (InvalidOperationException ex)
+            {
+                (disposeFailures ??= []).Add(ex);
+            }
         }
 
         if (_native is not null)
@@ -557,6 +573,11 @@ public sealed class GameInputClient : IDisposable
 
         _disposed = true;
         GC.SuppressFinalize(this);
+
+        if (disposeFailures is not null)
+        {
+            throw new AggregateException("部分 callback 註冊無法釋放；其餘資源已完成釋放。", disposeFailures);
+        }
     }
 
     private GameInputCallbackRegistration AddRegistration(ulong token, GCHandle contextHandle, Action deactivateContext)
@@ -625,43 +646,103 @@ public sealed class GameInputClient : IDisposable
 
     private static void OnReadingCallback(ulong callbackToken, IntPtr context, IGameInputReading reading)
     {
-        if (TryGetContext(context, out ReadingCallbackContext? callbackContext))
+        GameInputCallbackThread.Enter();
+        try
         {
-            using GameInputReading managedReading = new(reading);
-            callbackContext!.Handler(managedReading);
+            if (TryGetContext(context, out ReadingCallbackContext? callbackContext))
+            {
+                using GameInputReading managedReading = new(reading);
+                callbackContext!.Handler(managedReading);
+            }
+        }
+        catch (Exception ex)
+        {
+            RaiseUnhandledCallbackException(ex);
+        }
+        finally
+        {
+            GameInputCallbackThread.Exit();
         }
     }
 
     private static void OnDeviceCallback(ulong callbackToken, IntPtr context, IGameInputDevice device, ulong timestamp, GameInputDeviceStatus currentStatus, GameInputDeviceStatus previousStatus)
     {
-        if (TryGetContext(context, out DeviceEnumerationContext? enumerationContext))
+        GameInputCallbackThread.Enter();
+        try
         {
-            enumerationContext!.Devices.Add(new GameInputDevice(device));
-            return;
-        }
+            if (TryGetContext(context, out DeviceEnumerationContext? enumerationContext))
+            {
+                enumerationContext!.Devices.Add(new GameInputDevice(device));
+                return;
+            }
 
-        if (TryGetContext(context, out DeviceCallbackContext? callbackContext))
+            if (TryGetContext(context, out DeviceCallbackContext? callbackContext))
+            {
+                using GameInputDevice managedDevice = new(device);
+                callbackContext!.Handler(managedDevice, timestamp, currentStatus, previousStatus);
+            }
+        }
+        catch (Exception ex)
         {
-            using GameInputDevice managedDevice = new(device);
-            callbackContext!.Handler(managedDevice, timestamp, currentStatus, previousStatus);
+            RaiseUnhandledCallbackException(ex);
+        }
+        finally
+        {
+            GameInputCallbackThread.Exit();
         }
     }
 
     private static void OnSystemButtonCallback(ulong callbackToken, IntPtr context, IGameInputDevice device, ulong timestamp, GameInputSystemButtons currentButtons, GameInputSystemButtons previousButtons)
     {
-        if (TryGetContext(context, out SystemButtonCallbackContext? callbackContext))
+        GameInputCallbackThread.Enter();
+        try
         {
-            using GameInputDevice managedDevice = new(device);
-            callbackContext!.Handler(managedDevice, timestamp, currentButtons, previousButtons);
+            if (TryGetContext(context, out SystemButtonCallbackContext? callbackContext))
+            {
+                using GameInputDevice managedDevice = new(device);
+                callbackContext!.Handler(managedDevice, timestamp, currentButtons, previousButtons);
+            }
+        }
+        catch (Exception ex)
+        {
+            RaiseUnhandledCallbackException(ex);
+        }
+        finally
+        {
+            GameInputCallbackThread.Exit();
         }
     }
 
     private static void OnKeyboardLayoutCallback(ulong callbackToken, IntPtr context, IGameInputDevice device, ulong timestamp, uint currentLayout, uint previousLayout)
     {
-        if (TryGetContext(context, out KeyboardLayoutCallbackContext? callbackContext))
+        GameInputCallbackThread.Enter();
+        try
         {
-            using GameInputDevice managedDevice = new(device);
-            callbackContext!.Handler(managedDevice, timestamp, currentLayout, previousLayout);
+            if (TryGetContext(context, out KeyboardLayoutCallbackContext? callbackContext))
+            {
+                using GameInputDevice managedDevice = new(device);
+                callbackContext!.Handler(managedDevice, timestamp, currentLayout, previousLayout);
+            }
+        }
+        catch (Exception ex)
+        {
+            RaiseUnhandledCallbackException(ex);
+        }
+        finally
+        {
+            GameInputCallbackThread.Exit();
+        }
+    }
+
+    private static void RaiseUnhandledCallbackException(Exception exception)
+    {
+        try
+        {
+            UnhandledCallbackException?.Invoke(null, new GameInputCallbackExceptionEventArgs(exception));
+        }
+        catch
+        {
+            // 事件訂閱者拋出的例外同樣不可跨越原生 P/Invoke 邊界，於此吞下。
         }
     }
 

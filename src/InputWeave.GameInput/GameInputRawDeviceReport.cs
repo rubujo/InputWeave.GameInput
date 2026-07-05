@@ -176,12 +176,13 @@ public sealed class GameInputRawDeviceReport : IDisposable
         /// </summary>
         /// <param name="buffer">目標資料緩衝區。</param>
         /// <returns>操作完成後的查詢或建立結果。</returns>
-        public int CopyRawData(Span<byte> buffer)
+        public unsafe int CopyRawData(Span<byte> buffer)
         {
-            byte[] managedBuffer = new byte[buffer.Length];
-            int count = CopyRawData(managedBuffer);
-            managedBuffer.AsSpan(0, count).CopyTo(buffer);
-            return count;
+            fixed (byte* pointer = buffer)
+            {
+                UIntPtr written = Native.GetRawData((UIntPtr)buffer.Length, (IntPtr)pointer);
+                return checked((int)written.ToUInt64());
+            }
         }
 
         /// <summary>
@@ -189,9 +190,12 @@ public sealed class GameInputRawDeviceReport : IDisposable
         /// </summary>
         /// <param name="data">要寫入的資料。</param>
         /// <returns>操作完成後的查詢或建立結果。</returns>
-        public bool SetRawData(ReadOnlySpan<byte> data)
+        public unsafe bool SetRawData(ReadOnlySpan<byte> data)
         {
-            return SetRawData(data.ToArray());
+            fixed (byte* pointer = data)
+            {
+                return Native.SetRawData((UIntPtr)data.Length, (IntPtr)pointer);
+            }
         }
 #endif
 

@@ -42,11 +42,17 @@ public sealed class GameInputCallbackRegistration : IDisposable
     /// <summary>
     /// 取消註冊 callback 並釋放相關 managed 狀態。
     /// </summary>
+    /// <exception cref="InvalidOperationException">在原生回呼執行緒中同步呼叫此方法。</exception>
     public void Dispose()
     {
         if (IsDisposed)
         {
             return;
+        }
+
+        if (GameInputCallbackThread.IsExecutingCallback)
+        {
+            throw new InvalidOperationException("不允許在原生 GameInput 回呼執行緒中同步取消註冊該回呼，這會觸發原生端的致命判斷提示。請改由其他執行緒（例如透過 Task.Run）非同步釋放此註冊。");
         }
 
         IsDisposed = true;

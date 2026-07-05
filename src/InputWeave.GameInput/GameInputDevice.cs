@@ -10,6 +10,7 @@ public sealed class GameInputDevice : IDisposable
 {
     private IGameInputDevice? _native;
     private bool _disposed;
+    private GameInputDeviceInfoSnapshot? _cachedInfoSnapshot;
 
     internal GameInputDevice(IGameInputDevice native)
     {
@@ -38,6 +39,13 @@ public sealed class GameInputDevice : IDisposable
     /// <summary>
     /// 取得裝置資訊。
     /// </summary>
+    /// <remarks>
+    /// 傳回結構內的字串與陣列欄位（例如 <see cref="GameInputDeviceInfo.DisplayName"/>、
+    /// <see cref="GameInputDeviceInfo.PnpPath"/>）是指向原生記憶體的指標，其生命週期綁定於這個
+    /// <see cref="GameInputDevice"/> 的底層 COM 物件。裝置被 <see cref="Dispose"/> 後再存取這些指標會導致未定義行為
+    /// （例如 <see cref="AccessViolationException"/>）。一般情境應改用不持有原生指標的
+    /// <see cref="GetDeviceInfoSnapshot"/>。
+    /// </remarks>
     /// <returns>操作完成後的查詢或建立結果。</returns>
     public GameInputDeviceInfo GetDeviceInfo()
     {
@@ -69,10 +77,14 @@ public sealed class GameInputDevice : IDisposable
     /// <summary>
     /// 取得不持有原生指標的裝置資訊快照。
     /// </summary>
+    /// <remarks>
+    /// 裝置能力（例如支援的輸入種類、rumble 馬達）在裝置存續期間為固定值，此方法會在同一個
+    /// <see cref="GameInputDevice"/> 執行個體上快取結果，避免重複的完整原生 marshal。
+    /// </remarks>
     /// <returns>操作完成後的查詢或建立結果。</returns>
     public GameInputDeviceInfoSnapshot GetDeviceInfoSnapshot()
     {
-        return GameInputDeviceInfoSnapshot.FromNative(GetDeviceInfo());
+        return _cachedInfoSnapshot ??= GameInputDeviceInfoSnapshot.FromNative(GetDeviceInfo());
     }
 
     /// <summary>
@@ -145,17 +157,6 @@ public sealed class GameInputDevice : IDisposable
     }
 
     /// <summary>
-    /// 使用 managed force feedback builder 產生的參數建立 effect。
-    /// </summary>
-    /// <param name="motorIndex">force feedback motor 索引。</param>
-    /// <param name="parameters">GameInput 原生參數。</param>
-    /// <returns>操作完成後的查詢或建立結果。</returns>
-    public GameInputForceFeedbackEffect CreateForceFeedbackEffect(uint motorIndex, GameInputForceFeedbackParams parameters)
-    {
-        return CreateForceFeedbackEffect(motorIndex, in parameters);
-    }
-
-    /// <summary>
     /// 嘗試建立 force feedback effect；不支援時不擲出例外。
     /// </summary>
     /// <param name="motorIndex">force feedback motor 索引。</param>
@@ -175,23 +176,15 @@ public sealed class GameInputDevice : IDisposable
             effect = CreateForceFeedbackEffect(motorIndex, in parameters);
             return true;
         }
-        catch (GameInputException ex) when (ex.HResult == GameInputHResult.FeedbackNotSupported)
+        catch (GameInputException ex) when (ex.HResult is GameInputHResult.FeedbackNotSupported
+            or GameInputHResult.DeviceDisconnected
+            or GameInputHResult.DeviceNotFound
+            or GameInputHResult.ObjectNoLongerExists)
         {
+            // 裝置可能在能力檢查與建立 effect 之間被拔除；依 Try 方法契約歸類為「不支援」而非向外拋出。
             effect = null;
             return false;
         }
-    }
-
-    /// <summary>
-    /// 嘗試建立 force feedback effect；不支援時不擲出例外。
-    /// </summary>
-    /// <param name="motorIndex">force feedback motor 索引。</param>
-    /// <param name="parameters">GameInput 原生參數。</param>
-    /// <param name="effect">成功時接收 force feedback effect。</param>
-    /// <returns>若裝置支援並成功建立 effect，傳回 true；否則傳回 false。</returns>
-    public bool TryCreateForceFeedbackEffect(uint motorIndex, GameInputForceFeedbackParams parameters, out GameInputForceFeedbackEffect? effect)
-    {
-        return TryCreateForceFeedbackEffect(motorIndex, in parameters, out effect);
     }
 
     /// <summary>
@@ -253,20 +246,23 @@ public sealed class GameInputDevice : IDisposable
     /// <summary>
     /// 嘗試依裝置能力設定 rumble 狀態。
     /// </summary>
+    /// <remarks>
+    /// 判斷式僅依裝置是否宣告支援任一 rumble motor，而非依請求強度是否為 0；因此明確傳入全部為 0
+    /// 的強度（例如要停止震動）在裝置支援 rumble 時仍會傳回 true。
+    /// </remarks>
     /// <param name="parameters">GameInput rumble 參數，強度必須介於 0.0 到 1.0。</param>
-    /// <returns>若裝置支援要求的 rumble motor 並已設定狀態，傳回 true；否則傳回 false。</returns>
+    /// <returns>若裝置支援任一要求的 rumble motor 並已設定狀態，傳回 true；若裝置不支援 rumble，傳回 false。</returns>
     public bool TrySetRumble(in GameInputRumbleParams parameters)
     {
         ValidateRumbleStrength(parameters);
 
         GameInputRumbleMotors supportedMotors = GetDeviceInfoSnapshot().SupportedRumbleMotors;
-        GameInputRumbleParams masked = MaskRumble(parameters, supportedMotors);
-        if (!HasActiveRumble(masked))
+        if (supportedMotors == GameInputRumbleMotors.GameInputRumbleNone)
         {
             return false;
         }
 
-        SetRumbleState(masked);
+        SetRumbleState(MaskRumble(parameters, supportedMotors));
         return true;
     }
 

@@ -3,20 +3,31 @@ using InputWeave.GameInput.Interop;
 namespace InputWeave.GameInput;
 
 /// <summary>
-/// 不持有原生讀取資料生命週期的鍵盤快照。
+/// 不持有原生讀取資料生命週期的讀取快照基底類別。
 /// </summary>
-public sealed class KeyboardReadingSnapshot
+public abstract class ReadingSnapshot
 {
-    internal KeyboardReadingSnapshot(ulong timestamp, GameInputKeyState[] keys)
+    private protected ReadingSnapshot(ulong timestamp)
     {
         Timestamp = timestamp;
-        Keys = Array.AsReadOnly((GameInputKeyState[])keys.Clone());
     }
 
     /// <summary>
     /// GameInput 時間戳記。
     /// </summary>
     public ulong Timestamp { get; }
+}
+
+/// <summary>
+/// 不持有原生讀取資料生命週期的鍵盤快照。
+/// </summary>
+public sealed class KeyboardReadingSnapshot : ReadingSnapshot
+{
+    internal KeyboardReadingSnapshot(ulong timestamp, GameInputKeyState[] keys)
+        : base(timestamp)
+    {
+        Keys = Array.AsReadOnly((GameInputKeyState[])keys.Clone());
+    }
 
     /// <summary>
     /// 目前按下或作用中的鍵盤按鍵狀態。
@@ -27,18 +38,13 @@ public sealed class KeyboardReadingSnapshot
 /// <summary>
 /// 不持有原生讀取資料生命週期的滑鼠快照。
 /// </summary>
-public sealed class MouseReadingSnapshot
+public sealed class MouseReadingSnapshot : ReadingSnapshot
 {
     internal MouseReadingSnapshot(ulong timestamp, GameInputMouseState state)
+        : base(timestamp)
     {
-        Timestamp = timestamp;
         State = state;
     }
-
-    /// <summary>
-    /// GameInput 時間戳記。
-    /// </summary>
-    public ulong Timestamp { get; }
 
     /// <summary>
     /// 滑鼠狀態。
@@ -49,18 +55,13 @@ public sealed class MouseReadingSnapshot
 /// <summary>
 /// 不持有原生讀取資料生命週期的感測器快照。
 /// </summary>
-public sealed class SensorsReadingSnapshot
+public sealed class SensorsReadingSnapshot : ReadingSnapshot
 {
     internal SensorsReadingSnapshot(ulong timestamp, GameInputSensorsState state)
+        : base(timestamp)
     {
-        Timestamp = timestamp;
         State = state;
     }
-
-    /// <summary>
-    /// GameInput 時間戳記。
-    /// </summary>
-    public ulong Timestamp { get; }
 
     /// <summary>
     /// 感測器狀態。
@@ -71,20 +72,15 @@ public sealed class SensorsReadingSnapshot
 /// <summary>
 /// 不持有原生讀取資料生命週期的一般 controller 快照。
 /// </summary>
-public sealed class ControllerReadingSnapshot
+public sealed class ControllerReadingSnapshot : ReadingSnapshot
 {
     internal ControllerReadingSnapshot(ulong timestamp, float[] axes, bool[] buttons, GameInputSwitchPosition[] switches)
+        : base(timestamp)
     {
-        Timestamp = timestamp;
         Axes = Array.AsReadOnly((float[])axes.Clone());
         Buttons = Array.AsReadOnly((bool[])buttons.Clone());
         Switches = Array.AsReadOnly((GameInputSwitchPosition[])switches.Clone());
     }
-
-    /// <summary>
-    /// GameInput 時間戳記。
-    /// </summary>
-    public ulong Timestamp { get; }
 
     /// <summary>
     /// Controller 軸狀態。
@@ -105,18 +101,13 @@ public sealed class ControllerReadingSnapshot
 /// <summary>
 /// 不持有原生讀取資料生命週期的 arcade stick 快照。
 /// </summary>
-public sealed class ArcadeStickReadingSnapshot
+public sealed class ArcadeStickReadingSnapshot : ReadingSnapshot
 {
     internal ArcadeStickReadingSnapshot(ulong timestamp, GameInputArcadeStickState state)
+        : base(timestamp)
     {
-        Timestamp = timestamp;
         State = state;
     }
-
-    /// <summary>
-    /// GameInput 時間戳記。
-    /// </summary>
-    public ulong Timestamp { get; }
 
     /// <summary>
     /// Arcade stick 狀態。
@@ -127,18 +118,13 @@ public sealed class ArcadeStickReadingSnapshot
 /// <summary>
 /// 不持有原生讀取資料生命週期的 flight stick 快照。
 /// </summary>
-public sealed class FlightStickReadingSnapshot
+public sealed class FlightStickReadingSnapshot : ReadingSnapshot
 {
     internal FlightStickReadingSnapshot(ulong timestamp, GameInputFlightStickState state)
+        : base(timestamp)
     {
-        Timestamp = timestamp;
         State = state;
     }
-
-    /// <summary>
-    /// GameInput 時間戳記。
-    /// </summary>
-    public ulong Timestamp { get; }
 
     /// <summary>
     /// Flight stick 狀態。
@@ -149,18 +135,13 @@ public sealed class FlightStickReadingSnapshot
 /// <summary>
 /// 不持有原生讀取資料生命週期的 racing wheel 快照。
 /// </summary>
-public sealed class RacingWheelReadingSnapshot
+public sealed class RacingWheelReadingSnapshot : ReadingSnapshot
 {
     internal RacingWheelReadingSnapshot(ulong timestamp, GameInputRacingWheelState state)
+        : base(timestamp)
     {
-        Timestamp = timestamp;
         State = state;
     }
-
-    /// <summary>
-    /// GameInput 時間戳記。
-    /// </summary>
-    public ulong Timestamp { get; }
 
     /// <summary>
     /// Racing wheel 狀態。
@@ -171,19 +152,14 @@ public sealed class RacingWheelReadingSnapshot
 /// <summary>
 /// 不持有原生 raw report 生命週期的 raw device report 快照。
 /// </summary>
-public sealed class RawDeviceReportSnapshot
+public sealed class RawDeviceReportSnapshot : ReadingSnapshot
 {
     internal RawDeviceReportSnapshot(ulong timestamp, GameInputRawDeviceReportInfo info, byte[] data)
+        : base(timestamp)
     {
-        Timestamp = timestamp;
         Info = info;
         Data = Array.AsReadOnly((byte[])data.Clone());
     }
-
-    /// <summary>
-    /// GameInput 時間戳記。
-    /// </summary>
-    public ulong Timestamp { get; }
 
     /// <summary>
     /// Raw device report 資訊。

@@ -10,6 +10,8 @@ public sealed class GameInputReading : IDisposable
 {
     private IGameInputReading? _native;
     private bool _disposed;
+    private GameInputKind? _cachedInputKind;
+    private ulong? _cachedTimestamp;
 
     internal GameInputReading(IGameInputReading native)
     {
@@ -27,22 +29,30 @@ public sealed class GameInputReading : IDisposable
     /// <summary>
     /// 讀取資料包含的輸入種類。
     /// </summary>
+    /// <remarks>
+    /// 同一筆讀取資料的輸入種類在其存續期間為固定值，此屬性會在同一個 <see cref="GameInputReading"/>
+    /// 執行個體上快取結果，避免重複的原生呼叫。
+    /// </remarks>
     public GameInputKind InputKind
     {
         get
         {
-            return Native.GetInputKind();
+            return _cachedInputKind ??= Native.GetInputKind();
         }
     }
 
     /// <summary>
     /// 讀取資料的 GameInput 時間戳記。
     /// </summary>
+    /// <remarks>
+    /// 同一筆讀取資料的時間戳記在其存續期間為固定值，此屬性會在同一個 <see cref="GameInputReading"/>
+    /// 執行個體上快取結果，避免重複的原生呼叫。
+    /// </remarks>
     public ulong Timestamp
     {
         get
         {
-            return Native.GetTimestamp();
+            return _cachedTimestamp ??= Native.GetTimestamp();
         }
     }
 

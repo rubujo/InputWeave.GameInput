@@ -43,6 +43,12 @@ public sealed class GameInputDeviceInfoSnapshot
     /// <summary>
     /// 原生固定欄位快照；所有指標欄位只供診斷，不應在快照外解參考。
     /// </summary>
+    /// <remarks>
+    /// 這個結構中的字串與陣列欄位（例如 <see cref="GameInputDeviceInfo.DisplayName"/>、
+    /// <see cref="GameInputDeviceInfo.PnpPath"/>）是指向原生記憶體的指標，生命週期綁定於原始裝置的底層 COM
+    /// 物件；裝置釋放後解參考會導致未定義行為。一般情境應改用本類別提供的
+    /// <see cref="DisplayName"/>、<see cref="PnpPath"/> 等已複製欄位，而非直接讀取 <see cref="Native"/> 的指標欄位。
+    /// </remarks>
     public GameInputDeviceInfo Native { get; }
 
     /// <summary>
@@ -242,36 +248,26 @@ public sealed class GameInputDeviceInfoSnapshot
             return Array.Empty<T>();
         }
 
-        int itemSize = SizeOf<T>();
+        Type type = typeof(T);
+        bool isEnum = type.IsEnum;
+        TypeCode underlyingTypeCode = isEnum ? Type.GetTypeCode(Enum.GetUnderlyingType(type)) : TypeCode.Empty;
+        int itemSize = isEnum ? Marshal.SizeOf(Enum.GetUnderlyingType(type)) : Marshal.SizeOf<T>();
+
         T[] values = new T[checked((int)count)];
         for (int index = 0; index < values.Length; index++)
         {
-            values[index] = ReadElement<T>(IntPtr.Add(pointer, checked(index * itemSize)));
+            IntPtr elementPointer = IntPtr.Add(pointer, checked(index * itemSize));
+            values[index] = isEnum
+                ? (T)Enum.ToObject(type, ReadUnderlyingEnumValue(elementPointer, underlyingTypeCode))
+                : Marshal.PtrToStructure<T>(elementPointer);
         }
 
         return values;
     }
 
-    private static int SizeOf<T>()
-        where T : struct
+    private static object ReadUnderlyingEnumValue(IntPtr pointer, TypeCode underlyingTypeCode)
     {
-        Type type = typeof(T);
-        return type.IsEnum
-            ? Marshal.SizeOf(Enum.GetUnderlyingType(type))
-            : Marshal.SizeOf<T>();
-    }
-
-    private static T ReadElement<T>(IntPtr pointer)
-        where T : struct
-    {
-        Type type = typeof(T);
-        if (!type.IsEnum)
-        {
-            return Marshal.PtrToStructure<T>(pointer);
-        }
-
-        Type underlyingType = Enum.GetUnderlyingType(type);
-        object value = Type.GetTypeCode(underlyingType) switch
+        return underlyingTypeCode switch
         {
             TypeCode.Byte => Marshal.ReadByte(pointer),
             TypeCode.SByte => unchecked((sbyte)Marshal.ReadByte(pointer)),
@@ -281,10 +277,8 @@ public sealed class GameInputDeviceInfoSnapshot
             TypeCode.UInt32 => unchecked((uint)Marshal.ReadInt32(pointer)),
             TypeCode.Int64 => Marshal.ReadInt64(pointer),
             TypeCode.UInt64 => unchecked((ulong)Marshal.ReadInt64(pointer)),
-            _ => throw new NotSupportedException($"不支援的 enum underlying type：{underlyingType.FullName}。")
+            _ => throw new NotSupportedException($"不支援的 enum underlying type：{underlyingTypeCode}。")
         };
-
-        return (T)Enum.ToObject(type, value);
     }
 }
 
@@ -308,6 +302,11 @@ public sealed class GameInputControllerInfoSnapshot
     /// <summary>
     /// 原生 controller 固定欄位快照；指標欄位只供診斷。
     /// </summary>
+    /// <remarks>
+    /// 這個結構中的陣列欄位（例如 <see cref="GameInputControllerInfo.ControllerAxisLabels"/>）是指向原生記憶體的指標，
+    /// 生命週期綁定於原始裝置的底層 COM 物件；裝置釋放後解參考會導致未定義行為。一般情境應改用本類別提供的
+    /// <see cref="AxisLabels"/>、<see cref="ButtonLabels"/>、<see cref="Switches"/> 等已複製欄位。
+    /// </remarks>
     public GameInputControllerInfo Native { get; }
 
     /// <summary>

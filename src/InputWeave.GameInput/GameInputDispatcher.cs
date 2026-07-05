@@ -29,6 +29,11 @@ public sealed class GameInputDispatcher : IDisposable
     /// <summary>
     /// 開啟 dispatcher wait handle。
     /// </summary>
+    /// <remarks>
+    /// 傳回的原生 handle 由呼叫端負責關閉；本函式庫沒有公開對應的關閉 API。一般情境應改用
+    /// <see cref="OpenSafeWaitHandle"/>，讓 <see cref="GameInputDispatcherWaitHandle"/> 以 <see cref="SafeHandle"/>
+    /// 管理 handle 生命週期，避免忘記關閉造成 handle 洩漏。
+    /// </remarks>
     /// <returns>操作完成後的查詢或建立結果。</returns>
     public IntPtr OpenWaitHandle()
     {
