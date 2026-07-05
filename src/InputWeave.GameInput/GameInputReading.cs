@@ -90,6 +90,24 @@ public sealed class GameInputReading : IDisposable
     }
 
     /// <summary>
+    /// 使用既有陣列緩衝區取得 controller 軸狀態，避免每影格分配。
+    /// </summary>
+    /// <param name="stateArray">接收狀態資料的 managed 陣列。</param>
+    /// <returns>原生 API 寫入的元素數。</returns>
+    public uint GetControllerAxisState(float[] stateArray)
+    {
+#if NET10_0_OR_GREATER
+        ArgumentNullException.ThrowIfNull(stateArray);
+#else
+        if (stateArray is null)
+        {
+            throw new ArgumentNullException(nameof(stateArray));
+        }
+#endif
+        return Native.GetControllerAxisState((uint)stateArray.Length, stateArray);
+    }
+
+    /// <summary>
     /// 取得 controller 按鈕狀態。
     /// </summary>
     /// <returns>操作完成後的查詢或建立結果。</returns>
@@ -110,6 +128,24 @@ public sealed class GameInputReading : IDisposable
         }
 
         return state;
+    }
+
+    /// <summary>
+    /// 使用既有 byte 陣列緩衝區取得 controller 按鈕狀態，避免每影格分配。
+    /// </summary>
+    /// <param name="stateArray">接收狀態資料的 managed byte 陣列。</param>
+    /// <returns>原生 API 寫入的元素數。</returns>
+    public uint GetControllerButtonState(byte[] stateArray)
+    {
+#if NET10_0_OR_GREATER
+        ArgumentNullException.ThrowIfNull(stateArray);
+#else
+        if (stateArray is null)
+        {
+            throw new ArgumentNullException(nameof(stateArray));
+        }
+#endif
+        return Native.GetControllerButtonState((uint)stateArray.Length, stateArray);
     }
 
     /// <summary>
@@ -136,6 +172,24 @@ public sealed class GameInputReading : IDisposable
     }
 
     /// <summary>
+    /// 使用既有陣列緩衝區取得 controller switch 狀態，避免每影格分配。
+    /// </summary>
+    /// <param name="stateArray">接收狀態資料的 managed 陣列。</param>
+    /// <returns>原生 API 寫入的元素數。</returns>
+    public uint GetControllerSwitchState(GameInputSwitchPosition[] stateArray)
+    {
+#if NET10_0_OR_GREATER
+        ArgumentNullException.ThrowIfNull(stateArray);
+#else
+        if (stateArray is null)
+        {
+            throw new ArgumentNullException(nameof(stateArray));
+        }
+#endif
+        return Native.GetControllerSwitchState((uint)stateArray.Length, stateArray);
+    }
+
+    /// <summary>
     /// 取得鍵盤按鍵狀態。
     /// </summary>
     /// <returns>操作完成後的查詢或建立結果。</returns>
@@ -156,6 +210,24 @@ public sealed class GameInputReading : IDisposable
 
         Array.Resize(ref state, checked((int)written));
         return state;
+    }
+
+    /// <summary>
+    /// 使用既有陣列緩衝區取得鍵盤按鍵狀態，避免每影格分配。
+    /// </summary>
+    /// <param name="stateArray">接收狀態資料的 managed 陣列。</param>
+    /// <returns>原生 API 寫入的元素數。</returns>
+    public uint GetKeyState(GameInputKeyState[] stateArray)
+    {
+#if NET10_0_OR_GREATER
+        ArgumentNullException.ThrowIfNull(stateArray);
+#else
+        if (stateArray is null)
+        {
+            throw new ArgumentNullException(nameof(stateArray));
+        }
+#endif
+        return Native.GetKeyState((uint)stateArray.Length, stateArray);
     }
 
     /// <summary>
@@ -407,7 +479,10 @@ public sealed class GameInputReading : IDisposable
 
         if (_native is not null)
         {
-            Marshal.ReleaseComObject(_native);
+            if (Marshal.IsComObject(_native))
+            {
+                _ = Marshal.ReleaseComObject(_native);
+            }
             _native = null;
         }
 
