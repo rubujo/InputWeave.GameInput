@@ -2,6 +2,6 @@
   <ItemGroup>
     <PackageVersion Include="Microsoft.GameInput" Version="3.4.218" />
     <PackageVersion Include="Microsoft.NETFramework.ReferenceAssemblies.net48" Version="1.0.3" />
-    <PackageVersion Include="MSTest" Version="4.0.2" />
+    <PackageVersion Include="MSTest" Version="4.2.3" />
   </ItemGroup>
 </Project>
