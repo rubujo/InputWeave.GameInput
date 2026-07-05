@@ -86,6 +86,8 @@ if (sensors is not null)
 
 這個片段示範建立分派器、Safe Wait Handle 與裝置回呼。沒有插拔或狀態變化時，不收到回呼是正常結果；回呼內的 `GameInputDevice` 只在回呼執行期間有效，不要存起來跨回呼使用。
 
+回呼委派拋出的例外不會跨越原生邊界導致行程崩潰，而是會被攔截並改觸發 `GameInputClient.UnhandledCallbackException` 靜態事件；若沒有訂閱這個事件，例外會被靜默吞掉，建議在應用程式啟動時訂閱以利診斷。此外，**不要在回呼執行緒中同步呼叫 `registration.Dispose()`**（例如想在收到第一次事件後立即取消訂閱）——這會拋出 `InvalidOperationException`。請改為在回呼中設定旗標，於其他執行緒或下一次 frame 迴圈再呼叫 `Dispose()`。
+
 ```csharp
 using System;
 using System.Diagnostics;
@@ -128,7 +130,7 @@ static void OnDeviceChanged(
 
 ## Reading callback 轉快照
 
-Callback handler 內收到的 `GameInputReading` 只應在 handler 執行期間使用。若資料要交給其他執行緒或稍後處理，請立即轉成 snapshot。
+Callback handler 內收到的 `GameInputReading` 只應在 handler 執行期間使用。若資料要交給其他執行緒或稍後處理，請立即轉成 snapshot。回呼委派的例外處理方式與同步取消註冊的限制，請參考前一節「裝置熱插拔與回呼」的說明。
 
 ```csharp
 using System;
