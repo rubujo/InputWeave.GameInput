@@ -39,7 +39,15 @@ internal sealed class EventObservable<T>(Action? onFirstSubscribe = null, Action
                 _observers.Add(observer);
                 if (wasEmpty)
                 {
-                    onFirstSubscribe?.Invoke();
+                    try
+                    {
+                        onFirstSubscribe?.Invoke();
+                    }
+                    catch
+                    {
+                        _observers.Remove(observer);
+                        throw;
+                    }
                 }
             }
         }

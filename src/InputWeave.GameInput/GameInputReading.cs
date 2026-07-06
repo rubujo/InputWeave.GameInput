@@ -13,6 +13,12 @@ public sealed class GameInputReading : IDisposable
     private GameInputKind? _cachedInputKind;
     private ulong? _cachedTimestamp;
 
+#if NET10_0_OR_GREATER
+    private readonly System.Threading.Lock _cacheSyncRoot = new();
+#else
+    private readonly object _cacheSyncRoot = new();
+#endif
+
     internal GameInputReading(IGameInputReading native)
     {
         _native = native;
@@ -37,7 +43,15 @@ public sealed class GameInputReading : IDisposable
     {
         get
         {
-            return _cachedInputKind ??= Native.GetInputKind();
+            if (_cachedInputKind is { } cached)
+            {
+                return cached;
+            }
+
+            lock (_cacheSyncRoot)
+            {
+                return _cachedInputKind ??= Native.GetInputKind();
+            }
         }
     }
 
@@ -52,7 +66,15 @@ public sealed class GameInputReading : IDisposable
     {
         get
         {
-            return _cachedTimestamp ??= Native.GetTimestamp();
+            if (_cachedTimestamp is { } cached)
+            {
+                return cached;
+            }
+
+            lock (_cacheSyncRoot)
+            {
+                return _cachedTimestamp ??= Native.GetTimestamp();
+            }
         }
     }
 

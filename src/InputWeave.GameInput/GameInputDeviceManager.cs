@@ -248,7 +248,15 @@ public sealed class GameInputDeviceManager : IDisposable
             lock (_pushLock)
             {
                 _deviceChangedHandlers += value;
-                AddPushSubscriberLocked();
+                try
+                {
+                    AddPushSubscriberLocked();
+                }
+                catch
+                {
+                    _deviceChangedHandlers -= value;
+                    throw;
+                }
             }
         }
         remove
@@ -626,12 +634,20 @@ public sealed class GameInputDeviceManager : IDisposable
         _pushSubscriberCount++;
         if (_deviceEvents is null)
         {
-            _deviceEvents = _client.RegisterDeviceCallback(
-                null,
-                s_defaultInputKinds,
-                GameInputDeviceStatus.GameInputDeviceAnyStatus,
-                GameInputEnumerationKind.GameInputAsyncEnumeration,
-                EnqueueDeviceEvent);
+            try
+            {
+                _deviceEvents = _client.RegisterDeviceCallback(
+                    null,
+                    s_defaultInputKinds,
+                    GameInputDeviceStatus.GameInputDeviceAnyStatus,
+                    GameInputEnumerationKind.GameInputAsyncEnumeration,
+                    EnqueueDeviceEvent);
+            }
+            catch
+            {
+                _pushSubscriberCount--;
+                throw;
+            }
         }
     }
 

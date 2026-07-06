@@ -829,7 +829,7 @@ public sealed class GameInputClient : IDisposable
 
         if (disposed)
         {
-            registration.Dispose();
+            _ = registration.DisposeSafely();
         }
 
         return registration;
