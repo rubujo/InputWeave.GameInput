@@ -52,9 +52,10 @@ $expectedGeneratedFiles = @(
     'GameInputConstants.g.cs',
     'GameInputHResult.g.cs',
     'GameInputIids.g.cs',
-    'GameInputCallbacks.g.cs',
+    'GameInputCallbacks.NetFramework.g.cs',
     'GameInputStructs.g.cs',
-    'GameInputNativeInterfaces.g.cs'
+    'GameInputNativeInterfaces.NetFramework.g.cs',
+    'GameInputNativeInterfaces.Net10.g.cs'
 )
 
 $actualGeneratedFiles = @(Get-ChildItem -LiteralPath $actualGeneratedDir -File | Where-Object { $_.Name.EndsWith('.g.cs', [System.StringComparison]::Ordinal) -or $_.Name -eq 'gameinput-abi-manifest.json' } | Select-Object -ExpandProperty Name | Sort-Object)
@@ -98,4 +99,27 @@ if (-not @($manifest.hResults | Where-Object { $_.name -eq 'GAMEINPUT_E_INPUT_KI
     throw 'ABI manifest 缺少 GAMEINPUT_E_INPUT_KIND_NOT_PRESENT。'
 }
 
-Write-Information 'GameInput baseline、redist 雜湊、低階 interop 產生檔與 ABI manifest 驗證通過。' -InformationAction Continue
+$vtableSourcePath = Join-Path $actualGeneratedDir 'GameInputNativeInterfaces.Net10.g.cs'
+$vtableSource = Get-Content -LiteralPath $vtableSourcePath -Raw -Encoding utf8
+foreach ($interfaceDefinition in $manifest.interfaces)
+{
+    $vtableStructPattern = "internal unsafe struct $($interfaceDefinition.name)Vtbl\s*\{(?<body>.*?)\}"
+    $vtableMatch = [System.Text.RegularExpressions.Regex]::Match($vtableSource, $vtableStructPattern, [System.Text.RegularExpressions.RegexOptions]::Singleline)
+    if (-not $vtableMatch.Success)
+    {
+        throw "GameInputNativeInterfaces.Net10.g.cs 缺少 $($interfaceDefinition.name)Vtbl 結構。"
+    }
+
+    $methodNamePattern = 'delegate\*\s+unmanaged\[Stdcall\]<[^>]*>\s+(?<name>\w+);'
+    $vtableMethodNames = @([System.Text.RegularExpressions.Regex]::Matches($vtableMatch.Groups['body'].Value, $methodNamePattern) |
+        ForEach-Object { $_.Groups['name'].Value } |
+        Where-Object { $_ -notin @('QueryInterface', 'AddRef', 'Release') })
+    $expectedMethodNames = @($interfaceDefinition.methods | ForEach-Object { $_.name })
+
+    if (@(Compare-Object -ReferenceObject $expectedMethodNames -DifferenceObject $vtableMethodNames -SyncWindow 0).Count -ne 0)
+    {
+        throw "$($interfaceDefinition.name)Vtbl 的方法順序與 ABI manifest 不一致，vtable slot 順序錯誤會導致執行期呼叫錯誤的原生方法。"
+    }
+}
+
+Write-Information 'GameInput baseline、redist 雜湊、低階 interop 產生檔、ABI manifest 與 net10 vtable 順序驗證通過。' -InformationAction Continue

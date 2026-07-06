@@ -146,9 +146,9 @@ public sealed class GameInputDevice : IDisposable
             Marshal.StructureToPtr(parameters, pointer, fDeleteOld: false);
             int hResult = Native.CreateForceFeedbackEffect(motorIndex, pointer, out IGameInputForceFeedbackEffect? effect);
             GameInputException.ThrowIfFailed(hResult);
-            return effect is null
-                ? throw new GameInputException(GameInputHResult.FeedbackNotSupported)
-                : new GameInputForceFeedbackEffect(effect);
+            return effect is { } effectValue
+                ? new GameInputForceFeedbackEffect(effectValue)
+                : throw new GameInputException(GameInputHResult.FeedbackNotSupported);
         }
         finally
         {
@@ -307,9 +307,16 @@ public sealed class GameInputDevice : IDisposable
     /// <summary>
     /// 清除震動狀態。
     /// </summary>
+    /// <remarks>
+    /// GameInput 原生 API 文件把 <c>SetRumbleState</c> 的參數標為選用、可傳入 <c>nullptr</c> 表示停止震動，
+    /// 但實測發現部分裝置的驅動／執行階段實作在收到空指標時會觸發原生端記憶體存取違規（這類存取違規在
+    /// .NET Core / .NET 5+ 是處理序毀損狀態例外，無法用 managed 例外處理接住，會直接讓整個處理序當掉）。
+    /// 因此這裡改傳入全欄位為零的 <see cref="GameInputRumbleParams"/>（語意等價於停止震動），
+    /// 讓原生呼叫一律收到指向合法配置記憶體的指標，避免觸發這個已知的原生端問題。
+    /// </remarks>
     public void ClearRumbleState()
     {
-        Native.SetRumbleState(IntPtr.Zero);
+        SetRumbleState(default(GameInputRumbleParams));
     }
 
     /// <summary>
@@ -362,9 +369,9 @@ public sealed class GameInputDevice : IDisposable
     {
         int hResult = Native.CreateInputMapper(out IGameInputMapper? mapper);
         GameInputException.ThrowIfFailed(hResult);
-        return mapper is null
-            ? throw new GameInputException(GameInputHResult.ObjectNoLongerExists)
-            : new GameInputMapper(mapper);
+        return mapper is { } mapperValue
+            ? new GameInputMapper(mapperValue)
+            : throw new GameInputException(GameInputHResult.ObjectNoLongerExists);
     }
 
     /// <summary>
@@ -382,7 +389,17 @@ public sealed class GameInputDevice : IDisposable
             return indexes;
         }
 
+#if NET10_0_OR_GREATER
+        unsafe
+        {
+            fixed (byte* pointer = indexes)
+            {
+                hResult = Native.GetExtraAxisIndexes(inputKind, count, (IntPtr)pointer);
+            }
+        }
+#else
         hResult = Native.GetExtraAxisIndexes(inputKind, count, indexes);
+#endif
         GameInputException.ThrowIfFailed(hResult);
         return indexes;
     }
@@ -402,7 +419,17 @@ public sealed class GameInputDevice : IDisposable
             return indexes;
         }
 
+#if NET10_0_OR_GREATER
+        unsafe
+        {
+            fixed (byte* pointer = indexes)
+            {
+                hResult = Native.GetExtraButtonIndexes(inputKind, count, (IntPtr)pointer);
+            }
+        }
+#else
         hResult = Native.GetExtraButtonIndexes(inputKind, count, indexes);
+#endif
         GameInputException.ThrowIfFailed(hResult);
         return indexes;
     }
@@ -417,9 +444,9 @@ public sealed class GameInputDevice : IDisposable
     {
         int hResult = Native.CreateRawDeviceReport(reportId, reportKind, out IGameInputRawDeviceReport? report);
         GameInputException.ThrowIfFailed(hResult);
-        return report is null
-            ? throw new GameInputException(GameInputHResult.ObjectNoLongerExists)
-            : new GameInputRawDeviceReport(report);
+        return report is { } reportValue
+            ? new GameInputRawDeviceReport(reportValue)
+            : throw new GameInputException(GameInputHResult.ObjectNoLongerExists);
     }
 
     /// <summary>
@@ -453,7 +480,11 @@ public sealed class GameInputDevice : IDisposable
 
         if (_native is not null)
         {
+#if NET10_0_OR_GREATER
+            _native.Value.Release();
+#else
             Marshal.ReleaseComObject(_native);
+#endif
             _native = null;
         }
 

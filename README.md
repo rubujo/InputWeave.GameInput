@@ -21,7 +21,7 @@
 
 ## 支援範圍
 
-本套件支援一般 .NET Framework 與 .NET Windows 應用程式。`net10.0-windows` 與 `net48` 皆維持受控包裝與 COM interop 路徑；目前不宣告 NativeAOT、trimming 或 single-file 發佈相容性，也不包含原生橋接 DLL。若未來需要正式支援這些發佈模式，會另行規劃 native shim 或 ComWrappers source generation。
+本套件支援一般 .NET Framework 與 .NET Windows 應用程式。`net48` 維持傳統 `[ComImport]` COM interop 路徑；`net10.0-windows` 改用不依賴 CLR 內建 COM 封送的裸 vtable 投影（`delegate* unmanaged` 函式指標 + 手動 `AddRef`/`Release`），設計上與 NativeAOT／trimming 相容，巢狀 COM 物件也能確定性釋放。這條路徑已用真實 GameInput 執行階段驗證裝置列舉、回呼與釋放行為，但尚未實際跑過 `dotnet publish -p:PublishAot=true` 端對端驗證，也不包含原生橋接 DLL；正式宣告 NativeAOT 相容前，建議先在目標環境自行驗證一輪。
 
 ## 基本使用
 
@@ -44,7 +44,17 @@ if (manager.TryGetFirstGamepad(out GameInputDevice? gamepadDevice, out GameInput
 _ = gamepadInfo?.DisplayName;
 ```
 
-裝置管理、各輸入種類快照、分派器、Safe Wait Handle、Rumble scope、Force Feedback 與原始報告 API 請參考 [GameInput 常見情境指南](docs/gameinput-cookbook.md)。
+裝置管理、各輸入種類快照、分派器、Safe Wait Handle、Rumble scope、Force Feedback、原始報告、非同步 API、事件／`IObservable<T>` 與依賴注入註冊，請參考 [GameInput 常見情境指南](docs/gameinput-cookbook.md)。
+
+## 何時該使用低階 `InputWeave.GameInput.Interop`
+
+高階 API（`GameInputDeviceManager`、`GameInputClient`、`GameInputDevice` 等）涵蓋絕大多數情境，一般使用不需要接觸 `InputWeave.GameInput.Interop` 命名空間。以下情境才需要往下降到低階層：
+
+- 需要呼叫尚未包裝成高階便利方法的原生 GameInput API（可對照 [docs/gameinput-api-coverage.md](docs/gameinput-api-coverage.md) 確認涵蓋範圍）。
+- 需要自訂原生結構的封送方式，或要整合既有的原生 C++/COM 呼叫端。
+- 需要診斷層級的原始資料（例如 `GameInputDeviceInfo` 的原生指標欄位），而不是高階快照已複製的欄位。
+
+`InputWeave.GameInput.Interop` 內的列舉、常數與結構是公開型別，可直接使用；COM 介面本身則是 `internal`，一般不會也不需要直接操作。多數高階包裝類別會透過 `NativeInterface` 內部屬性存取對應的低階介面，但這個逃生口主要是給函式庫內部使用；一般應用程式若發現高階 API 涵蓋不到的情境，建議優先回報需求，而不是依賴內部實作細節。
 
 ## 範例
 

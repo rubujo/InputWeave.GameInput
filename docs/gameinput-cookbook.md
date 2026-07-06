@@ -248,9 +248,99 @@ byte[] data = report.GetData();
 Console.WriteLine($"Raw report {report.Info.Id}: {data.Length} bytes");
 ```
 
+## 非同步 API
+
+`RefreshDevicesAsync`／`EnumerateDevicesAsync` 只是把阻塞式列舉包在 `Task.Run` 中執行，方便 UI 執行緒呼叫；`WaitForDeviceEventAsync`／`WaitForReadingAsync` 則是真正等待原生事件的非同步方法，內部註冊一次性回呼，完成或取消後會在背景執行緒解除註冊。
+
+```csharp
+using System;
+using System.Threading;
+using System.Threading.Tasks;
+using InputWeave.GameInput;
+using InputWeave.GameInput.Interop;
+
+using GameInputDeviceManager manager = GameInputDeviceManager.Create();
+IReadOnlyList<GameInputDeviceInfoSnapshot> snapshots = await manager.RefreshDevicesAsync();
+
+using CancellationTokenSource timeout = new(TimeSpan.FromSeconds(5));
+try
+{
+    GameInputDeviceManagerEvent changed = await manager.WaitForDeviceEventAsync(cancellationToken: timeout.Token);
+    Console.WriteLine($"裝置事件：{changed.PreviousStatus} -> {changed.CurrentStatus}");
+}
+catch (OperationCanceledException)
+{
+    Console.WriteLine("5 秒內沒有裝置事件。");
+}
+```
+
+`WaitForReadingAsync`／`WaitForGamepadAsync` 的轉換委派會在原生回呼「仍然有效」的期間內執行；傳入的 `GameInputReading` 只在回呼執行期間有效，只能在委派內轉換成快照後回傳，不可以把 `GameInputReading` 本身或其原生生命週期往外傳遞。
+
+## 事件與 IObservable 訂閱
+
+`GameInputDeviceManager.DeviceChanged` 是標準 C# event；`DeviceChanges` 則是不依賴 `System.Reactive` 的 `IObservable<T>`。兩者共用同一套裝置事件監看機制，訂閱／取消訂閱會自動管理啟動與停止，處理常式的例外會透過 `GameInputClient.UnhandledCallbackException` 攔截，不會拋出到原生回呼邊界。
+
+```csharp
+using System;
+using InputWeave.GameInput;
+
+using GameInputDeviceManager manager = GameInputDeviceManager.Create();
+
+manager.DeviceChanged += (_, e) => Console.WriteLine($"event：{e.PreviousStatus} -> {e.CurrentStatus}");
+
+// DeviceChanges 是純 IObservable<T>（BCL 內建介面，未依賴 System.Reactive），
+// 訂閱時需要自行提供 IObserver<T> 實作或委派轉接器。
+using IDisposable subscription = manager.DeviceChanges.Subscribe(new DeviceChangeObserver());
+
+sealed class DeviceChangeObserver : IObserver<GameInputDeviceManagerEvent>
+{
+    public void OnCompleted() { }
+    public void OnError(Exception error) { }
+    public void OnNext(GameInputDeviceManagerEvent value) =>
+        Console.WriteLine($"observable：{value.PreviousStatus} -> {value.CurrentStatus}");
+}
+```
+
+手動呼叫 `StartDeviceEvents()`／`StopDeviceEvents()` 跟訂閱 `DeviceChanged`／`DeviceChanges` 可以混用：手動啟動的監看不會被事件訂閱的取消動作意外停止；手動停止後若仍有訂閱者，下一次新增訂閱者時會自動恢復監看。`manager.Dispose()` 時，所有 `DeviceChanges` 訂閱者都會收到一次 `IObserver<T>.OnCompleted()`；在 `Dispose()` 之後才呼叫 `Subscribe` 的新訂閱者，會立即收到 `OnCompleted()` 而不會收到任何 `OnNext()`。
+
+## 依賴注入註冊
+
+`AddGameInputClient()`／`AddGameInputDeviceManager()` 這兩個 `IServiceCollection` 擴充方法以 Singleton 註冊對應型別，容器釋放時會一併釋放 GameInput 資源。
+
+```csharp
+using InputWeave.GameInput;
+using Microsoft.Extensions.DependencyInjection;
+
+ServiceCollection services = new();
+services.AddGameInputDeviceManager();
+
+using ServiceProvider provider = services.BuildServiceProvider();
+GameInputDeviceManager manager = provider.GetRequiredService<GameInputDeviceManager>();
+```
+
+## 低階 Interop 逃生口
+
+高階 API 涵蓋不到的情境（例如尚未包裝的原生方法、自訂封送）才需要接觸 `InputWeave.GameInput.Interop`。列舉、常數與結構是公開型別，可直接搭配高階 API 使用；COM 介面本身是 `internal`，屬於函式庫內部實作細節。
+
+```csharp
+using InputWeave.GameInput;
+using InputWeave.GameInput.Interop;
+
+using GameInputDeviceManager manager = GameInputDeviceManager.Create();
+manager.RefreshDevices();
+
+if (manager.TryGetFirstGamepad(out GameInputDevice? device, out GameInputDeviceInfoSnapshot? info))
+{
+    // GameInputKind、GameInputDeviceStatus 等列舉與 GameInputDeviceInfo 結構都是公開型別，
+    // 可以直接讀取原生固定欄位快照做進階診斷。
+    GameInputDeviceInfo native = info!.Value.Native;
+    Console.WriteLine($"SupportedInput（原生列舉值）：{(int)native.SupportedInput}");
+}
+```
+
 ## 執行階段缺失排除
 
-`GameInputRuntime.TryProbe` 可在建立 client 前檢查目前載入原則、候選執行階段、HRESULT 與 Win32 錯誤碼。InputWeave 會用受控載入器對齊 Microsoft C++ 載入器的執行階段選擇行為，但包裝套件不會散佈或安裝 `GameInputRedist.msi`、`GameInputRedist.dll` 或原生橋接 DLL；應用程式安裝流程仍需負責安裝 Microsoft 支援的 GameInput 可轉散發套件。目前也不宣告 NativeAOT、trimming 或 single-file 發佈相容性。
+`GameInputRuntime.TryProbe` 可在建立 client 前檢查目前載入原則、候選執行階段、HRESULT 與 Win32 錯誤碼。InputWeave 會用受控載入器對齊 Microsoft C++ 載入器的執行階段選擇行為，但包裝套件不會散佈或安裝 `GameInputRedist.msi`、`GameInputRedist.dll` 或原生橋接 DLL；應用程式安裝流程仍需負責安裝 Microsoft 支援的 GameInput 可轉散發套件。`net10.0-windows` 分支已改用與 NativeAOT／trimming 相容的裸 vtable 投影，但目前尚未實際跑過 `dotnet publish -p:PublishAot=true` 端對端驗證。
 
 ```csharp
 using System;

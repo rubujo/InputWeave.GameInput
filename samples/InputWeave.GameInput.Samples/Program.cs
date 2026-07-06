@@ -1,16 +1,39 @@
 using System.Diagnostics;
 using InputWeave.GameInput;
 using InputWeave.GameInput.Interop;
+using Microsoft.Extensions.DependencyInjection;
 
 Console.OutputEncoding = System.Text.Encoding.UTF8;
 
-bool enableRumble = args.Any(static argument => string.Equals(argument, "--rumble", StringComparison.OrdinalIgnoreCase));
-string? unknownArgument = args.FirstOrDefault(static argument =>
-    !string.Equals(argument, "--rumble", StringComparison.OrdinalIgnoreCase) &&
-    !string.Equals(argument, "--help", StringComparison.OrdinalIgnoreCase) &&
-    !string.Equals(argument, "-h", StringComparison.OrdinalIgnoreCase));
+string[] knownFlags =
+[
+    "--rumble",
+    "--forcefeedback",
+    "--rawreport",
+    "--mapping",
+    "--async",
+    "--events",
+    "--di",
+    "--help",
+    "-h"
+];
 
-if (args.Any(static argument => string.Equals(argument, "--help", StringComparison.OrdinalIgnoreCase) || string.Equals(argument, "-h", StringComparison.OrdinalIgnoreCase)))
+bool HasFlag(string flag)
+{
+    return args.Any(argument => string.Equals(argument, flag, StringComparison.OrdinalIgnoreCase));
+}
+
+bool enableRumble = HasFlag("--rumble");
+bool enableForceFeedback = HasFlag("--forcefeedback");
+bool enableRawReport = HasFlag("--rawreport");
+bool enableMapping = HasFlag("--mapping");
+bool enableAsync = HasFlag("--async");
+bool enableEvents = HasFlag("--events");
+bool enableDi = HasFlag("--di");
+
+string? unknownArgument = args.FirstOrDefault(argument => !knownFlags.Any(flag => string.Equals(argument, flag, StringComparison.OrdinalIgnoreCase)));
+
+if (HasFlag("--help") || HasFlag("-h"))
 {
     PrintUsage();
     return;
@@ -35,6 +58,36 @@ try
     PrintOtherInputSnapshots(manager);
     DemonstrateDispatcherAndCallback();
     DemonstrateHapticsAndRumble(manager, enableRumble);
+
+    if (enableForceFeedback)
+    {
+        DemonstrateForceFeedback(manager);
+    }
+
+    if (enableRawReport)
+    {
+        DemonstrateRawReport(manager);
+    }
+
+    if (enableMapping)
+    {
+        DemonstrateMapping(manager);
+    }
+
+    if (enableAsync)
+    {
+        await DemonstrateAsyncApisAsync(manager);
+    }
+
+    if (enableEvents)
+    {
+        DemonstrateEventsAndObservable(manager);
+    }
+
+    if (enableDi)
+    {
+        DemonstrateDependencyInjection();
+    }
 }
 catch (DllNotFoundException ex)
 {
@@ -62,8 +115,21 @@ static void PrintUsage()
     Console.WriteLine("用法：");
     Console.WriteLine("  dotnet run --project samples/InputWeave.GameInput.Samples");
     Console.WriteLine("  dotnet run --project samples/InputWeave.GameInput.Samples -- --rumble");
+    Console.WriteLine("  dotnet run --project samples/InputWeave.GameInput.Samples -- --forcefeedback");
+    Console.WriteLine("  dotnet run --project samples/InputWeave.GameInput.Samples -- --rawreport");
+    Console.WriteLine("  dotnet run --project samples/InputWeave.GameInput.Samples -- --mapping");
+    Console.WriteLine("  dotnet run --project samples/InputWeave.GameInput.Samples -- --async");
+    Console.WriteLine("  dotnet run --project samples/InputWeave.GameInput.Samples -- --events");
+    Console.WriteLine("  dotnet run --project samples/InputWeave.GameInput.Samples -- --di");
     Console.WriteLine();
-    Console.WriteLine("預設只做唯讀列舉、polling 與 callback 示範。傳入 --rumble 才會短暫觸發支援裝置的低強度震動。");
+    Console.WriteLine("預設只做唯讀列舉、polling 與 callback 示範。各旗標可疊加使用，示範對應的進階功能：");
+    Console.WriteLine("  --rumble        對支援裝置短暫輸出低強度震動。");
+    Console.WriteLine("  --forcefeedback 建立並執行一個明確的 force feedback effect。");
+    Console.WriteLine("  --rawreport     讀取並印出目前 raw device report 的原始位元組。");
+    Console.WriteLine("  --mapping       建立 input mapper 並查詢 gamepad 按鈕/軸映射資訊。");
+    Console.WriteLine("  --async         示範 RefreshDevicesAsync/WaitForGamepadAsync 等非同步 API。");
+    Console.WriteLine("  --events        示範 DeviceChanged event 與 DeviceChanges/IObservable 訂閱。");
+    Console.WriteLine("  --di            示範透過 ServiceCollection 以 DI 註冊並解析 GameInputDeviceManager。");
 }
 
 static void PrintHeader(bool enableRumble)
@@ -105,8 +171,7 @@ static void PrintGamepadSnapshot(GameInputDeviceManager manager)
         return;
     }
 
-    GamepadReadingSnapshot? gamepad = manager.GetCurrentGamepad(device);
-    if (gamepad is null)
+    if (manager.GetCurrentGamepad(device) is not { } gamepad)
     {
         Console.WriteLine($"已找到 gamepad 裝置「{GetDisplayName(snapshot)}」，但目前沒有可讀取的 gamepad snapshot。");
         Console.WriteLine("如果應用程式需要背景輸入，請在實際程式中設定合適的 focus policy。");
@@ -125,24 +190,20 @@ static void PrintOtherInputSnapshots(GameInputDeviceManager manager)
 {
     WriteSection("其他輸入快照");
 
-    KeyboardReadingSnapshot? keyboard = manager.GetCurrentKeyboard();
-    MouseReadingSnapshot? mouse = manager.GetCurrentMouse();
-    SensorsReadingSnapshot? sensors = manager.GetCurrentSensors();
-
     bool printed = false;
-    if (keyboard is not null)
+    if (manager.GetCurrentKeyboard() is { } keyboard)
     {
         Console.WriteLine($"Keyboard：目前作用中按鍵 {keyboard.Keys.Count} 個。");
         printed = true;
     }
 
-    if (mouse is not null)
+    if (manager.GetCurrentMouse() is { } mouse)
     {
         Console.WriteLine($"Mouse：Buttons={mouse.State.Buttons}, Position=({mouse.State.PositionX}, {mouse.State.PositionY})。");
         printed = true;
     }
 
-    if (sensors is not null)
+    if (manager.GetCurrentSensors() is { } sensors)
     {
         Console.WriteLine($"Sensors：OrientationW={sensors.State.OrientationW:F2}, Heading={sensors.State.HeadingInDegreesFromMagneticNorth:F2}。");
         printed = true;
@@ -179,7 +240,7 @@ static void DemonstrateDispatcherAndCallback()
         GameInputKind.GameInputKindGamepad,
         reading =>
         {
-            if (!reading.TryGetGamepadSnapshot(out GamepadReadingSnapshot? snapshot))
+            if (!reading.TryGetGamepadSnapshot(out GamepadReadingSnapshot? snapshot) || snapshot is not { } snapshotValue)
             {
                 return;
             }
@@ -187,7 +248,7 @@ static void DemonstrateDispatcherAndCallback()
             int count = Interlocked.Increment(ref readingCallbackCount);
             if (count <= 3)
             {
-                Console.WriteLine($"Reading callback：{snapshot!.Timestamp} Buttons={snapshot.State.Buttons}");
+                Console.WriteLine($"Reading callback：{snapshotValue.Timestamp} Buttons={snapshotValue.State.Buttons}");
             }
         });
 
@@ -228,8 +289,8 @@ static void DemonstrateHapticsAndRumble(GameInputDeviceManager manager, bool ena
 
     Console.WriteLine($"選用裝置：{GetDisplayName(snapshot)}");
 
-    Console.WriteLine(device!.TryGetHapticInfoSnapshot(out GameInputHapticInfoSnapshot? haptic)
-        ? $"Haptic endpoint：{haptic!.AudioEndpointId} / Locations：{haptic.Locations.Count}"
+    Console.WriteLine(device!.TryGetHapticInfoSnapshot(out GameInputHapticInfoSnapshot? haptic) && haptic is { } hapticValue
+        ? $"Haptic endpoint：{hapticValue.AudioEndpointId} / Locations：{hapticValue.Locations.Count}"
         : "此裝置沒有 haptic 資訊。");
 
     if (!enableRumble)
@@ -238,7 +299,7 @@ static void DemonstrateHapticsAndRumble(GameInputDeviceManager manager, bool ena
         return;
     }
 
-    if (snapshot!.SupportedRumbleMotors == GameInputRumbleMotors.GameInputRumbleNone)
+    if (snapshot!.Value.SupportedRumbleMotors == GameInputRumbleMotors.GameInputRumbleNone)
     {
         Console.WriteLine("此裝置未宣告支援 rumble motor；略過震動測試。");
         return;
@@ -258,7 +319,7 @@ static void DemonstrateHapticsAndRumble(GameInputDeviceManager manager, bool ena
         }
 
         Thread.Sleep(250);
-        Console.WriteLine($"已對支援馬達輸出短暫低強度震動：{snapshot.SupportedRumbleMotors}");
+        Console.WriteLine($"已對支援馬達輸出短暫低強度震動：{snapshot.Value.SupportedRumbleMotors}");
     }
     catch (GameInputException ex)
     {
@@ -266,13 +327,165 @@ static void DemonstrateHapticsAndRumble(GameInputDeviceManager manager, bool ena
     }
 }
 
+static void DemonstrateForceFeedback(GameInputDeviceManager manager)
+{
+    WriteSection("Force feedback");
+
+    if (!manager.TryGetFirstGamepad(out GameInputDevice? device, out GameInputDeviceInfoSnapshot? snapshot))
+    {
+        Console.WriteLine("目前沒有可測試 force feedback 的裝置。");
+        return;
+    }
+
+    GameInputForceFeedbackEnvelope envelope = GameInputForceFeedback.Envelope(sustainDuration: 250_000);
+    GameInputForceFeedbackMagnitude magnitude = GameInputForceFeedback.Magnitude(normal: 0.25f);
+    GameInputForceFeedbackParams effectParams = GameInputForceFeedback.SineWave(magnitude, envelope, frequency: 20);
+
+    if (!device!.TryCreateForceFeedbackEffect(0, effectParams, out GameInputForceFeedbackEffect? effect) || effect is null)
+    {
+        Console.WriteLine($"裝置「{GetDisplayName(snapshot)}」不支援指定的 force feedback effect。");
+        return;
+    }
+
+    using (effect)
+    {
+        effect.State = GameInputFeedbackEffectState.GameInputFeedbackRunning;
+        Console.WriteLine($"已在裝置「{GetDisplayName(snapshot)}」上啟動 force feedback effect，State={effect.State}。");
+        Thread.Sleep(250);
+    }
+}
+
+static void DemonstrateRawReport(GameInputDeviceManager manager)
+{
+    WriteSection("Raw device report");
+
+    if (manager.GetCurrentRawReport() is not { } report)
+    {
+        Console.WriteLine("目前沒有 raw device report；沒有支援 raw report 的裝置時這是正常結果。");
+        return;
+    }
+
+    byte[] data = report.GetData();
+    string hex = string.Join(' ', data.Take(16).Select(static value => value.ToString("X2")));
+    Console.WriteLine($"Raw report：Id={report.Info.Id}, 長度={data.Length} bytes");
+    Console.WriteLine($"前 16 bytes：{hex}");
+}
+
+static void DemonstrateMapping(GameInputDeviceManager manager)
+{
+    WriteSection("Input mapping");
+
+    if (!manager.TryGetFirstGamepad(out GameInputDevice? device, out GameInputDeviceInfoSnapshot? snapshot))
+    {
+        Console.WriteLine("目前沒有可查詢映射資訊的 gamepad 裝置。");
+        return;
+    }
+
+    using GameInputMapper mapper = device!.CreateInputMapper();
+    Console.WriteLine($"已建立裝置「{GetDisplayName(snapshot)}」的 input mapper。");
+
+    if (mapper.TryGetGamepadButtonMappingInfo(GameInputGamepadButtons.GameInputGamepadA, out GameInputButtonMapping buttonMapping))
+    {
+        Console.WriteLine($"GamepadA 按鈕映射：{buttonMapping}");
+    }
+    else
+    {
+        Console.WriteLine("此裝置沒有 GamepadA 按鈕映射資訊。");
+    }
+
+    if (mapper.TryGetGamepadAxisMappingInfo(GameInputGamepadAxes.GameInputGamepadLeftThumbstickX, out GameInputAxisMapping axisMapping))
+    {
+        Console.WriteLine($"左搖桿 X 軸映射：{axisMapping}");
+    }
+    else
+    {
+        Console.WriteLine("此裝置沒有左搖桿 X 軸映射資訊。");
+    }
+}
+
+static async Task DemonstrateAsyncApisAsync(GameInputDeviceManager manager)
+{
+    WriteSection("非同步 API");
+
+    IReadOnlyList<GameInputDeviceInfoSnapshot> refreshed = await manager.RefreshDevicesAsync();
+    Console.WriteLine($"RefreshDevicesAsync 完成，裝置數：{refreshed.Count}");
+
+    using CancellationTokenSource waitTimeout = new(TimeSpan.FromMilliseconds(500));
+    try
+    {
+        using GameInputClient client = GameInputClient.Create();
+        GamepadReadingSnapshot? gamepad = await client.WaitForGamepadAsync(cancellationToken: waitTimeout.Token);
+        Console.WriteLine(gamepad is { } value
+            ? $"WaitForGamepadAsync 收到 reading：Timestamp={value.Timestamp}"
+            : "WaitForGamepadAsync 收到 reading，但沒有 gamepad 資料可轉換。");
+    }
+    catch (OperationCanceledException)
+    {
+        Console.WriteLine("WaitForGamepadAsync 在 500ms 內沒有收到新的 gamepad reading（逾時屬正常結果）。");
+    }
+}
+
+static void DemonstrateEventsAndObservable(GameInputDeviceManager manager)
+{
+    WriteSection("事件與 IObservable");
+
+    int eventCount = 0;
+    int observableCount = 0;
+    EventHandler<GameInputDeviceManagerEvent> handler = (_, e) =>
+    {
+        _ = Interlocked.Increment(ref eventCount);
+        Console.WriteLine($"DeviceChanged：{e.Timestamp} {e.PreviousStatus} -> {e.CurrentStatus}");
+    };
+
+    manager.DeviceChanged += handler;
+    using IDisposable subscription = manager.DeviceChanges.Subscribe(new DelegateObserver(managerEvent =>
+    {
+        _ = Interlocked.Increment(ref observableCount);
+    }));
+
+    Console.WriteLine("已訂閱 DeviceChanged 與 DeviceChanges，等待 500ms 觀察是否有裝置事件（沒有插拔屬正常結果）。");
+    Thread.Sleep(500);
+
+    manager.DeviceChanged -= handler;
+    Console.WriteLine($"事件觸發次數：event={eventCount}, observable={observableCount}");
+}
+
+static void DemonstrateDependencyInjection()
+{
+    WriteSection("依賴注入註冊");
+
+    ServiceCollection services = new();
+    services.AddGameInputDeviceManager();
+
+    using ServiceProvider provider = services.BuildServiceProvider();
+    GameInputDeviceManager resolved = provider.GetRequiredService<GameInputDeviceManager>();
+    Console.WriteLine($"已透過 ServiceCollection 解析 GameInputDeviceManager，目前裝置快取數：{resolved.Devices.Count}");
+}
+
 static string GetDisplayName(GameInputDeviceInfoSnapshot? snapshot)
 {
-    return string.IsNullOrWhiteSpace(snapshot?.DisplayName) ? "(未命名裝置)" : snapshot.DisplayName;
+    string? displayName = snapshot?.DisplayName;
+    return string.IsNullOrWhiteSpace(displayName) ? "(未命名裝置)" : displayName;
 }
 
 static void WriteSection(string title)
 {
     Console.WriteLine();
     Console.WriteLine($"== {title} ==");
+}
+
+internal sealed class DelegateObserver(Action<GameInputDeviceManagerEvent> onNext) : IObserver<GameInputDeviceManagerEvent>
+{
+    public void OnCompleted()
+    {
+    }
+
+    public void OnError(Exception error)
+    {
+    }
+
+    public void OnNext(GameInputDeviceManagerEvent value)
+    {
+        onNext(value);
+    }
 }

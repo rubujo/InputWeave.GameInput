@@ -77,4 +77,47 @@ public sealed class GameInputCallbackRegistration : IDisposable
             GC.SuppressFinalize(this);
         }
     }
+
+    /// <summary>
+    /// 供程式庫內部呼叫的安全釋放方法：不在原生回呼執行緒中時直接同步 <see cref="Dispose"/>；
+    /// 在原生回呼執行緒中時，改在背景執行緒呼叫 <see cref="Dispose"/> 並同步等待其完成，
+    /// 讓呼叫端可以確定回傳時這個註冊已經真正解除，而不是像 fire-and-forget 延後那樣可能還沒完成。
+    /// </summary>
+    /// <returns>釋放過程中發生的例外；順利完成時為 <c>null</c>。</returns>
+    internal Exception? DisposeSafely()
+    {
+        if (!GameInputCallbackThread.IsExecutingCallback)
+        {
+            try
+            {
+                Dispose();
+                return null;
+            }
+            catch (InvalidOperationException ex)
+            {
+                return ex;
+            }
+        }
+
+        using ManualResetEventSlim completed = new(initialState: false);
+        Exception? deferredException = null;
+        ThreadPool.QueueUserWorkItem(_ =>
+        {
+            try
+            {
+                Dispose();
+            }
+            catch (Exception ex)
+            {
+                deferredException = ex;
+            }
+            finally
+            {
+                completed.Set();
+            }
+        });
+
+        completed.Wait();
+        return deferredException;
+    }
 }

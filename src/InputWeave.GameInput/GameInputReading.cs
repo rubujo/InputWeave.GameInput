@@ -63,7 +63,7 @@ public sealed class GameInputReading : IDisposable
     public GameInputDevice? GetDevice()
     {
         Native.GetDevice(out IGameInputDevice? device);
-        return device is null ? null : new GameInputDevice(device);
+        return device is { } deviceValue ? new GameInputDevice(deviceValue) : null;
     }
 
     /// <summary>
@@ -79,7 +79,11 @@ public sealed class GameInputReading : IDisposable
         }
 
         float[] state = new float[checked((int)count)];
+#if NET10_0_OR_GREATER
+        uint written = InvokeArrayState(state, Native.GetControllerAxisState);
+#else
         uint written = Native.GetControllerAxisState(count, state);
+#endif
         if (written == count)
         {
             return state;
@@ -104,7 +108,11 @@ public sealed class GameInputReading : IDisposable
             throw new ArgumentNullException(nameof(stateArray));
         }
 #endif
+#if NET10_0_OR_GREATER
+        return InvokeArrayState(stateArray, Native.GetControllerAxisState);
+#else
         return Native.GetControllerAxisState((uint)stateArray.Length, stateArray);
+#endif
     }
 
     /// <summary>
@@ -120,7 +128,11 @@ public sealed class GameInputReading : IDisposable
         }
 
         byte[] nativeState = new byte[checked((int)count)];
+#if NET10_0_OR_GREATER
+        uint written = InvokeArrayState(nativeState, Native.GetControllerButtonState);
+#else
         uint written = Native.GetControllerButtonState(count, nativeState);
+#endif
         bool[] state = new bool[checked((int)written)];
         for (int index = 0; index < state.Length; index++)
         {
@@ -145,7 +157,11 @@ public sealed class GameInputReading : IDisposable
             throw new ArgumentNullException(nameof(stateArray));
         }
 #endif
+#if NET10_0_OR_GREATER
+        return InvokeArrayState(stateArray, Native.GetControllerButtonState);
+#else
         return Native.GetControllerButtonState((uint)stateArray.Length, stateArray);
+#endif
     }
 
     /// <summary>
@@ -161,7 +177,11 @@ public sealed class GameInputReading : IDisposable
         }
 
         GameInputSwitchPosition[] state = new GameInputSwitchPosition[checked((int)count)];
+#if NET10_0_OR_GREATER
+        uint written = InvokeArrayState(state, Native.GetControllerSwitchState);
+#else
         uint written = Native.GetControllerSwitchState(count, state);
+#endif
         if (written == count)
         {
             return state;
@@ -186,7 +206,11 @@ public sealed class GameInputReading : IDisposable
             throw new ArgumentNullException(nameof(stateArray));
         }
 #endif
+#if NET10_0_OR_GREATER
+        return InvokeArrayState(stateArray, Native.GetControllerSwitchState);
+#else
         return Native.GetControllerSwitchState((uint)stateArray.Length, stateArray);
+#endif
     }
 
     /// <summary>
@@ -202,7 +226,11 @@ public sealed class GameInputReading : IDisposable
         }
 
         GameInputKeyState[] state = new GameInputKeyState[checked((int)count)];
+#if NET10_0_OR_GREATER
+        uint written = InvokeArrayState(state, Native.GetKeyState);
+#else
         uint written = Native.GetKeyState(count, state);
+#endif
         if (written == count)
         {
             return state;
@@ -227,7 +255,11 @@ public sealed class GameInputReading : IDisposable
             throw new ArgumentNullException(nameof(stateArray));
         }
 #endif
+#if NET10_0_OR_GREATER
+        return InvokeArrayState(stateArray, Native.GetKeyState);
+#else
         return Native.GetKeyState((uint)stateArray.Length, stateArray);
+#endif
     }
 
     /// <summary>
@@ -399,9 +431,9 @@ public sealed class GameInputReading : IDisposable
     /// <returns>操作完成後的查詢或建立結果。</returns>
     public bool TryGetRawReport(out GameInputRawDeviceReport? report)
     {
-        if (Native.GetRawReport(out IGameInputRawDeviceReport? nativeReport) && nativeReport is not null)
+        if (Native.GetRawReport(out IGameInputRawDeviceReport? nativeReport) && nativeReport is { } nativeReportValue)
         {
-            report = new GameInputRawDeviceReport(nativeReport);
+            report = new GameInputRawDeviceReport(nativeReportValue);
             return true;
         }
 
@@ -479,10 +511,14 @@ public sealed class GameInputReading : IDisposable
 
         if (_native is not null)
         {
+#if NET10_0_OR_GREATER
+            _native.Value.Release();
+#else
             if (Marshal.IsComObject(_native))
             {
                 _ = Marshal.ReleaseComObject(_native);
             }
+#endif
             _native = null;
         }
 
@@ -499,6 +535,20 @@ public sealed class GameInputReading : IDisposable
                 : _native ?? throw new ObjectDisposedException(nameof(GameInputReading));
         }
     }
+
+#if NET10_0_OR_GREATER
+    /// <summary>
+    /// 釘選 managed 陣列並以原生緩衝區指標呼叫裸 vtable 方法。
+    /// </summary>
+    private static unsafe uint InvokeArrayState<T>(T[] array, Func<uint, IntPtr, uint> invoke)
+        where T : unmanaged
+    {
+        fixed (T* pointer = array)
+        {
+            return invoke((uint)array.Length, (IntPtr)pointer);
+        }
+    }
+#endif
 
     private bool HasAnyInputKind(GameInputKind inputKind)
     {

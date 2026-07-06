@@ -2,7 +2,7 @@
 
 本報告定義 `InputWeave.GameInput v0.0.1` 的 100% 完整度標準。範圍鎖定 `Microsoft.GameInput 3.4.218`、GameInput API 版本 `3`，並以 `native/include/GameInput.h` 的公開介面範圍為準。
 
-最後核對日期：2026-05-27
+最後核對日期：2026-07-06
 
 ## 覆蓋率摘要
 
@@ -37,6 +37,15 @@
 - 聚合裝置：Create / Disable
 - 執行階段載入器：`GameInputRuntime` 提供與 Microsoft C++ 載入器對齊的受控執行階段選擇與探測診斷
 - 發佈支援界線：目前不宣告 NativeAOT、trimming 或 single-file 發佈相容性，不包含原生橋接 DLL
+- 非同步 API：`GameInputClient.EnumerateDevicesAsync`/`WaitForReadingAsync`/`WaitForGamepadAsync`、
+  `GameInputDeviceManager.RefreshDevicesAsync`/`WaitForDeviceEventAsync`，以 `Task`/`TaskCompletionSource` 包裝，
+  一次性原生回呼會延後到背景執行緒解除註冊，避免在原生回呼執行緒內同步 `Dispose`
+- 事件與 `IObservable<T>`：`GameInputDeviceManager.DeviceChanged`（標準 C# event）與 `DeviceChanges`
+  （不依賴 `System.Reactive` 的 `IObservable<T>`），手動輪詢與事件訂閱可混用，`Dispose()` 時觸發 `OnCompleted()`
+- 依賴注入：`AddGameInputClient()`/`AddGameInputDeviceManager()`（`Microsoft.Extensions.DependencyInjection.Abstractions`）
+  以 Singleton 註冊，容器釋放時一併釋放 GameInput 資源
+- Snapshot 值相等性：所有讀取/裝置資訊 snapshot 皆為 `readonly record struct`；含集合欄位（陣列、標籤清單等）的型別
+  提供逐一比較內容的 `IEquatable<T>` 覆寫，原生指標欄位（僅供診斷）不參與比較
 
 ## 測試與驗收
 

@@ -6,7 +6,13 @@ namespace InputWeave.GameInput;
 /// <summary>
 /// 不持有原生指標的 GameInput 裝置資訊快照。
 /// </summary>
-public sealed class GameInputDeviceInfoSnapshot
+/// <remarks>
+/// <see cref="ForceFeedbackMotors"/>、<see cref="InputReports"/>、<see cref="OutputReports"/> 是集合欄位，
+/// 值相等性採逐一比較內容，而不是比較複本陣列的參考。<see cref="Native"/> 內僅供診斷的原生指標欄位
+/// （<see cref="GameInputDeviceInfo.DisplayName"/>、<see cref="GameInputDeviceInfo.PnpPath"/> 等）不參與相等性比較，
+/// 因為這些指標值只在單次列舉呼叫內有效，不代表邏輯內容差異。
+/// </remarks>
+public readonly record struct GameInputDeviceInfoSnapshot : IEquatable<GameInputDeviceInfoSnapshot>
 {
     internal GameInputDeviceInfoSnapshot(
         GameInputDeviceInfo native,
@@ -215,6 +221,77 @@ public sealed class GameInputDeviceInfoSnapshot
     /// </summary>
     public IReadOnlyList<GameInputRawDeviceReportInfo> OutputReports { get; }
 
+    /// <summary>
+    /// 比較所有欄位的值相等性，其中 <see cref="ForceFeedbackMotors"/>、<see cref="InputReports"/>、
+    /// <see cref="OutputReports"/> 採逐一比較內容；<see cref="Native"/> 內僅供診斷的原生指標欄位不參與比較。
+    /// </summary>
+    /// <param name="other">要比較的另一個快照。</param>
+    /// <returns>兩個快照的所有欄位皆相同時，傳回 true。</returns>
+    public bool Equals(GameInputDeviceInfoSnapshot other)
+    {
+        return VendorId == other.VendorId
+            && ProductId == other.ProductId
+            && RevisionNumber == other.RevisionNumber
+            && Usage.Equals(other.Usage)
+            && Native.HardwareVersion.Equals(other.Native.HardwareVersion)
+            && Native.FirmwareVersion.Equals(other.Native.FirmwareVersion)
+            && Native.DeviceId.Equals(other.Native.DeviceId)
+            && Native.DeviceRootId.Equals(other.Native.DeviceRootId)
+            && DeviceFamily == other.DeviceFamily
+            && SupportedInput == other.SupportedInput
+            && SupportedRumbleMotors == other.SupportedRumbleMotors
+            && SupportedSystemButtons == other.SupportedSystemButtons
+            && ContainerId == other.ContainerId
+            && DisplayName == other.DisplayName
+            && PnpPath == other.PnpPath
+            && EqualityComparer<GameInputKeyboardInfo?>.Default.Equals(Keyboard, other.Keyboard)
+            && EqualityComparer<GameInputMouseInfo?>.Default.Equals(Mouse, other.Mouse)
+            && EqualityComparer<GameInputSensorsInfo?>.Default.Equals(Sensors, other.Sensors)
+            && EqualityComparer<GameInputControllerInfoSnapshot?>.Default.Equals(Controller, other.Controller)
+            && EqualityComparer<GameInputArcadeStickInfo?>.Default.Equals(ArcadeStick, other.ArcadeStick)
+            && EqualityComparer<GameInputFlightStickInfo?>.Default.Equals(FlightStick, other.FlightStick)
+            && EqualityComparer<GameInputGamepadInfo?>.Default.Equals(Gamepad, other.Gamepad)
+            && EqualityComparer<GameInputRacingWheelInfo?>.Default.Equals(RacingWheel, other.RacingWheel)
+            && ForceFeedbackMotors.SequenceEqual(other.ForceFeedbackMotors)
+            && InputReports.SequenceEqual(other.InputReports)
+            && OutputReports.SequenceEqual(other.OutputReports);
+    }
+
+    /// <summary>
+    /// 依所有欄位內容計算雜湊碼；<see cref="Native"/> 內僅供診斷的原生指標欄位不參與計算。
+    /// </summary>
+    /// <returns>雜湊碼。</returns>
+    public override int GetHashCode()
+    {
+        int hash = VendorId.GetHashCode();
+        hash = HashCodeCombiner.Combine(hash, ProductId.GetHashCode());
+        hash = HashCodeCombiner.Combine(hash, RevisionNumber.GetHashCode());
+        hash = HashCodeCombiner.Combine(hash, Usage.GetHashCode());
+        hash = HashCodeCombiner.Combine(hash, Native.HardwareVersion.GetHashCode());
+        hash = HashCodeCombiner.Combine(hash, Native.FirmwareVersion.GetHashCode());
+        hash = HashCodeCombiner.Combine(hash, Native.DeviceId.GetHashCode());
+        hash = HashCodeCombiner.Combine(hash, Native.DeviceRootId.GetHashCode());
+        hash = HashCodeCombiner.Combine(hash, DeviceFamily.GetHashCode());
+        hash = HashCodeCombiner.Combine(hash, SupportedInput.GetHashCode());
+        hash = HashCodeCombiner.Combine(hash, SupportedRumbleMotors.GetHashCode());
+        hash = HashCodeCombiner.Combine(hash, SupportedSystemButtons.GetHashCode());
+        hash = HashCodeCombiner.Combine(hash, ContainerId.GetHashCode());
+        hash = HashCodeCombiner.Combine(hash, DisplayName?.GetHashCode() ?? 0);
+        hash = HashCodeCombiner.Combine(hash, PnpPath?.GetHashCode() ?? 0);
+        hash = HashCodeCombiner.Combine(hash, Keyboard.GetHashCode());
+        hash = HashCodeCombiner.Combine(hash, Mouse.GetHashCode());
+        hash = HashCodeCombiner.Combine(hash, Sensors.GetHashCode());
+        hash = HashCodeCombiner.Combine(hash, Controller.GetHashCode());
+        hash = HashCodeCombiner.Combine(hash, ArcadeStick.GetHashCode());
+        hash = HashCodeCombiner.Combine(hash, FlightStick.GetHashCode());
+        hash = HashCodeCombiner.Combine(hash, Gamepad.GetHashCode());
+        hash = HashCodeCombiner.Combine(hash, RacingWheel.GetHashCode());
+        hash = HashCodeCombiner.CombineRange(hash, ForceFeedbackMotors);
+        hash = HashCodeCombiner.CombineRange(hash, InputReports);
+        hash = HashCodeCombiner.CombineRange(hash, OutputReports);
+        return hash;
+    }
+
     internal static GameInputDeviceInfoSnapshot FromNative(GameInputDeviceInfo native)
     {
         return new GameInputDeviceInfoSnapshot(
@@ -285,9 +362,14 @@ public sealed class GameInputDeviceInfoSnapshot
 /// <summary>
 /// 不持有原生指標的 controller 子資訊快照。
 /// </summary>
-public sealed class GameInputControllerInfoSnapshot
+/// <remarks>
+/// <see cref="AxisLabels"/>、<see cref="ButtonLabels"/>、<see cref="Switches"/> 是集合欄位，
+/// 值相等性採逐一比較內容，而不是比較複本陣列的參考。<see cref="Native"/> 完全不參與相等性比較——
+/// 它只有 Count 欄位與僅供診斷的原生指標欄位，Count 已完整反映在上述集合欄位的長度中。
+/// </remarks>
+public readonly record struct GameInputControllerInfoSnapshot : IEquatable<GameInputControllerInfoSnapshot>
 {
-    private GameInputControllerInfoSnapshot(
+    internal GameInputControllerInfoSnapshot(
         GameInputControllerInfo native,
         IReadOnlyList<GameInputLabel> axisLabels,
         IReadOnlyList<GameInputLabel> buttonLabels,
@@ -323,6 +405,32 @@ public sealed class GameInputControllerInfoSnapshot
     /// Controller switch 資訊快照清單。
     /// </summary>
     public IReadOnlyList<GameInputControllerSwitchInfoSnapshot> Switches { get; }
+
+    /// <summary>
+    /// 逐一比較 <see cref="AxisLabels"/>、<see cref="ButtonLabels"/>、<see cref="Switches"/> 內容的值相等性；
+    /// <see cref="Native"/> 內僅供診斷的原生指標欄位不參與比較（其 Count 欄位已完整反映在各集合欄位長度中）。
+    /// </summary>
+    /// <param name="other">要比較的另一個快照。</param>
+    /// <returns>兩個快照的所有欄位皆相同時，傳回 true。</returns>
+    public bool Equals(GameInputControllerInfoSnapshot other)
+    {
+        return AxisLabels.SequenceEqual(other.AxisLabels)
+            && ButtonLabels.SequenceEqual(other.ButtonLabels)
+            && Switches.SequenceEqual(other.Switches);
+    }
+
+    /// <summary>
+    /// 依 <see cref="AxisLabels"/>、<see cref="ButtonLabels"/>、<see cref="Switches"/> 內容計算雜湊碼。
+    /// </summary>
+    /// <returns>雜湊碼。</returns>
+    public override int GetHashCode()
+    {
+        int hash = 17;
+        hash = HashCodeCombiner.CombineRange(hash, AxisLabels);
+        hash = HashCodeCombiner.CombineRange(hash, ButtonLabels);
+        hash = HashCodeCombiner.CombineRange(hash, Switches);
+        return hash;
+    }
 
     internal static GameInputControllerInfoSnapshot? FromPointer(IntPtr pointer)
     {
@@ -361,9 +469,12 @@ public sealed class GameInputControllerInfoSnapshot
 /// <summary>
 /// 不持有 fixed buffer 的 controller switch 子資訊快照。
 /// </summary>
-public sealed class GameInputControllerSwitchInfoSnapshot
+/// <remarks>
+/// <see cref="Labels"/> 是集合欄位，值相等性採逐一比較內容，而不是比較複本陣列的參考。
+/// </remarks>
+public readonly record struct GameInputControllerSwitchInfoSnapshot : IEquatable<GameInputControllerSwitchInfoSnapshot>
 {
-    private GameInputControllerSwitchInfoSnapshot(IReadOnlyList<GameInputLabel> labels, GameInputSwitchKind kind)
+    internal GameInputControllerSwitchInfoSnapshot(IReadOnlyList<GameInputLabel> labels, GameInputSwitchKind kind)
     {
         Labels = labels;
         Kind = kind;
@@ -378,6 +489,25 @@ public sealed class GameInputControllerSwitchInfoSnapshot
     /// Switch 的原生種類。
     /// </summary>
     public GameInputSwitchKind Kind { get; }
+
+    /// <summary>
+    /// 逐一比較 <see cref="Labels"/> 內容的值相等性。
+    /// </summary>
+    /// <param name="other">要比較的另一個快照。</param>
+    /// <returns>兩個快照的 <see cref="Kind"/> 與 <see cref="Labels"/> 內容皆相同時，傳回 true。</returns>
+    public bool Equals(GameInputControllerSwitchInfoSnapshot other)
+    {
+        return Kind == other.Kind && Labels.SequenceEqual(other.Labels);
+    }
+
+    /// <summary>
+    /// 依 <see cref="Kind"/> 與 <see cref="Labels"/> 內容計算雜湊碼。
+    /// </summary>
+    /// <returns>雜湊碼。</returns>
+    public override int GetHashCode()
+    {
+        return HashCodeCombiner.CombineRange(Kind.GetHashCode(), Labels);
+    }
 
     internal static unsafe GameInputControllerSwitchInfoSnapshot FromNative(GameInputControllerSwitchInfo native)
     {
@@ -394,7 +524,10 @@ public sealed class GameInputControllerSwitchInfoSnapshot
 /// <summary>
 /// 不持有原生 haptic 緩衝區的觸覺資訊快照。
 /// </summary>
-public sealed class GameInputHapticInfoSnapshot
+/// <remarks>
+/// <see cref="Locations"/> 是集合欄位，值相等性採逐一比較內容，而不是比較複本陣列的參考。
+/// </remarks>
+public readonly record struct GameInputHapticInfoSnapshot : IEquatable<GameInputHapticInfoSnapshot>
 {
     internal GameInputHapticInfoSnapshot(string audioEndpointId, IReadOnlyList<Guid> locations)
     {
@@ -411,6 +544,25 @@ public sealed class GameInputHapticInfoSnapshot
     /// Haptic 位置識別碼清單。
     /// </summary>
     public IReadOnlyList<Guid> Locations { get; }
+
+    /// <summary>
+    /// 逐一比較 <see cref="Locations"/> 內容的值相等性。
+    /// </summary>
+    /// <param name="other">要比較的另一個快照。</param>
+    /// <returns>兩個快照的 <see cref="AudioEndpointId"/> 與 <see cref="Locations"/> 內容皆相同時，傳回 true。</returns>
+    public bool Equals(GameInputHapticInfoSnapshot other)
+    {
+        return AudioEndpointId == other.AudioEndpointId && Locations.SequenceEqual(other.Locations);
+    }
+
+    /// <summary>
+    /// 依 <see cref="AudioEndpointId"/> 與 <see cref="Locations"/> 內容計算雜湊碼。
+    /// </summary>
+    /// <returns>雜湊碼。</returns>
+    public override int GetHashCode()
+    {
+        return HashCodeCombiner.CombineRange(AudioEndpointId.GetHashCode(), Locations);
+    }
 
     internal static GameInputHapticInfoSnapshot FromNative(GameInputHapticInfo native)
     {

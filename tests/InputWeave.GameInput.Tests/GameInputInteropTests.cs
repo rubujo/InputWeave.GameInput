@@ -109,56 +109,35 @@ public sealed class GameInputInteropTests
     }
 
     [TestMethod]
-    public void GeneratedCallbackDelegatesUseWinapiCallingConvention()
+    public void GeneratedComCallbackParametersUseRawFunctionPointers()
     {
-        Type[] callbackTypes =
+        (string MethodName, string ParameterName)[] callbackMethods =
         [
-            typeof(GameInputReadingCallback),
-            typeof(GameInputDeviceCallback),
-            typeof(GameInputSystemButtonCallback),
-            typeof(GameInputKeyboardLayoutCallback)
+            (nameof(IGameInput.RegisterReadingCallback), "callbackFunc"),
+            (nameof(IGameInput.RegisterDeviceCallback), "callbackFunc"),
+            (nameof(IGameInput.RegisterSystemButtonCallback), "callbackFunc"),
+            (nameof(IGameInput.RegisterKeyboardLayoutCallback), "callbackFunc")
         ];
 
-        foreach (Type callbackType in callbackTypes)
-        {
-            UnmanagedFunctionPointerAttribute? attribute = callbackType.GetCustomAttribute<UnmanagedFunctionPointerAttribute>();
-
-            Assert.IsNotNull(attribute, $"{callbackType.Name} 應明確標示 unmanaged calling convention。");
-            Assert.AreEqual(CallingConvention.Winapi, attribute.CallingConvention);
-        }
-    }
-
-    [TestMethod]
-    public void GeneratedComCallbackParametersMarshalAsFunctionPointers()
-    {
-        (string MethodName, Type CallbackType)[] callbackMethods =
-        [
-            (nameof(IGameInput.RegisterReadingCallback), typeof(GameInputReadingCallback)),
-            (nameof(IGameInput.RegisterDeviceCallback), typeof(GameInputDeviceCallback)),
-            (nameof(IGameInput.RegisterSystemButtonCallback), typeof(GameInputSystemButtonCallback)),
-            (nameof(IGameInput.RegisterKeyboardLayoutCallback), typeof(GameInputKeyboardLayoutCallback))
-        ];
-
-        foreach ((string methodName, Type callbackType) in callbackMethods)
+        foreach ((string methodName, string parameterName) in callbackMethods)
         {
             MethodInfo? method = typeof(IGameInput).GetMethod(methodName);
             Assert.IsNotNull(method, $"IGameInput.{methodName} 應存在。");
 
             ParameterInfo? callbackParameter = method.GetParameters()
-                .SingleOrDefault(static parameter => parameter.Name == "callbackFunc");
-            Assert.IsNotNull(callbackParameter, $"IGameInput.{methodName} 應包含 callbackFunc 參數。");
-            Assert.AreEqual(callbackType, callbackParameter.ParameterType, $"IGameInput.{methodName}.callbackFunc 應保留原生 callback delegate 型別。");
-
-            MarshalAsAttribute? attribute = callbackParameter.GetCustomAttribute<MarshalAsAttribute>();
-            Assert.IsNotNull(attribute, $"IGameInput.{methodName}.callbackFunc 應明確標示 unmanaged function pointer marshaling。");
-            Assert.AreEqual(UnmanagedType.FunctionPtr, attribute.Value);
+                .SingleOrDefault(parameter => parameter.Name == parameterName);
+            Assert.IsNotNull(callbackParameter, $"IGameInput.{methodName} 應包含 {parameterName} 參數。");
+            Assert.AreEqual(
+                typeof(IntPtr),
+                callbackParameter.ParameterType,
+                $"IGameInput.{methodName}.{parameterName} 在裸 vtable 投影下應為原始函式指標（IntPtr），不透過委派封送。");
         }
     }
 
     [TestMethod]
-    public void GeneratedComInterfacesUseIUnknownAndPreserveSig()
+    public void GeneratedVtableWrappersExposeIUnknownLifecycle()
     {
-        Type[] interfaceTypes =
+        Type[] wrapperTypes =
         [
                 typeof(IGameInput),
                 typeof(IGameInputRawDeviceReport),
@@ -169,21 +148,24 @@ public sealed class GameInputInteropTests
                 typeof(IGameInputMapper)
             ];
 
-        foreach (Type interfaceType in interfaceTypes)
+        foreach (Type wrapperType in wrapperTypes)
         {
-            InterfaceTypeAttribute? interfaceTypeAttribute = interfaceType.GetCustomAttribute<InterfaceTypeAttribute>();
-            MethodInfo[] methods = interfaceType.GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly);
+            MethodInfo[] methods = wrapperType.GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly);
 
-            Assert.IsTrue(interfaceType.IsImport, $"{interfaceType.Name} 應由 [ComImport] 產生。");
-            Assert.IsNotNull(interfaceType.GetCustomAttribute<GuidAttribute>(), $"{interfaceType.Name} 應有 IID。");
-            Assert.IsNotNull(interfaceTypeAttribute, $"{interfaceType.Name} 應標示 COM interface type。");
-            Assert.AreEqual(ComInterfaceType.InterfaceIsIUnknown, interfaceTypeAttribute.Value);
-            Assert.IsNotEmpty(methods, $"{interfaceType.Name} 應包含原生 vtable 方法。");
+            Assert.IsTrue(wrapperType.IsValueType, $"{wrapperType.Name} 在裸 vtable 投影下應為 struct，而非 ComImport 介面。");
+            Assert.IsNotNull(wrapperType.GetProperty("Pointer"), $"{wrapperType.Name} 應公開原生 COM 指標。");
+            Assert.IsNotNull(wrapperType.GetMethod("AddRef", Type.EmptyTypes), $"{wrapperType.Name} 應可呼叫原生 AddRef。");
+            Assert.IsNotNull(wrapperType.GetMethod("Release", Type.EmptyTypes), $"{wrapperType.Name} 應可呼叫原生 Release。");
+            Assert.IsNotEmpty(methods, $"{wrapperType.Name} 應包含原生 vtable 方法。");
 
-            foreach (MethodInfo method in methods)
-            {
-                Assert.IsNotNull(method.GetCustomAttribute<PreserveSigAttribute>(), $"{interfaceType.Name}.{method.Name} 應保留 HRESULT/原生回傳語意。");
-            }
+            Type? vtableType = wrapperType.Assembly.GetType($"{wrapperType.FullName}Vtbl", throwOnError: false);
+            Assert.IsNotNull(vtableType, $"{wrapperType.Name} 應有對應的 {wrapperType.Name}Vtbl 結構。");
+
+            FieldInfo[] vtableFields = vtableType.GetFields(BindingFlags.Instance | BindingFlags.Public);
+            Assert.IsTrue(vtableFields.Length >= 3, $"{vtableType.Name} 應至少包含 IUnknown 的三個 vtable slot。");
+            Assert.AreEqual("QueryInterface", vtableFields[0].Name);
+            Assert.AreEqual("AddRef", vtableFields[1].Name);
+            Assert.AreEqual("Release", vtableFields[2].Name);
         }
     }
 

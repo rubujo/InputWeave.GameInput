@@ -570,9 +570,10 @@ internal static partial class GameInputInteropWriter
         WriteFile(outputDir, "GameInputConstants.g.cs", WriteConstants(manifest, ns, docs));
         WriteFile(outputDir, "GameInputHResult.g.cs", WriteHResults(manifest, ns, docs));
         WriteFile(outputDir, "GameInputIids.g.cs", WriteIids(manifest, ns, docs));
-        WriteFile(outputDir, "GameInputCallbacks.g.cs", WriteCallbacks(manifest, ns, docs));
+        WriteFile(outputDir, "GameInputCallbacks.NetFramework.g.cs", WriteCallbacks(manifest, ns, docs));
         WriteFile(outputDir, "GameInputStructs.g.cs", WriteStructs(manifest, ns, docs));
-        WriteFile(outputDir, "GameInputNativeInterfaces.g.cs", WriteInterfaces(manifest, ns, docs));
+        WriteFile(outputDir, "GameInputNativeInterfaces.NetFramework.g.cs", WriteComImportInterfaces(manifest, ns, docs));
+        WriteFile(outputDir, "GameInputNativeInterfaces.Net10.g.cs", WriteVtableInterfaces(manifest, ns, docs));
     }
 
     private static void WriteFile(string outputDir, string fileName, string content)
@@ -662,7 +663,9 @@ internal static partial class GameInputInteropWriter
 
     private static string WriteCallbacks(AbiManifest manifest, string ns, GameInputXmlDocsCatalog docs)
     {
-        StringBuilder builder = GameInputEnumWriter.CreateGeneratedBuilder();
+        StringBuilder builder = new();
+        builder.AppendLine("#if NETFRAMEWORK");
+        builder.Append(GameInputEnumWriter.CreateGeneratedBuilder().ToString());
         builder.AppendLine("using System;");
         builder.AppendLine("using System.Runtime.InteropServices;");
         builder.AppendLine();
@@ -678,6 +681,8 @@ internal static partial class GameInputInteropWriter
         }
 
         TrimLastBlankLine(builder);
+        builder.AppendLine();
+        builder.AppendLine("#endif");
         return builder.ToString();
     }
 
@@ -714,9 +719,11 @@ internal static partial class GameInputInteropWriter
         builder.AppendLine();
     }
 
-    private static string WriteInterfaces(AbiManifest manifest, string ns, GameInputXmlDocsCatalog docs)
+    private static string WriteComImportInterfaces(AbiManifest manifest, string ns, GameInputXmlDocsCatalog docs)
     {
-        StringBuilder builder = GameInputEnumWriter.CreateGeneratedBuilder();
+        StringBuilder builder = new();
+        builder.AppendLine("#if NETFRAMEWORK");
+        builder.Append(GameInputEnumWriter.CreateGeneratedBuilder().ToString());
         builder.AppendLine("using System;");
         builder.AppendLine("using System.Runtime.InteropServices;");
         builder.AppendLine();
@@ -740,7 +747,135 @@ internal static partial class GameInputInteropWriter
         }
 
         TrimLastBlankLine(builder);
+        builder.AppendLine();
+        builder.AppendLine("#endif");
         return builder.ToString();
+    }
+
+    private static string WriteVtableInterfaces(AbiManifest manifest, string ns, GameInputXmlDocsCatalog docs)
+    {
+        StringBuilder builder = new();
+        builder.AppendLine("#if NET10_0_OR_GREATER");
+        builder.Append(GameInputEnumWriter.CreateGeneratedBuilder().ToString());
+        builder.AppendLine("using System;");
+        builder.AppendLine("using System.Runtime.InteropServices;");
+        builder.AppendLine();
+        GameInputEnumWriter.AppendFileScopedNamespace(builder, ns);
+        foreach (InterfaceDefinition interfaceDefinition in manifest.Interfaces)
+        {
+            WriteVtableStruct(builder, interfaceDefinition);
+            WriteVtableWrapperStruct(builder, docs, interfaceDefinition);
+        }
+
+        TrimLastBlankLine(builder);
+        builder.AppendLine();
+        builder.AppendLine("#endif");
+        return builder.ToString();
+    }
+
+    private static void WriteVtableStruct(StringBuilder builder, InterfaceDefinition interfaceDefinition)
+    {
+        builder.AppendLine("[StructLayout(LayoutKind.Sequential)]");
+        builder.AppendLine($"internal unsafe struct {interfaceDefinition.Name}Vtbl");
+        builder.AppendLine("{");
+        builder.AppendLine("    public delegate* unmanaged[Stdcall]<IntPtr, Guid*, void**, int> QueryInterface;");
+        builder.AppendLine("    public delegate* unmanaged[Stdcall]<IntPtr, uint> AddRef;");
+        builder.AppendLine("    public delegate* unmanaged[Stdcall]<IntPtr, uint> Release;");
+        foreach (InterfaceMethodDefinition method in interfaceDefinition.Methods)
+        {
+            VtableMethodPlan plan = VtableMethodPlan.Create(method.Name, GetMethodDeclaration(interfaceDefinition.Name + "." + method.Name));
+            string parameterTypes = string.Join(", ", plan.Parameters.Select(p => p.VtableType));
+            string typeArguments = plan.Parameters.Count == 0
+                ? $"IntPtr, {plan.VtableReturnType}"
+                : $"IntPtr, {parameterTypes}, {plan.VtableReturnType}";
+            builder.AppendLine($"    public delegate* unmanaged[Stdcall]<{typeArguments}> {method.Name};");
+        }
+
+        builder.AppendLine("}");
+        builder.AppendLine();
+    }
+
+    private static void WriteVtableWrapperStruct(StringBuilder builder, GameInputXmlDocsCatalog docs, InterfaceDefinition interfaceDefinition)
+    {
+        XmlDocWriter.AppendDocumentation(builder, docs, interfaceDefinition.Name, string.Empty);
+        builder.AppendLine($"internal readonly unsafe struct {interfaceDefinition.Name}(IntPtr pointer) : IEquatable<{interfaceDefinition.Name}>");
+        builder.AppendLine("{");
+        builder.AppendLine("    /// <summary>");
+        builder.AppendLine("    /// 這個包裝所持有的原生 COM 指標。");
+        builder.AppendLine("    /// </summary>");
+        builder.AppendLine("    public IntPtr Pointer { get; } = pointer;");
+        builder.AppendLine();
+        builder.AppendLine($"    private {interfaceDefinition.Name}Vtbl* Vtbl => ({interfaceDefinition.Name}Vtbl*)(*(void**)Pointer);");
+        builder.AppendLine();
+        builder.AppendLine("    /// <summary>");
+        builder.AppendLine("    /// 呼叫原生 vtable 的 AddRef，增加參考計數。");
+        builder.AppendLine("    /// </summary>");
+        builder.AppendLine("    /// <returns>呼叫後的參考計數。</returns>");
+        builder.AppendLine("    public uint AddRef()");
+        builder.AppendLine("    {");
+        builder.AppendLine("        return Vtbl->AddRef(Pointer);");
+        builder.AppendLine("    }");
+        builder.AppendLine();
+        builder.AppendLine("    /// <summary>");
+        builder.AppendLine("    /// 呼叫原生 vtable 的 Release，減少參考計數並視需要釋放原生物件。");
+        builder.AppendLine("    /// </summary>");
+        builder.AppendLine("    /// <returns>呼叫後的參考計數。</returns>");
+        builder.AppendLine("    public uint Release()");
+        builder.AppendLine("    {");
+        builder.AppendLine("        return Vtbl->Release(Pointer);");
+        builder.AppendLine("    }");
+        builder.AppendLine();
+        builder.AppendLine($"    /// <summary>");
+        builder.AppendLine($"    /// 比較兩個 {interfaceDefinition.Name} 是否指向同一個原生物件。");
+        builder.AppendLine($"    /// </summary>");
+        builder.AppendLine($"    /// <param name=\"other\">要比較的另一個 {interfaceDefinition.Name}。</param>");
+        builder.AppendLine($"    /// <returns>原生指標相同時傳回 true；否則傳回 false。</returns>");
+        builder.AppendLine($"    public bool Equals({interfaceDefinition.Name} other)");
+        builder.AppendLine("    {");
+        builder.AppendLine("        return Pointer == other.Pointer;");
+        builder.AppendLine("    }");
+        builder.AppendLine();
+        builder.AppendLine("    /// <inheritdoc />");
+        builder.AppendLine("    public override bool Equals(object? obj)");
+        builder.AppendLine("    {");
+        builder.AppendLine($"        return obj is {interfaceDefinition.Name} other && Equals(other);");
+        builder.AppendLine("    }");
+        builder.AppendLine();
+        builder.AppendLine("    /// <inheritdoc />");
+        builder.AppendLine("    public override int GetHashCode()");
+        builder.AppendLine("    {");
+        builder.AppendLine("        return Pointer.GetHashCode();");
+        builder.AppendLine("    }");
+        builder.AppendLine();
+
+        foreach (InterfaceMethodDefinition method in interfaceDefinition.Methods)
+        {
+            WriteVtableWrapperMethod(builder, docs, interfaceDefinition.Name, method.Name);
+        }
+
+        TrimLastBlankLine(builder);
+        builder.AppendLine("}");
+        builder.AppendLine();
+    }
+
+    private static void WriteVtableWrapperMethod(StringBuilder builder, GameInputXmlDocsCatalog docs, string interfaceName, string methodName)
+    {
+        string key = interfaceName + "." + methodName;
+        VtableMethodPlan plan = VtableMethodPlan.Create(methodName, GetMethodDeclaration(key));
+
+        DeclarationInfo declarationInfo = DeclarationInfo.Parse(plan.OriginalDeclaration);
+        XmlDocWriter.AppendDocumentation(builder, docs, key, "    ", declarationInfo.Parameters, declarationInfo.HasReturn);
+
+        string wrapperParameters = string.Join(", ", plan.Parameters.Select(p => p.WrapperParamText));
+        builder.AppendLine($"    public unsafe {plan.WrapperReturnType} {methodName}({wrapperParameters})");
+        builder.AppendLine("    {");
+        foreach (string line in plan.RenderBody())
+        {
+            builder.AppendLine(line.Length == 0 ? string.Empty : "        " + line);
+        }
+
+        builder.AppendLine("    }");
+        builder.AppendLine();
     }
 
     private static int GetConstant(AbiManifest manifest, string name)
@@ -964,7 +1099,23 @@ internal static partial class GameInputInteropWriter
     private static void WriteInterfaceMethod(StringBuilder builder, GameInputXmlDocsCatalog docs, string interfaceName, string methodName)
     {
         string key = interfaceName + "." + methodName;
-        MethodDeclaration method = key switch
+        MethodDeclaration method = GetMethodDeclaration(key);
+
+        DeclarationInfo declarationInfo = DeclarationInfo.Parse(method.Declaration);
+        XmlDocWriter.AppendDocumentation(builder, docs, key, "    ", declarationInfo.Parameters, declarationInfo.HasReturn);
+        builder.AppendLine("    [PreserveSig]");
+        if (method.MarshalBoolReturn)
+        {
+            builder.AppendLine("    [return: MarshalAs(UnmanagedType.I1)]");
+        }
+
+        builder.AppendLine("    " + method.Declaration);
+        builder.AppendLine();
+    }
+
+    private static MethodDeclaration GetMethodDeclaration(string key)
+    {
+        return key switch
         {
             "IGameInput.GetCurrentTimestamp" => Method("ulong GetCurrentTimestamp();"),
             "IGameInput.GetCurrentReading" => Method("int GetCurrentReading(GameInputKind inputKind, IGameInputDevice? device, out IGameInputReading? reading);"),
@@ -1039,17 +1190,6 @@ internal static partial class GameInputInteropWriter
             "IGameInputMapper.GetRacingWheelButtonMappingInfo" => BoolMethod("bool GetRacingWheelButtonMappingInfo(GameInputRacingWheelButtons buttonElement, IntPtr mapping);"),
             _ => throw new InvalidOperationException($"未支援的 COM 方法：{key}。")
         };
-
-        DeclarationInfo declarationInfo = DeclarationInfo.Parse(method.Declaration);
-        XmlDocWriter.AppendDocumentation(builder, docs, key, "    ", declarationInfo.Parameters, declarationInfo.HasReturn);
-        builder.AppendLine("    [PreserveSig]");
-        if (method.MarshalBoolReturn)
-        {
-            builder.AppendLine("    [return: MarshalAs(UnmanagedType.I1)]");
-        }
-
-        builder.AppendLine("    " + method.Declaration);
-        builder.AppendLine();
     }
 
     private static MethodDeclaration Method(string declaration)
@@ -1085,6 +1225,252 @@ internal static partial class GameInputInteropWriter
 internal sealed record NativeMember(string NativeType, string Name, string? ArraySize);
 
 internal sealed record MethodDeclaration(string Declaration, bool MarshalBoolReturn);
+
+internal enum VtableParamKind
+{
+    Value,
+    InterfaceIn,
+    InterfaceOut,
+    RefStruct,
+    OutStruct,
+    StringParam
+}
+
+internal sealed record VtableParamPlan(
+    VtableParamKind Kind,
+    string ParamName,
+    string VtableType,
+    string WrapperParamText,
+    string CallArgExpr,
+    bool NeedsFixed,
+    string? FixedPointerType,
+    bool FixedSourceIsRef,
+    string? InterfaceTypeName);
+
+internal static partial class VtableParameterParser
+{
+    public static List<VtableParamPlan> Parse(string parametersText)
+    {
+        List<VtableParamPlan> plans = [];
+        foreach (string raw in DeclarationInfo.SplitParameters(parametersText))
+        {
+            string trimmed = raw.Trim();
+            if (trimmed.Length > 0)
+            {
+                plans.Add(ParseOne(trimmed));
+            }
+        }
+
+        return plans;
+    }
+
+    private static VtableParamPlan ParseOne(string trimmed)
+    {
+        List<string> attributes = [.. AttributeRegex().Matches(trimmed).Select(m => m.Value)];
+        string withoutAttributes = AttributeRegex().Replace(trimmed, string.Empty).Trim();
+
+        string modifier = string.Empty;
+        if (withoutAttributes.StartsWith("out ", StringComparison.Ordinal))
+        {
+            modifier = "out";
+            withoutAttributes = withoutAttributes["out ".Length..].Trim();
+        }
+        else if (withoutAttributes.StartsWith("ref ", StringComparison.Ordinal))
+        {
+            modifier = "ref";
+            withoutAttributes = withoutAttributes["ref ".Length..].Trim();
+        }
+
+        int lastSpace = withoutAttributes.LastIndexOf(' ');
+        string type = withoutAttributes[..lastSpace].Trim();
+        string name = withoutAttributes[(lastSpace + 1)..].Trim();
+
+        bool hasFunctionPtrAttribute = attributes.Any(a => a.Contains("FunctionPtr", StringComparison.Ordinal));
+        bool hasOutArrayAttribute = attributes.Any(a => a.Contains("Out", StringComparison.Ordinal));
+        bool isStringType = type == "string";
+        bool isArrayType = type.EndsWith("[]", StringComparison.Ordinal);
+        bool isInterfaceType = type.TrimEnd('?').StartsWith("IGameInput", StringComparison.Ordinal);
+        bool isNullable = type.EndsWith('?');
+        string bareType = type.TrimEnd('?');
+
+        if (isInterfaceType)
+        {
+            if (modifier == "out")
+            {
+                return new VtableParamPlan(
+                    VtableParamKind.InterfaceOut,
+                    name,
+                    "void**",
+                    $"out {type} {name}",
+                    $"&{name}Raw",
+                    NeedsFixed: false,
+                    FixedPointerType: null,
+                    FixedSourceIsRef: false,
+                    bareType);
+            }
+
+            string callArg = isNullable ? $"{name}?.Pointer ?? IntPtr.Zero" : $"{name}.Pointer";
+            return new VtableParamPlan(
+                VtableParamKind.InterfaceIn,
+                name,
+                "IntPtr",
+                $"{type} {name}",
+                callArg,
+                NeedsFixed: false,
+                FixedPointerType: null,
+                FixedSourceIsRef: false,
+                InterfaceTypeName: null);
+        }
+
+        if (isStringType)
+        {
+            return new VtableParamPlan(
+                VtableParamKind.StringParam,
+                name,
+                "IntPtr",
+                $"string {name}",
+                $"(IntPtr){name}Ptr",
+                NeedsFixed: true,
+                FixedPointerType: "char",
+                FixedSourceIsRef: false,
+                InterfaceTypeName: null);
+        }
+
+        if (hasFunctionPtrAttribute || (isArrayType && hasOutArrayAttribute))
+        {
+            return new VtableParamPlan(
+                VtableParamKind.Value,
+                name,
+                "IntPtr",
+                $"IntPtr {name}",
+                name,
+                NeedsFixed: false,
+                FixedPointerType: null,
+                FixedSourceIsRef: false,
+                InterfaceTypeName: null);
+        }
+
+        if (modifier is "out" or "ref")
+        {
+            return new VtableParamPlan(
+                modifier == "ref" ? VtableParamKind.RefStruct : VtableParamKind.OutStruct,
+                name,
+                $"{type}*",
+                $"{modifier} {type} {name}",
+                $"{name}Ptr",
+                NeedsFixed: true,
+                FixedPointerType: type,
+                FixedSourceIsRef: true,
+                InterfaceTypeName: null);
+        }
+
+        return new VtableParamPlan(
+            VtableParamKind.Value,
+            name,
+            type,
+            $"{type} {name}",
+            name,
+            NeedsFixed: false,
+            FixedPointerType: null,
+            FixedSourceIsRef: false,
+            InterfaceTypeName: null);
+    }
+
+    [GeneratedRegex(@"\[[^\]]+\]")]
+    private static partial Regex AttributeRegex();
+}
+
+internal sealed partial record VtableMethodPlan(
+    string MethodName,
+    string OriginalDeclaration,
+    string VtableReturnType,
+    string WrapperReturnType,
+    bool MarshalBoolReturn,
+    IReadOnlyList<VtableParamPlan> Parameters)
+{
+    public static VtableMethodPlan Create(string methodName, MethodDeclaration method)
+    {
+        string normalized = method.Declaration.Trim().TrimEnd(';');
+        Match match = ShapeRegex().Match(normalized);
+        if (!match.Success)
+        {
+            throw new InvalidOperationException($"無法解析 COM 方法簽章以產生 vtable 投影：{method.Declaration}");
+        }
+
+        string returnType = match.Groups["return"].Value;
+        List<VtableParamPlan> parameters = VtableParameterParser.Parse(match.Groups["parameters"].Value);
+        string vtableReturnType = method.MarshalBoolReturn ? "byte" : returnType;
+
+        List<VtableParamPlan> fixedParams = [.. parameters.Where(p => p.NeedsFixed)];
+        if (fixedParams.Count > 1)
+        {
+            throw new InvalidOperationException($"vtable 投影僅支援每個方法最多一個需要 fixed 的參數：{method.Declaration}");
+        }
+
+        return new VtableMethodPlan(methodName, method.Declaration, vtableReturnType, returnType, method.MarshalBoolReturn, parameters);
+    }
+
+    public IEnumerable<string> RenderBody()
+    {
+        List<VtableParamPlan> interfaceOuts = [.. Parameters.Where(p => p.Kind == VtableParamKind.InterfaceOut)];
+        VtableParamPlan? fixedParam = Parameters.FirstOrDefault(p => p.NeedsFixed);
+        bool hasReturn = WrapperReturnType != "void";
+        string callArgs = string.Join(", ", new[] { "Pointer" }.Concat(Parameters.Select(p => p.CallArgExpr)));
+        string callExpr = MarshalBoolReturn
+            ? $"Vtbl->{MethodName}({callArgs}) != 0"
+            : $"Vtbl->{MethodName}({callArgs})";
+
+        foreach (VtableParamPlan output in interfaceOuts)
+        {
+            yield return $"void* {output.ParamName}Raw = null;";
+        }
+
+        if (fixedParam is null)
+        {
+            if (interfaceOuts.Count == 0)
+            {
+                yield return hasReturn ? $"return {callExpr};" : $"{callExpr};";
+                yield break;
+            }
+
+            yield return hasReturn ? $"{WrapperReturnType} result = {callExpr};" : $"{callExpr};";
+        }
+        else
+        {
+            if (hasReturn && interfaceOuts.Count > 0)
+            {
+                yield return $"{WrapperReturnType} result;";
+            }
+
+            string fixedSource = fixedParam.FixedSourceIsRef ? $"&{fixedParam.ParamName}" : fixedParam.ParamName;
+            yield return $"fixed ({fixedParam.FixedPointerType}* {fixedParam.ParamName}Ptr = {fixedSource})";
+            yield return "{";
+            if (interfaceOuts.Count == 0)
+            {
+                yield return hasReturn ? $"    return {callExpr};" : $"    {callExpr};";
+            }
+            else
+            {
+                yield return hasReturn ? $"    result = {callExpr};" : $"    {callExpr};";
+            }
+
+            yield return "}";
+        }
+
+        foreach (VtableParamPlan output in interfaceOuts)
+        {
+            yield return $"{output.ParamName} = {output.ParamName}Raw == null ? null : new {output.InterfaceTypeName}((IntPtr){output.ParamName}Raw);";
+        }
+
+        if (hasReturn && interfaceOuts.Count > 0)
+        {
+            yield return "return result;";
+        }
+    }
+
+    [GeneratedRegex(@"^(?<return>[^\s]+)\s+(?<name>\w+)\((?<parameters>.*)\)$")]
+    private static partial Regex ShapeRegex();
+}
 
 internal sealed partial record DeclarationInfo(string ReturnType, IReadOnlyList<string> Parameters)
 {
@@ -1131,7 +1517,7 @@ internal sealed partial record DeclarationInfo(string ReturnType, IReadOnlyList<
         return names;
     }
 
-    private static List<string> SplitParameters(string parameters)
+    internal static List<string> SplitParameters(string parameters)
     {
         List<string> values = [];
         StringBuilder current = new();

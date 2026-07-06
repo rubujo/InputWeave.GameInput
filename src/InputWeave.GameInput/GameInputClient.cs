@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using InputWeave.GameInput.Interop;
 
@@ -13,10 +14,12 @@ public sealed class GameInputClient : IDisposable
     /// </summary>
     public static event EventHandler<GameInputCallbackExceptionEventArgs>? UnhandledCallbackException;
 
+#if !NET10_0_OR_GREATER
     private static readonly GameInputReadingCallback s_readingCallback = OnReadingCallback;
     private static readonly GameInputDeviceCallback s_deviceCallback = OnDeviceCallback;
     private static readonly GameInputSystemButtonCallback s_systemButtonCallback = OnSystemButtonCallback;
     private static readonly GameInputKeyboardLayoutCallback s_keyboardLayoutCallback = OnKeyboardLayoutCallback;
+#endif
 
 #if NET10_0_OR_GREATER
     private readonly System.Threading.Lock _syncRoot = new();
@@ -24,6 +27,7 @@ public sealed class GameInputClient : IDisposable
     private readonly object _syncRoot = new();
 #endif
     private readonly List<GameInputCallbackRegistration> _registrations = [];
+    private readonly List<Action> _pendingWaitCancellations = [];
     private IGameInput? _native;
     private bool _disposed;
 
@@ -45,7 +49,12 @@ public sealed class GameInputClient : IDisposable
 
         try
         {
+#if NET10_0_OR_GREATER
+            IGameInput native = new(nativePointer);
+            native.AddRef();
+#else
             IGameInput native = (IGameInput)Marshal.GetObjectForIUnknown(nativePointer);
+#endif
             return new GameInputClient(native);
         }
         finally
@@ -207,7 +216,7 @@ public sealed class GameInputClient : IDisposable
         }
 
         GameInputException.ThrowIfFailed(hResult);
-        return nativeReading is null ? null : new GameInputReading(nativeReading);
+        return nativeReading is { } reading ? new GameInputReading(reading) : null;
     }
 
     /// <summary>
@@ -235,7 +244,7 @@ public sealed class GameInputClient : IDisposable
         }
 
         GameInputException.ThrowIfFailed(hResult);
-        return nativeReading is null ? null : new GameInputReading(nativeReading);
+        return nativeReading is { } reading ? new GameInputReading(reading) : null;
     }
 
     /// <summary>
@@ -263,7 +272,7 @@ public sealed class GameInputClient : IDisposable
         }
 
         GameInputException.ThrowIfFailed(hResult);
-        return nativeReading is null ? null : new GameInputReading(nativeReading);
+        return nativeReading is { } reading ? new GameInputReading(reading) : null;
     }
 
     /// <summary>
@@ -274,9 +283,9 @@ public sealed class GameInputClient : IDisposable
     {
         int hResult = Native.CreateDispatcher(out IGameInputDispatcher? dispatcher);
         GameInputException.ThrowIfFailed(hResult);
-        return dispatcher is null
-            ? throw new GameInputException(GameInputHResult.ObjectNoLongerExists)
-            : new GameInputDispatcher(dispatcher);
+        return dispatcher is { } dispatcherValue
+            ? new GameInputDispatcher(dispatcherValue)
+            : throw new GameInputException(GameInputHResult.ObjectNoLongerExists);
     }
 
     /// <summary>
@@ -288,9 +297,9 @@ public sealed class GameInputClient : IDisposable
     {
         int hResult = Native.FindDeviceFromId(ref deviceId, out IGameInputDevice? device);
         GameInputException.ThrowIfFailed(hResult);
-        return device is null
-            ? throw new GameInputException(GameInputHResult.DeviceNotFound)
-            : new GameInputDevice(device);
+        return device is { } deviceValue
+            ? new GameInputDevice(deviceValue)
+            : throw new GameInputException(GameInputHResult.DeviceNotFound);
     }
 
     /// <summary>
@@ -307,9 +316,9 @@ public sealed class GameInputClient : IDisposable
 
         int hResult = Native.FindDeviceFromPlatformString(value, out IGameInputDevice? device);
         GameInputException.ThrowIfFailed(hResult);
-        return device is null
-            ? throw new GameInputException(GameInputHResult.DeviceNotFound)
-            : new GameInputDevice(device);
+        return device is { } deviceValue
+            ? new GameInputDevice(deviceValue)
+            : throw new GameInputException(GameInputHResult.DeviceNotFound);
     }
 
     /// <summary>
@@ -325,6 +334,20 @@ public sealed class GameInputClient : IDisposable
         ulong token = 0;
         try
         {
+#if NET10_0_OR_GREATER
+            int hResult;
+            unsafe
+            {
+                hResult = Native.RegisterDeviceCallback(
+                    device: null,
+                    inputKind,
+                    statusFilter,
+                    GameInputEnumerationKind.GameInputBlockingEnumeration,
+                    GCHandle.ToIntPtr(contextHandle),
+                    (IntPtr)(delegate* unmanaged[Stdcall]<ulong, IntPtr, IGameInputDevice, ulong, GameInputDeviceStatus, GameInputDeviceStatus, void>)&OnDeviceCallback,
+                    out token);
+            }
+#else
             int hResult = Native.RegisterDeviceCallback(
                 device: null,
                 inputKind,
@@ -333,6 +356,7 @@ public sealed class GameInputClient : IDisposable
                 GCHandle.ToIntPtr(contextHandle),
                 s_deviceCallback,
                 out token);
+#endif
 
             GameInputException.ThrowIfFailed(hResult);
             return context.Devices.ToArray();
@@ -350,6 +374,25 @@ public sealed class GameInputClient : IDisposable
                 contextHandle.Free();
             }
         }
+    }
+
+    /// <summary>
+    /// 以背景執行緒非同步列舉目前符合條件的裝置，避免呼叫端執行緒被原生阻塞式列舉卡住。
+    /// </summary>
+    /// <remarks>
+    /// 這個方法只是把 <see cref="EnumerateDevices(GameInputKind, GameInputDeviceStatus)"/> 包在
+    /// <see cref="Task.Run(Action)"/> 中執行，不是等待原生事件的非同步方法。
+    /// </remarks>
+    /// <param name="inputKind">要查詢或篩選的 GameInput 輸入種類。</param>
+    /// <param name="statusFilter">要篩選的裝置狀態。</param>
+    /// <param name="cancellationToken">取消語彙。</param>
+    /// <returns>操作完成後的查詢或建立結果。</returns>
+    public Task<IReadOnlyList<GameInputDevice>> EnumerateDevicesAsync(
+        GameInputKind inputKind,
+        GameInputDeviceStatus statusFilter = GameInputDeviceStatus.GameInputDeviceConnected,
+        CancellationToken cancellationToken = default)
+    {
+        return Task.Run(() => EnumerateDevices(inputKind, statusFilter), cancellationToken);
     }
 
     /// <summary>
@@ -397,7 +440,20 @@ public sealed class GameInputClient : IDisposable
         ulong token = 0;
         try
         {
+#if NET10_0_OR_GREATER
+            int hResult;
+            unsafe
+            {
+                hResult = Native.RegisterReadingCallback(
+                    device?.NativeInterface,
+                    inputKind,
+                    GCHandle.ToIntPtr(handle),
+                    (IntPtr)(delegate* unmanaged[Stdcall]<ulong, IntPtr, IGameInputReading, void>)&OnReadingCallback,
+                    out token);
+            }
+#else
             int hResult = Native.RegisterReadingCallback(device?.NativeInterface, inputKind, GCHandle.ToIntPtr(handle), s_readingCallback, out token);
+#endif
             GameInputException.ThrowIfFailed(hResult);
             return AddRegistration(token, handle, context.Deactivate);
         }
@@ -410,6 +466,113 @@ public sealed class GameInputClient : IDisposable
 
             throw;
         }
+    }
+
+    /// <summary>
+    /// 非同步等待下一筆符合條件的 reading，並在原生回呼仍然有效期間內以 <paramref name="selector"/> 轉換為安全結果。
+    /// </summary>
+    /// <remarks>
+    /// <paramref name="selector"/> 收到的 <see cref="GameInputReading"/> 只在回呼執行期間有效，
+    /// 不可以把它本身、或任何指向其原生生命週期的參考當作 <paramref name="selector"/> 的回傳值往外傳遞；
+    /// 應改用 <see cref="GameInputReading.TryGetGamepadSnapshot"/> 等方法轉換成不持有原生生命週期的快照後再回傳。
+    /// 內部會註冊一次性原生回呼；完成或取消後會透過背景執行緒解除註冊，
+    /// 不會在原生回呼執行緒中同步呼叫 <see cref="GameInputCallbackRegistration.Dispose"/>。
+    /// </remarks>
+    /// <typeparam name="TResult">轉換後的安全結果型別。</typeparam>
+    /// <param name="inputKind">要查詢或篩選的 GameInput 輸入種類。</param>
+    /// <param name="device">選用的 GameInput 裝置篩選。</param>
+    /// <param name="selector">在原生回呼執行期間，把 reading 轉換為安全結果的委派。</param>
+    /// <param name="cancellationToken">取消語彙。</param>
+    /// <returns>操作完成後的查詢或建立結果。</returns>
+    public Task<TResult> WaitForReadingAsync<TResult>(
+        GameInputKind inputKind,
+        GameInputDevice? device,
+        Func<GameInputReading, TResult> selector,
+        CancellationToken cancellationToken = default)
+    {
+#if NET10_0_OR_GREATER
+        ArgumentNullException.ThrowIfNull(selector);
+#else
+        if (selector is null)
+        {
+            throw new ArgumentNullException(nameof(selector));
+        }
+#endif
+
+        return RunAwaitableCallback<TResult>(
+            onResult => RegisterReadingCallback(device, inputKind, reading => onResult(selector(reading))),
+            cancellationToken,
+            nameof(GameInputClient));
+    }
+
+    /// <summary>
+    /// 收斂「一次性原生回呼 + 取消語彙 + Dispose 時以例外收尾」的樣板邏輯，供 <see cref="WaitForReadingAsync{TResult}"/>
+    /// 與 <see cref="GameInputDeviceManager.WaitForDeviceEventAsync(GameInputKind, GameInputDeviceStatus, CancellationToken)"/> 共用。
+    /// </summary>
+    /// <typeparam name="TResult">轉換後的安全結果型別。</typeparam>
+    /// <param name="register">註冊一次性原生回呼的委派；收到 <c>onResult</c> 後應在回呼內把結果轉換完成再呼叫它。</param>
+    /// <param name="cancellationToken">取消語彙。</param>
+    /// <param name="disposedObjectName">呼叫端在等待期間被釋放時，<see cref="ObjectDisposedException"/> 要標示的物件名稱。</param>
+    /// <returns>操作完成後的查詢或建立結果。</returns>
+    internal Task<TResult> RunAwaitableCallback<TResult>(
+        Func<Action<TResult>, GameInputCallbackRegistration> register,
+        CancellationToken cancellationToken,
+        string disposedObjectName)
+    {
+        TaskCompletionSource<TResult> completionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        DeferredCallbackCompletion completion = new();
+        Action cancelForDispose = () =>
+        {
+            completionSource.TrySetException(new ObjectDisposedException(disposedObjectName));
+            completion.DisposeCancellationRegistrationForDispose();
+        };
+        RegisterPendingWait(cancelForDispose);
+
+        GameInputCallbackRegistration registration;
+        try
+        {
+            registration = register(result =>
+            {
+                if (completionSource.TrySetResult(result))
+                {
+                    UnregisterPendingWait(cancelForDispose);
+                    completion.Complete();
+                }
+            });
+        }
+        catch
+        {
+            UnregisterPendingWait(cancelForDispose);
+            throw;
+        }
+        completion.SetRegistration(registration);
+
+        CancellationTokenRegistration cancellationRegistration = cancellationToken.Register(() =>
+        {
+            if (completionSource.TrySetCanceled(cancellationToken))
+            {
+                UnregisterPendingWait(cancelForDispose);
+                completion.Complete();
+            }
+        });
+        completion.SetCancellationRegistration(cancellationRegistration);
+
+        return completionSource.Task;
+    }
+
+    /// <summary>
+    /// 非同步等待下一筆 gamepad reading，並轉換為不持有原生生命週期的快照。
+    /// </summary>
+    /// <param name="device">選用的 GameInput 裝置篩選。</param>
+    /// <param name="cancellationToken">取消語彙。</param>
+    /// <returns>操作完成後的查詢或建立結果。</returns>
+    public Task<GamepadReadingSnapshot?> WaitForGamepadAsync(GameInputDevice? device = null, CancellationToken cancellationToken = default)
+    {
+        return WaitForReadingAsync(
+            GameInputKind.GameInputKindGamepad,
+            device,
+            static reading => reading.TryGetGamepadSnapshot(out GamepadReadingSnapshot? snapshot) ? snapshot : null,
+            cancellationToken);
     }
 
     /// <summary>
@@ -442,7 +605,22 @@ public sealed class GameInputClient : IDisposable
         ulong token = 0;
         try
         {
+#if NET10_0_OR_GREATER
+            int hResult;
+            unsafe
+            {
+                hResult = Native.RegisterDeviceCallback(
+                    device?.NativeInterface,
+                    inputKind,
+                    statusFilter,
+                    enumerationKind,
+                    GCHandle.ToIntPtr(handle),
+                    (IntPtr)(delegate* unmanaged[Stdcall]<ulong, IntPtr, IGameInputDevice, ulong, GameInputDeviceStatus, GameInputDeviceStatus, void>)&OnDeviceCallback,
+                    out token);
+            }
+#else
             int hResult = Native.RegisterDeviceCallback(device?.NativeInterface, inputKind, statusFilter, enumerationKind, GCHandle.ToIntPtr(handle), s_deviceCallback, out token);
+#endif
             GameInputException.ThrowIfFailed(hResult);
             return AddRegistration(token, handle, context.Deactivate);
         }
@@ -480,7 +658,20 @@ public sealed class GameInputClient : IDisposable
         ulong token = 0;
         try
         {
+#if NET10_0_OR_GREATER
+            int hResult;
+            unsafe
+            {
+                hResult = Native.RegisterSystemButtonCallback(
+                    device?.NativeInterface,
+                    buttonFilter,
+                    GCHandle.ToIntPtr(handle),
+                    (IntPtr)(delegate* unmanaged[Stdcall]<ulong, IntPtr, IGameInputDevice, ulong, GameInputSystemButtons, GameInputSystemButtons, void>)&OnSystemButtonCallback,
+                    out token);
+            }
+#else
             int hResult = Native.RegisterSystemButtonCallback(device?.NativeInterface, buttonFilter, GCHandle.ToIntPtr(handle), s_systemButtonCallback, out token);
+#endif
             GameInputException.ThrowIfFailed(hResult);
             return AddRegistration(token, handle, context.Deactivate);
         }
@@ -517,7 +708,19 @@ public sealed class GameInputClient : IDisposable
         ulong token = 0;
         try
         {
+#if NET10_0_OR_GREATER
+            int hResult;
+            unsafe
+            {
+                hResult = Native.RegisterKeyboardLayoutCallback(
+                    device?.NativeInterface,
+                    GCHandle.ToIntPtr(handle),
+                    (IntPtr)(delegate* unmanaged[Stdcall]<ulong, IntPtr, IGameInputDevice, ulong, uint, uint, void>)&OnKeyboardLayoutCallback,
+                    out token);
+            }
+#else
             int hResult = Native.RegisterKeyboardLayoutCallback(device?.NativeInterface, GCHandle.ToIntPtr(handle), s_keyboardLayoutCallback, out token);
+#endif
             GameInputException.ThrowIfFailed(hResult);
             return AddRegistration(token, handle, context.Deactivate);
         }
@@ -545,6 +748,18 @@ public sealed class GameInputClient : IDisposable
             return;
         }
 
+        Action[] pendingWaitCancellations;
+        lock (_syncRoot)
+        {
+            pendingWaitCancellations = [.. _pendingWaitCancellations];
+            _pendingWaitCancellations.Clear();
+        }
+
+        foreach (Action cancelForDispose in pendingWaitCancellations)
+        {
+            cancelForDispose();
+        }
+
         GameInputCallbackRegistration[] registrations;
         lock (_syncRoot)
         {
@@ -555,19 +770,19 @@ public sealed class GameInputClient : IDisposable
         List<Exception>? disposeFailures = null;
         foreach (GameInputCallbackRegistration registration in registrations)
         {
-            try
+            if (registration.DisposeSafely() is { } failure)
             {
-                registration.Dispose();
-            }
-            catch (InvalidOperationException ex)
-            {
-                (disposeFailures ??= []).Add(ex);
+                (disposeFailures ??= []).Add(failure);
             }
         }
 
         if (_native is not null)
         {
+#if NET10_0_OR_GREATER
+            _native.Value.Release();
+#else
             Marshal.ReleaseComObject(_native);
+#endif
             _native = null;
         }
 
@@ -590,9 +805,19 @@ public sealed class GameInputClient : IDisposable
             UnregisterCallback,
             RemoveRegistration);
 
+        bool disposed;
         lock (_syncRoot)
         {
-            _registrations.Add(registration);
+            disposed = _disposed;
+            if (!disposed)
+            {
+                _registrations.Add(registration);
+            }
+        }
+
+        if (disposed)
+        {
+            registration.Dispose();
         }
 
         return registration;
@@ -616,11 +841,46 @@ public sealed class GameInputClient : IDisposable
         }
     }
 
+    /// <summary>
+    /// 追蹤一個尚未完成的非同步等待，讓 <see cref="Dispose"/> 能在釋放資源時把它以例外收尾，
+    /// 避免呼叫端的 <see cref="Task"/> 永遠停在 pending 狀態。
+    /// </summary>
+    /// <param name="cancelForDispose">在 <see cref="Dispose"/> 時呼叫、讓等待以例外完成的委派。</param>
+    internal void RegisterPendingWait(Action cancelForDispose)
+    {
+        bool disposed;
+        lock (_syncRoot)
+        {
+            disposed = _disposed;
+            if (!disposed)
+            {
+                _pendingWaitCancellations.Add(cancelForDispose);
+            }
+        }
+
+        if (disposed)
+        {
+            cancelForDispose();
+        }
+    }
+
+    /// <summary>
+    /// 解除 <see cref="RegisterPendingWait"/> 追蹤的等待，等待已透過一般路徑完成時呼叫。
+    /// </summary>
+    /// <param name="cancelForDispose">先前傳入 <see cref="RegisterPendingWait"/> 的同一個委派。</param>
+    internal void UnregisterPendingWait(Action cancelForDispose)
+    {
+        lock (_syncRoot)
+        {
+            _pendingWaitCancellations.Remove(cancelForDispose);
+        }
+    }
+
     private TSnapshot? GetCurrentSnapshot<TSnapshot>(
         GameInputKind inputKind,
         GameInputDevice? device,
         TryCreateReadingSnapshot<TSnapshot> tryCreateSnapshot)
-        where TSnapshot : class
+        where TSnapshot : struct
     {
         using GameInputReading? reading = GetCurrentReading(inputKind, device);
         if (reading is null)
@@ -642,8 +902,11 @@ public sealed class GameInputClient : IDisposable
     }
 
     private delegate bool TryCreateReadingSnapshot<TSnapshot>(GameInputReading reading, out TSnapshot? snapshot)
-        where TSnapshot : class;
+        where TSnapshot : struct;
 
+#if NET10_0_OR_GREATER
+    [UnmanagedCallersOnly(CallConvs = [typeof(CallConvStdcall)])]
+#endif
     private static void OnReadingCallback(ulong callbackToken, IntPtr context, IGameInputReading reading)
     {
         GameInputCallbackThread.Enter();
@@ -665,6 +928,9 @@ public sealed class GameInputClient : IDisposable
         }
     }
 
+#if NET10_0_OR_GREATER
+    [UnmanagedCallersOnly(CallConvs = [typeof(CallConvStdcall)])]
+#endif
     private static void OnDeviceCallback(ulong callbackToken, IntPtr context, IGameInputDevice device, ulong timestamp, GameInputDeviceStatus currentStatus, GameInputDeviceStatus previousStatus)
     {
         GameInputCallbackThread.Enter();
@@ -692,6 +958,9 @@ public sealed class GameInputClient : IDisposable
         }
     }
 
+#if NET10_0_OR_GREATER
+    [UnmanagedCallersOnly(CallConvs = [typeof(CallConvStdcall)])]
+#endif
     private static void OnSystemButtonCallback(ulong callbackToken, IntPtr context, IGameInputDevice device, ulong timestamp, GameInputSystemButtons currentButtons, GameInputSystemButtons previousButtons)
     {
         GameInputCallbackThread.Enter();
@@ -713,6 +982,9 @@ public sealed class GameInputClient : IDisposable
         }
     }
 
+#if NET10_0_OR_GREATER
+    [UnmanagedCallersOnly(CallConvs = [typeof(CallConvStdcall)])]
+#endif
     private static void OnKeyboardLayoutCallback(ulong callbackToken, IntPtr context, IGameInputDevice device, ulong timestamp, uint currentLayout, uint previousLayout)
     {
         GameInputCallbackThread.Enter();
@@ -734,7 +1006,7 @@ public sealed class GameInputClient : IDisposable
         }
     }
 
-    private static void RaiseUnhandledCallbackException(Exception exception)
+    internal static void RaiseUnhandledCallbackException(Exception exception)
     {
         try
         {

@@ -103,7 +103,7 @@ public sealed class GameInputForceFeedbackEffect : IDisposable
     public GameInputDevice? GetDevice()
     {
         Native.GetDevice(out IGameInputDevice? device);
-        return device is null ? null : new GameInputDevice(device);
+        return device is { } deviceValue ? new GameInputDevice(deviceValue) : null;
     }
 
     /// <summary>
@@ -118,7 +118,11 @@ public sealed class GameInputForceFeedbackEffect : IDisposable
 
         if (_native is not null)
         {
+#if NET10_0_OR_GREATER
+            _native.Value.Release();
+#else
             Marshal.ReleaseComObject(_native);
+#endif
             _native = null;
         }
 

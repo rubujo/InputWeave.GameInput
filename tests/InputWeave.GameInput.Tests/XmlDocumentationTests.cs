@@ -114,13 +114,14 @@ public sealed class XmlDocumentationTests
     {
         foreach (MethodInfo method in type.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance | BindingFlags.DeclaredOnly))
         {
-            if (method.IsSpecialName || !IsPublicOrProtected(method))
+            if (method.IsSpecialName || !IsPublicOrProtected(method) || IsCompilerGenerated(method))
             {
                 continue;
             }
 
             ParameterInfo[] parameters = method.GetParameters();
-            XElement documentation = RequireDocumentedMember(members, "M:" + GetXmlTypeName(type) + "." + method.Name, parameters);
+            string genericArity = method.IsGenericMethodDefinition ? "``" + method.GetGenericArguments().Length : string.Empty;
+            XElement documentation = RequireDocumentedMember(members, "M:" + GetXmlTypeName(type) + "." + method.Name + genericArity, parameters);
             RequireNonEmptyElement(documentation, "summary", method.Name);
             ValidateParameterDocumentation(documentation, parameters, method.Name);
             if (method.ReturnType != typeof(void))
