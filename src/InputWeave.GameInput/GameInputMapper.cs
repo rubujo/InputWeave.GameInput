@@ -22,7 +22,7 @@ public sealed class GameInputMapper : IDisposable
     /// </summary>
     /// <param name="axisElement">要查詢 mapping 的 axis 元素。</param>
     /// <param name="mapping">接收 mapping 資訊的輸出欄位。</param>
-    /// <returns>操作完成後的查詢或建立結果。</returns>
+    /// <returns>若成功取得對應的軸 mapping 資訊，傳回 <see langword="true"/> 並透過 <paramref name="mapping"/> 輸出結果；查詢失敗時傳回 <see langword="false"/>。</returns>
     public bool TryGetGamepadAxisMappingInfo(GameInputGamepadAxes axisElement, out GameInputAxisMapping mapping)
     {
         return TryReadMapping(size: Marshal.SizeOf<GameInputAxisMapping>(), NativeMapping, out mapping);
@@ -38,7 +38,7 @@ public sealed class GameInputMapper : IDisposable
     /// </summary>
     /// <param name="buttonElement">要查詢 mapping 的 button 元素。</param>
     /// <param name="mapping">接收 mapping 資訊的輸出欄位。</param>
-    /// <returns>操作完成後的查詢或建立結果。</returns>
+    /// <returns>若成功取得對應的按鈕 mapping 資訊，傳回 <see langword="true"/> 並透過 <paramref name="mapping"/> 輸出結果；查詢失敗時傳回 <see langword="false"/>。</returns>
     public bool TryGetGamepadButtonMappingInfo(GameInputGamepadButtons buttonElement, out GameInputButtonMapping mapping)
     {
         return TryReadMapping(size: Marshal.SizeOf<GameInputButtonMapping>(), NativeMapping, out mapping);
@@ -54,7 +54,7 @@ public sealed class GameInputMapper : IDisposable
     /// </summary>
     /// <param name="axisElement">要查詢 mapping 的 axis 元素。</param>
     /// <param name="mapping">接收 mapping 資訊的輸出欄位。</param>
-    /// <returns>操作完成後的查詢或建立結果。</returns>
+    /// <returns>若成功取得對應的軸 mapping 資訊，傳回 <see langword="true"/> 並透過 <paramref name="mapping"/> 輸出結果；查詢失敗時傳回 <see langword="false"/>。</returns>
     public bool TryGetFlightStickAxisMappingInfo(GameInputFlightStickAxes axisElement, out GameInputAxisMapping mapping)
     {
         return TryReadMapping(size: Marshal.SizeOf<GameInputAxisMapping>(), NativeMapping, out mapping);
@@ -70,7 +70,7 @@ public sealed class GameInputMapper : IDisposable
     /// </summary>
     /// <param name="buttonElement">要查詢 mapping 的 button 元素。</param>
     /// <param name="mapping">接收 mapping 資訊的輸出欄位。</param>
-    /// <returns>操作完成後的查詢或建立結果。</returns>
+    /// <returns>若成功取得對應的按鈕 mapping 資訊，傳回 <see langword="true"/> 並透過 <paramref name="mapping"/> 輸出結果；查詢失敗時傳回 <see langword="false"/>。</returns>
     public bool TryGetFlightStickButtonMappingInfo(GameInputFlightStickButtons buttonElement, out GameInputButtonMapping mapping)
     {
         return TryReadMapping(size: Marshal.SizeOf<GameInputButtonMapping>(), NativeMapping, out mapping);
@@ -86,7 +86,7 @@ public sealed class GameInputMapper : IDisposable
     /// </summary>
     /// <param name="axisElement">要查詢 mapping 的 axis 元素。</param>
     /// <param name="mapping">接收 mapping 資訊的輸出欄位。</param>
-    /// <returns>操作完成後的查詢或建立結果。</returns>
+    /// <returns>若成功取得對應的軸 mapping 資訊，傳回 <see langword="true"/> 並透過 <paramref name="mapping"/> 輸出結果；查詢失敗時傳回 <see langword="false"/>。</returns>
     public bool TryGetRacingWheelAxisMappingInfo(GameInputRacingWheelAxes axisElement, out GameInputAxisMapping mapping)
     {
         return TryReadMapping(size: Marshal.SizeOf<GameInputAxisMapping>(), NativeMapping, out mapping);
@@ -102,7 +102,7 @@ public sealed class GameInputMapper : IDisposable
     /// </summary>
     /// <param name="buttonElement">要查詢 mapping 的 button 元素。</param>
     /// <param name="mapping">接收 mapping 資訊的輸出欄位。</param>
-    /// <returns>操作完成後的查詢或建立結果。</returns>
+    /// <returns>若成功取得對應的按鈕 mapping 資訊，傳回 <see langword="true"/> 並透過 <paramref name="mapping"/> 輸出結果；查詢失敗時傳回 <see langword="false"/>。</returns>
     public bool TryGetRacingWheelButtonMappingInfo(GameInputRacingWheelButtons buttonElement, out GameInputButtonMapping mapping)
     {
         return TryReadMapping(size: Marshal.SizeOf<GameInputButtonMapping>(), NativeMapping, out mapping);
@@ -118,7 +118,7 @@ public sealed class GameInputMapper : IDisposable
     /// </summary>
     /// <param name="buttonElement">要查詢 mapping 的 button 元素。</param>
     /// <param name="mapping">接收 mapping 資訊的輸出欄位。</param>
-    /// <returns>操作完成後的查詢或建立結果。</returns>
+    /// <returns>若成功取得對應的按鈕 mapping 資訊，傳回 <see langword="true"/> 並透過 <paramref name="mapping"/> 輸出結果；查詢失敗時傳回 <see langword="false"/>。</returns>
     public bool TryGetArcadeStickButtonMappingInfo(GameInputArcadeStickButtons buttonElement, out GameInputButtonMapping mapping)
     {
         return TryReadMapping(size: Marshal.SizeOf<GameInputButtonMapping>(), NativeMapping, out mapping);

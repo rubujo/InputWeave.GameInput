@@ -93,7 +93,7 @@ public sealed class GameInputCallbackRegistration : IDisposable
                 Dispose();
                 return null;
             }
-            catch (InvalidOperationException ex)
+            catch (Exception ex)
             {
                 return ex;
             }

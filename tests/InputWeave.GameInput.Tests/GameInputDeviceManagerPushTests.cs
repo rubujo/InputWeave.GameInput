@@ -125,6 +125,10 @@ public sealed class GameInputDeviceManagerPushTests
             {
                 Assert.IsNotNull(GetDeviceEventsField(manager), "_manualDeviceEventsActive 為 true 時，_deviceEvents 不應為 null。");
             }
+            else if (GetPushSubscriberCountField(manager) == 0)
+            {
+                Assert.IsNull(GetDeviceEventsField(manager), "_manualDeviceEventsActive 為 false 且沒有 push 訂閱者時，_deviceEvents 應已清空，不應殘留洩漏的裝置事件註冊。");
+            }
 
             manager.StopDeviceEvents();
         });
@@ -188,6 +192,12 @@ public sealed class GameInputDeviceManagerPushTests
     {
         FieldInfo field = typeof(GameInputDeviceManager).GetField("_manualDeviceEventsActive", BindingFlags.NonPublic | BindingFlags.Instance)!;
         return (bool)field.GetValue(manager)!;
+    }
+
+    private static int GetPushSubscriberCountField(GameInputDeviceManager manager)
+    {
+        FieldInfo field = typeof(GameInputDeviceManager).GetField("_pushSubscriberCount", BindingFlags.NonPublic | BindingFlags.Instance)!;
+        return (int)field.GetValue(manager)!;
     }
 
     private static void RunWithManager(Action<GameInputDeviceManager> action)

@@ -36,7 +36,7 @@
 - Rumble：依能力遮罩的 opt-in helper 與 `GameInputRumbleScope`
 - 聚合裝置：Create / Disable
 - 執行階段載入器：`GameInputRuntime` 提供與 Microsoft C++ 載入器對齊的受控執行階段選擇與探測診斷
-- 發佈支援界線：目前不宣告 NativeAOT、trimming 或 single-file 發佈相容性，不包含原生橋接 DLL
+- 發佈支援界線：`net10.0-windows` 已實際跑過 `dotnet publish -p:PublishAot=true` 端對端驗證（獨立探測專案 + 實體硬體，詳見 README「支援範圍」段落）；不宣告 single-file 發佈相容性，不包含原生橋接 DLL
 - 非同步 API：`GameInputClient.EnumerateDevicesAsync`/`WaitForReadingAsync`/`WaitForGamepadAsync`、
   `GameInputDeviceManager.RefreshDevicesAsync`/`WaitForDeviceEventAsync`，以 `Task`/`TaskCompletionSource` 包裝，
   一次性原生回呼會延後到背景執行緒解除註冊，避免在原生回呼執行緒內同步 `Dispose`

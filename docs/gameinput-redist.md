@@ -2,7 +2,7 @@
 
 Microsoft 官方 `Microsoft.GameInput` NuGet 套件會提供最新 `GameInput.h`、原生程式庫與 Windows PC 用 `GameInputRedist.msi`。這個包裝套件不會重新散佈 MSI、可轉散發 DLL 或任何原生橋接 DLL，也不會在使用者電腦上自動安裝可轉散發套件。
 
-InputWeave 目前支援一般 .NET Framework 與 .NET Windows 應用程式，不宣告 NativeAOT、trimming 或 single-file 發佈相容性。若未來需要正式支援這些發佈模式，會另行規劃 native shim 或 ComWrappers source generation；這不是目前套件形狀的一部分。
+InputWeave 目前支援一般 .NET Framework 與 .NET Windows 應用程式。`net10.0-windows` 已實際跑過 `dotnet publish -p:PublishAot=true` 端對端驗證（獨立探測專案 + 實體硬體，詳見 README「支援範圍」段落）；不宣告 single-file 發佈相容性。
 
 InputWeave 目前採取純受控載入器，預設對齊 Microsoft C++ 載入器的執行階段選擇行為。載入候選來源如下：
 

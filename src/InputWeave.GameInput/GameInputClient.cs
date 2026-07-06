@@ -291,6 +291,14 @@ public sealed class GameInputClient : IDisposable
     /// <summary>
     /// 依裝置 ID 尋找裝置。
     /// </summary>
+    /// <remarks>
+    /// 實測觀察到：緊接在 <see cref="CreateAggregateDevice"/> 之後、原生裝置註冊尚未完成的極短暫時間窗內，立即用剛取得的
+    /// <see cref="AppLocalDeviceId"/> 呼叫這個方法，偶爾會在原生 GameInput 執行階段觸發無法被 managed 例外攔截的存取違規
+    /// （<c>0xC0000005</c>），而非乾淨地回傳「找不到裝置」的 HRESULT；查詢一個從未存在過的裝置 ID 則不會有這個問題。
+    /// 官方文件說明聚合裝置會透過 <see cref="RegisterDeviceCallback"/> 註冊的回呼發出狀態通知，因此若要查詢剛建立的聚合裝置，
+    /// 正確做法是先用 <see cref="RegisterDeviceCallback"/>（或 <see cref="GameInputDeviceManager.DeviceChanged"/>）
+    /// 等到該裝置的狀態通知後再查詢，而不是猜測一個延遲時間。
+    /// </remarks>
     /// <param name="deviceId">GameInput 裝置識別值。</param>
     /// <returns>操作完成後的查詢或建立結果。</returns>
     public GameInputDevice FindDeviceFromId(ref AppLocalDeviceId deviceId)
@@ -398,6 +406,10 @@ public sealed class GameInputClient : IDisposable
     /// <summary>
     /// 建立聚合裝置。
     /// </summary>
+    /// <remarks>
+    /// 傳回的 <see cref="AppLocalDeviceId"/> 不建議立即傳入 <see cref="FindDeviceFromId"/> 查詢，詳見該方法文件說明的
+    /// 已知原生時序風險。
+    /// </remarks>
     /// <param name="inputKind">要查詢或篩選的 GameInput 輸入種類。</param>
     /// <returns>操作完成後的查詢或建立結果。</returns>
     public AppLocalDeviceId CreateAggregateDevice(GameInputKind inputKind)

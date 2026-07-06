@@ -12,6 +12,12 @@ public sealed class GameInputDevice : IDisposable
     private bool _disposed;
     private GameInputDeviceInfoSnapshot? _cachedInfoSnapshot;
 
+#if NET10_0_OR_GREATER
+    private readonly System.Threading.Lock _cacheSyncRoot = new();
+#else
+    private readonly object _cacheSyncRoot = new();
+#endif
+
     internal GameInputDevice(IGameInputDevice native)
     {
         _native = native;
@@ -84,7 +90,15 @@ public sealed class GameInputDevice : IDisposable
     /// <returns>操作完成後的查詢或建立結果。</returns>
     public GameInputDeviceInfoSnapshot GetDeviceInfoSnapshot()
     {
-        return _cachedInfoSnapshot ??= GameInputDeviceInfoSnapshot.FromNative(GetDeviceInfo());
+        if (_cachedInfoSnapshot is { } cached)
+        {
+            return cached;
+        }
+
+        lock (_cacheSyncRoot)
+        {
+            return _cachedInfoSnapshot ??= GameInputDeviceInfoSnapshot.FromNative(GetDeviceInfo());
+        }
     }
 
     /// <summary>
