@@ -340,7 +340,7 @@ if (manager.TryGetFirstGamepad(out GameInputDevice? device, out GameInputDeviceI
 
 ## 執行階段缺失排除
 
-`GameInputRuntime.TryProbe` 可在建立 client 前檢查目前載入原則、候選執行階段、HRESULT 與 Win32 錯誤碼。InputWeave 會用受控載入器對齊 Microsoft C++ 載入器的執行階段選擇行為，但包裝套件不會散佈或安裝 `GameInputRedist.msi`、`GameInputRedist.dll` 或原生橋接 DLL；應用程式安裝流程仍需負責安裝 Microsoft 支援的 GameInput 可轉散發套件。`net10.0-windows` 分支已改用與 NativeAOT／trimming 相容的裸 vtable 投影，但目前尚未實際跑過 `dotnet publish -p:PublishAot=true` 端對端驗證。
+`GameInputRuntime.TryProbe` 可在建立 client 前檢查目前載入原則、候選執行階段、HRESULT 與 Win32 錯誤碼。InputWeave 會用受控載入器對齊 Microsoft C++ 載入器的執行階段選擇行為，但包裝套件不會散佈或安裝 `GameInputRedist.msi`、`GameInputRedist.dll` 或原生橋接 DLL；應用程式安裝流程仍需負責安裝 Microsoft 支援的 GameInput 可轉散發套件。`net10.0-windows` 分支已改用裸 vtable 投影，並已實際跑過 `dotnet publish -p:PublishAot=true` 端對端驗證（見 README「支援範圍」段落），確認裝置列舉、非同步 API、事件、依賴注入等主要路徑在 NativeAOT 下運作正常。
 
 ```csharp
 using System;

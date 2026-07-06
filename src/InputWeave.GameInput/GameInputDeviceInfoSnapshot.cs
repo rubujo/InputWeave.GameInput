@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
 using InputWeave.GameInput.Interop;
 
@@ -311,14 +312,24 @@ public readonly record struct GameInputDeviceInfoSnapshot : IEquatable<GameInput
             ReadArray<GameInputRawDeviceReportInfo>(native.OutputReportInfo, native.OutputReportCount));
     }
 
+#if NET10_0_OR_GREATER
+    private static T? PtrToNullableStructure<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors | DynamicallyAccessedMemberTypes.NonPublicConstructors)] T>(IntPtr pointer)
+        where T : struct
+#else
     private static T? PtrToNullableStructure<T>(IntPtr pointer)
         where T : struct
+#endif
     {
         return pointer == IntPtr.Zero ? null : Marshal.PtrToStructure<T>(pointer);
     }
 
+#if NET10_0_OR_GREATER
+    internal static IReadOnlyList<T> ReadArray<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors | DynamicallyAccessedMemberTypes.NonPublicConstructors)] T>(IntPtr pointer, uint count)
+        where T : struct
+#else
     internal static IReadOnlyList<T> ReadArray<T>(IntPtr pointer, uint count)
         where T : struct
+#endif
     {
         if (pointer == IntPtr.Zero || count == 0)
         {
@@ -328,7 +339,7 @@ public readonly record struct GameInputDeviceInfoSnapshot : IEquatable<GameInput
         Type type = typeof(T);
         bool isEnum = type.IsEnum;
         TypeCode underlyingTypeCode = isEnum ? Type.GetTypeCode(Enum.GetUnderlyingType(type)) : TypeCode.Empty;
-        int itemSize = isEnum ? Marshal.SizeOf(Enum.GetUnderlyingType(type)) : Marshal.SizeOf<T>();
+        int itemSize = isEnum ? GetUnderlyingTypeSize(underlyingTypeCode) : Marshal.SizeOf<T>();
 
         T[] values = new T[checked((int)count)];
         for (int index = 0; index < values.Length; index++)
@@ -340,6 +351,18 @@ public readonly record struct GameInputDeviceInfoSnapshot : IEquatable<GameInput
         }
 
         return values;
+    }
+
+    private static int GetUnderlyingTypeSize(TypeCode typeCode)
+    {
+        return typeCode switch
+        {
+            TypeCode.Byte or TypeCode.SByte => sizeof(byte),
+            TypeCode.Int16 or TypeCode.UInt16 => sizeof(short),
+            TypeCode.Int32 or TypeCode.UInt32 => sizeof(int),
+            TypeCode.Int64 or TypeCode.UInt64 => sizeof(long),
+            _ => throw new NotSupportedException($"不支援的 enum underlying type：{typeCode}。")
+        };
     }
 
     private static object ReadUnderlyingEnumValue(IntPtr pointer, TypeCode underlyingTypeCode)

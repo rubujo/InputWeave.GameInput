@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
 using InputWeave.GameInput.Interop;
 
@@ -152,8 +153,13 @@ public sealed class GameInputMapper : IDisposable
         GC.SuppressFinalize(this);
     }
 
+#if NET10_0_OR_GREATER
+    private static bool TryReadMapping<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors | DynamicallyAccessedMemberTypes.NonPublicConstructors)] T>(int size, Func<IntPtr, bool> read, out T mapping)
+        where T : struct
+#else
     private static bool TryReadMapping<T>(int size, Func<IntPtr, bool> read, out T mapping)
         where T : struct
+#endif
     {
         IntPtr pointer = Marshal.AllocHGlobal(size);
         try
