@@ -86,6 +86,18 @@ public sealed class GameInputClientAsyncTests
         });
     }
 
+    [TestMethod]
+    public void FindDeviceFromPlatformStringThrowsArgumentExceptionWhenValueExceedsMaxLength()
+    {
+        RunWithClient(client =>
+        {
+            string tooLong = new('a', GameInputClient.MaxPlatformStringLength + 1);
+
+            ArgumentException exception = Assert.ThrowsExactly<ArgumentException>(() => client.FindDeviceFromPlatformString(tooLong));
+            Assert.AreEqual("value", exception.ParamName);
+        });
+    }
+
     private static async Task RunWithClientAsync(Func<GameInputClient, Task> action)
     {
         try

@@ -14,6 +14,15 @@ public sealed class GameInputClient : IDisposable
     /// </summary>
     public static event EventHandler<GameInputCallbackExceptionEventArgs>? UnhandledCallbackException;
 
+    /// <summary>
+    /// <see cref="FindDeviceFromPlatformString"/> 接受的平台字串長度上限（字元數）。
+    /// </summary>
+    /// <remarks>
+    /// 實際平台裝置字串（例如裝置路徑）通常遠短於這個上限；超過時視為呼叫端誤用，直接拒絕，
+    /// 避免把異常長的字串傳入原生呼叫。
+    /// </remarks>
+    public const int MaxPlatformStringLength = 1024;
+
 #if !NET10_0_OR_GREATER
     private static readonly GameInputReadingCallback s_readingCallback = OnReadingCallback;
     private static readonly GameInputDeviceCallback s_deviceCallback = OnDeviceCallback;
@@ -315,11 +324,17 @@ public sealed class GameInputClient : IDisposable
     /// </summary>
     /// <param name="value">要傳入的值。</param>
     /// <returns>操作完成後的查詢或建立結果。</returns>
+    /// <exception cref="ArgumentException"><paramref name="value"/> 為空白，或長度超過 <see cref="MaxPlatformStringLength"/>。</exception>
     public GameInputDevice FindDeviceFromPlatformString(string value)
     {
         if (string.IsNullOrWhiteSpace(value))
         {
             throw new ArgumentException("平台字串不可為空白。", nameof(value));
+        }
+
+        if (value.Length > MaxPlatformStringLength)
+        {
+            throw new ArgumentException($"平台字串長度（{value.Length}）超過上限（{MaxPlatformStringLength}）。", nameof(value));
         }
 
         int hResult = Native.FindDeviceFromPlatformString(value, out IGameInputDevice? device);

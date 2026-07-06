@@ -8,6 +8,15 @@ namespace InputWeave.GameInput;
 /// </summary>
 public sealed class GameInputRawDeviceReport : IDisposable
 {
+    /// <summary>
+    /// <see cref="GetRawDataSize"/> 接受的原生回報大小上限（位元組）。
+    /// </summary>
+    /// <remarks>
+    /// 實際 HID／GameInput raw report 通常遠小於這個上限；超過時視為裝置或驅動程式回報異常，
+    /// 拒絕配置對應大小的記憶體，避免單一異常裝置造成過大的配置。
+    /// </remarks>
+    public const int MaxRawDataSize = 64 * 1024;
+
     private IGameInputRawDeviceReport? _native;
     private bool _disposed;
 
@@ -37,10 +46,21 @@ public sealed class GameInputRawDeviceReport : IDisposable
     /// <summary>
     /// 取得 raw data 大小。
     /// </summary>
+    /// <remarks>
+    /// 若原生回報的大小超過 <see cref="MaxRawDataSize"/>，視為裝置或驅動程式回報異常，拋出
+    /// <see cref="InvalidOperationException"/> 而不是嘗試配置對應大小的記憶體。
+    /// </remarks>
     /// <returns>操作完成後的查詢或建立結果。</returns>
+    /// <exception cref="InvalidOperationException">原生回報的大小超過 <see cref="MaxRawDataSize"/>。</exception>
     public int GetRawDataSize()
     {
-        return checked((int)Native.GetRawDataSize().ToUInt64());
+        int size = checked((int)Native.GetRawDataSize().ToUInt64());
+        if (size > MaxRawDataSize)
+        {
+            throw new InvalidOperationException($"原生 raw device report 回報的大小（{size} 位元組）超過上限（{MaxRawDataSize} 位元組），視為裝置或驅動程式回報異常。");
+        }
+
+        return size;
     }
 
     /// <summary>
