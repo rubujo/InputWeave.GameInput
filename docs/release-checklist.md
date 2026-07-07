@@ -23,10 +23,10 @@ dotnet pack src/InputWeave.GameInput/InputWeave.GameInput.csproj -c Release -o .
 - `.nupkg` 不得包含 `GameInputRedist.msi`、`GameInputRedist.dll` 或 `InputWeave.GameInput.Native.dll`。
 - `.csproj` 不得宣告 `IsAotCompatible` 或 `IsTrimmable`，release workflow 不得新增 NativeAOT、trimming 或 single-file 發佈矩陣。
 - `README.md` 必須包含 GameInput 可轉散發套件的安裝責任說明。
-- `README.md` 必須明確說明目前不宣告 NativeAOT、trimming 或 single-file 發佈相容性。
+- `README.md` 必須如實描述 NativeAOT 驗證狀態（`net10.0-windows` 已實測 `dotnet publish -p:PublishAot=true` 端對端驗證），且不得宣告 single-file 發佈相容性。
 - `README.md` 必須連到 `docs/gameinput-cookbook.md`。
 - 常見情境指南不得暗示包裝套件會散佈 `GameInputRedist.msi`、`GameInputRedist.dll` 或原生橋接 DLL。
-- 常見情境指南不得暗示目前支援 NativeAOT、trimming 或 single-file。
+- 常見情境指南的 NativeAOT 敘述必須與 README 一致（已實測驗證），且不得暗示支援 single-file。
 - 可轉散發套件文件必須說明受控載入器與 Microsoft C++ 載入器的行為對齊、DLL 劫持防護邊界與 `GameInputRuntime.TryProbe` 診斷方式。
 - 可轉散發套件文件不得暗示包裝套件會散佈 `GameInputRedist.msi`、`GameInputRedist.dll` 或原生橋接 DLL。
 - `docs/gameinput-api-coverage.md` 必須標示缺口為 0。
