@@ -4,6 +4,7 @@ using InputWeave.GameInput.Interop;
 namespace InputWeave.GameInput;
 
 /// <summary>
+/// A GameInput force feedback effect wrapper.
 /// GameInput force feedback effect 包裝。
 /// </summary>
 public sealed class GameInputForceFeedbackEffect : IDisposable
@@ -17,6 +18,7 @@ public sealed class GameInputForceFeedbackEffect : IDisposable
     }
 
     /// <summary>
+    /// The motor index.
     /// 馬達索引。
     /// </summary>
     public uint MotorIndex
@@ -44,6 +46,7 @@ public sealed class GameInputForceFeedbackEffect : IDisposable
     }
 
     /// <summary>
+    /// The effect state.
     /// effect 狀態。
     /// </summary>
     public GameInputFeedbackEffectState State
@@ -60,9 +63,10 @@ public sealed class GameInputForceFeedbackEffect : IDisposable
     }
 
     /// <summary>
+    /// Gets the effect parameters.
     /// 取得 effect 參數。
     /// </summary>
-    /// <returns>操作完成後的查詢或建立結果。</returns>
+    /// <returns>The current force feedback effect parameters. 目前的 force feedback effect 參數。</returns>
     public GameInputForceFeedbackParams GetParams()
     {
         IntPtr pointer = Marshal.AllocHGlobal(Marshal.SizeOf<GameInputForceFeedbackParams>());
@@ -78,10 +82,11 @@ public sealed class GameInputForceFeedbackEffect : IDisposable
     }
 
     /// <summary>
+    /// Sets the effect parameters.
     /// 設定 effect 參數。
     /// </summary>
-    /// <param name="parameters">GameInput 原生參數。</param>
-    /// <returns>操作完成後的查詢或建立結果。</returns>
+    /// <param name="parameters">The native GameInput parameters. GameInput 原生參數。</param>
+    /// <returns>Returns true when the parameters were applied; otherwise returns false. 參數套用成功時傳回 true；否則傳回 false。</returns>
     public bool SetParams(in GameInputForceFeedbackParams parameters)
     {
         IntPtr pointer = Marshal.AllocHGlobal(Marshal.SizeOf<GameInputForceFeedbackParams>());
@@ -97,9 +102,10 @@ public sealed class GameInputForceFeedbackEffect : IDisposable
     }
 
     /// <summary>
+    /// Gets the device that owns this effect.
     /// 取得此 effect 所屬裝置。
     /// </summary>
-    /// <returns>操作完成後的查詢或建立結果。</returns>
+    /// <returns>The owning device wrapper, or null when unavailable. 所屬裝置包裝；無法取得時為 null。</returns>
     public GameInputDevice? GetDevice()
     {
         Native.GetDevice(out IGameInputDevice? device);
@@ -107,6 +113,7 @@ public sealed class GameInputForceFeedbackEffect : IDisposable
     }
 
     /// <summary>
+    /// Releases the COM reference held by the force feedback effect wrapper.
     /// 釋放 force feedback effect 包裝持有的 COM 參考。
     /// </summary>
     public void Dispose()

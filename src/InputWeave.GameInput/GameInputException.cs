@@ -5,14 +5,16 @@ using InputWeave.GameInput.Interop;
 namespace InputWeave.GameInput;
 
 /// <summary>
+/// The exception thrown when a native GameInput call fails.
 /// GameInput 原生呼叫失敗時擲出的例外狀況。
 /// </summary>
 public sealed class GameInputException : Win32Exception
 {
     /// <summary>
+    /// Creates a GameInput exception from an HRESULT.
     /// 使用 HRESULT 建立 GameInput 例外狀況。
     /// </summary>
-    /// <param name="hResult">參數 hResult。</param>
+    /// <param name="hResult">The native HRESULT value. 參數 hResult。</param>
     public GameInputException(int hResult)
         : base(hResult, CreateMessage(hResult))
     {
@@ -20,6 +22,7 @@ public sealed class GameInputException : Win32Exception
     }
 
     /// <summary>
+    /// Whether the HRESULT means a GameInput device or reading does not exist.
     /// HRESULT 是否代表 GameInput 裝置或讀取資料不存在。
     /// </summary>
     public bool IsNotFound

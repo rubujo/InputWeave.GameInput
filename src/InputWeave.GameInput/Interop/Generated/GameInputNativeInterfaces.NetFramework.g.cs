@@ -9,7 +9,7 @@ using System.Runtime.InteropServices;
 namespace InputWeave.GameInput.Interop;
 
 /// <summary>
-/// 表示 IGameInput 對應的 GameInput COM 介面。
+/// Represents the GameInput COM interface corresponding to IGameInput. 表示 IGameInput 對應的 GameInput COM 介面。
 /// </summary>
 [ComImport]
 [Guid("20EFC1C7-5D9A-43BA-B26F-B807FA48609C")]
@@ -17,162 +17,162 @@ namespace InputWeave.GameInput.Interop;
 public interface IGameInput
 {
     /// <summary>
-    /// 呼叫 IGameInput.GetCurrentTimestamp 對應的 GameInput 原生 COM 方法。
+    /// Calls the native GameInput COM method corresponding to IGameInput.GetCurrentTimestamp. 呼叫 IGameInput.GetCurrentTimestamp 對應的 GameInput 原生 COM 方法。
     /// </summary>
-    /// <returns>原生 API 回傳的時間戳記或無號整數值。</returns>
+    /// <returns>The timestamp or unsigned integer value returned by the native API. 原生 API 回傳的時間戳記或無號整數值。</returns>
     [PreserveSig]
     ulong GetCurrentTimestamp();
 
     /// <summary>
-    /// 呼叫 IGameInput.GetCurrentReading 對應的 GameInput 原生 COM 方法。
+    /// Calls the native GameInput COM method corresponding to IGameInput.GetCurrentReading. 呼叫 IGameInput.GetCurrentReading 對應的 GameInput 原生 COM 方法。
     /// </summary>
-    /// <param name="inputKind">要查詢或篩選的 GameInput 輸入種類。</param>
-    /// <param name="device">目標或回呼提供的 GameInput device。</param>
-    /// <param name="reading">回呼提供的原生 GameInput reading。</param>
-    /// <returns>原生 HRESULT 值。</returns>
+    /// <param name="inputKind">The GameInput input kind to query or filter. 要查詢或篩選的 GameInput 輸入種類。</param>
+    /// <param name="device">The target GameInput device, or the device provided by the callback. 目標或回呼提供的 GameInput device。</param>
+    /// <param name="reading">The native GameInput reading provided by the callback. 回呼提供的原生 GameInput reading。</param>
+    /// <returns>The native HRESULT value. 原生 HRESULT 值。</returns>
     [PreserveSig]
     int GetCurrentReading(GameInputKind inputKind, IGameInputDevice? device, out IGameInputReading? reading);
 
     /// <summary>
-    /// 呼叫 IGameInput.GetNextReading 對應的 GameInput 原生 COM 方法。
+    /// Calls the native GameInput COM method corresponding to IGameInput.GetNextReading. 呼叫 IGameInput.GetNextReading 對應的 GameInput 原生 COM 方法。
     /// </summary>
-    /// <param name="referenceReading">作為查詢基準的 GameInput reading。</param>
-    /// <param name="inputKind">要查詢或篩選的 GameInput 輸入種類。</param>
-    /// <param name="device">目標或回呼提供的 GameInput device。</param>
-    /// <param name="reading">回呼提供的原生 GameInput reading。</param>
-    /// <returns>原生 HRESULT 值。</returns>
+    /// <param name="referenceReading">The GameInput reading used as the reference for the query. 作為查詢基準的 GameInput reading。</param>
+    /// <param name="inputKind">The GameInput input kind to query or filter. 要查詢或篩選的 GameInput 輸入種類。</param>
+    /// <param name="device">The target GameInput device, or the device provided by the callback. 目標或回呼提供的 GameInput device。</param>
+    /// <param name="reading">The native GameInput reading provided by the callback. 回呼提供的原生 GameInput reading。</param>
+    /// <returns>The native HRESULT value. 原生 HRESULT 值。</returns>
     [PreserveSig]
     int GetNextReading(IGameInputReading referenceReading, GameInputKind inputKind, IGameInputDevice? device, out IGameInputReading? reading);
 
     /// <summary>
-    /// 呼叫 IGameInput.GetPreviousReading 對應的 GameInput 原生 COM 方法。
+    /// Calls the native GameInput COM method corresponding to IGameInput.GetPreviousReading. 呼叫 IGameInput.GetPreviousReading 對應的 GameInput 原生 COM 方法。
     /// </summary>
-    /// <param name="referenceReading">作為查詢基準的 GameInput reading。</param>
-    /// <param name="inputKind">要查詢或篩選的 GameInput 輸入種類。</param>
-    /// <param name="device">目標或回呼提供的 GameInput device。</param>
-    /// <param name="reading">回呼提供的原生 GameInput reading。</param>
-    /// <returns>原生 HRESULT 值。</returns>
+    /// <param name="referenceReading">The GameInput reading used as the reference for the query. 作為查詢基準的 GameInput reading。</param>
+    /// <param name="inputKind">The GameInput input kind to query or filter. 要查詢或篩選的 GameInput 輸入種類。</param>
+    /// <param name="device">The target GameInput device, or the device provided by the callback. 目標或回呼提供的 GameInput device。</param>
+    /// <param name="reading">The native GameInput reading provided by the callback. 回呼提供的原生 GameInput reading。</param>
+    /// <returns>The native HRESULT value. 原生 HRESULT 值。</returns>
     [PreserveSig]
     int GetPreviousReading(IGameInputReading referenceReading, GameInputKind inputKind, IGameInputDevice? device, out IGameInputReading? reading);
 
     /// <summary>
-    /// 呼叫 IGameInput.RegisterReadingCallback 對應的 GameInput 原生 COM 方法。
+    /// Calls the native GameInput COM method corresponding to IGameInput.RegisterReadingCallback. 呼叫 IGameInput.RegisterReadingCallback 對應的 GameInput 原生 COM 方法。
     /// </summary>
-    /// <param name="device">目標或回呼提供的 GameInput device。</param>
-    /// <param name="inputKind">要查詢或篩選的 GameInput 輸入種類。</param>
-    /// <param name="context">註冊 callback 時傳入的使用者內容指標。</param>
-    /// <param name="callbackFunc">要註冊的原生 callback delegate。</param>
-    /// <param name="callbackToken">GameInput 指派的 callback token。</param>
-    /// <returns>原生 HRESULT 值。</returns>
+    /// <param name="device">The target GameInput device, or the device provided by the callback. 目標或回呼提供的 GameInput device。</param>
+    /// <param name="inputKind">The GameInput input kind to query or filter. 要查詢或篩選的 GameInput 輸入種類。</param>
+    /// <param name="context">The user context pointer supplied when the callback was registered. 註冊 callback 時傳入的使用者內容指標。</param>
+    /// <param name="callbackFunc">The native callback delegate to register. 要註冊的原生 callback delegate。</param>
+    /// <param name="callbackToken">The callback token assigned by GameInput. GameInput 指派的 callback token。</param>
+    /// <returns>The native HRESULT value. 原生 HRESULT 值。</returns>
     [PreserveSig]
     int RegisterReadingCallback(IGameInputDevice? device, GameInputKind inputKind, IntPtr context, [MarshalAs(UnmanagedType.FunctionPtr)] GameInputReadingCallback callbackFunc, out ulong callbackToken);
 
     /// <summary>
-    /// 呼叫 IGameInput.RegisterDeviceCallback 對應的 GameInput 原生 COM 方法。
+    /// Calls the native GameInput COM method corresponding to IGameInput.RegisterDeviceCallback. 呼叫 IGameInput.RegisterDeviceCallback 對應的 GameInput 原生 COM 方法。
     /// </summary>
-    /// <param name="device">目標或回呼提供的 GameInput device。</param>
-    /// <param name="inputKind">要查詢或篩選的 GameInput 輸入種類。</param>
-    /// <param name="statusFilter">要篩選的裝置狀態。</param>
-    /// <param name="enumerationKind">裝置列舉模式。</param>
-    /// <param name="context">註冊 callback 時傳入的使用者內容指標。</param>
-    /// <param name="callbackFunc">要註冊的原生 callback delegate。</param>
-    /// <param name="callbackToken">GameInput 指派的 callback token。</param>
-    /// <returns>原生 HRESULT 值。</returns>
+    /// <param name="device">The target GameInput device, or the device provided by the callback. 目標或回呼提供的 GameInput device。</param>
+    /// <param name="inputKind">The GameInput input kind to query or filter. 要查詢或篩選的 GameInput 輸入種類。</param>
+    /// <param name="statusFilter">The device status to filter. 要篩選的裝置狀態。</param>
+    /// <param name="enumerationKind">The device enumeration mode. 裝置列舉模式。</param>
+    /// <param name="context">The user context pointer supplied when the callback was registered. 註冊 callback 時傳入的使用者內容指標。</param>
+    /// <param name="callbackFunc">The native callback delegate to register. 要註冊的原生 callback delegate。</param>
+    /// <param name="callbackToken">The callback token assigned by GameInput. GameInput 指派的 callback token。</param>
+    /// <returns>The native HRESULT value. 原生 HRESULT 值。</returns>
     [PreserveSig]
     int RegisterDeviceCallback(IGameInputDevice? device, GameInputKind inputKind, GameInputDeviceStatus statusFilter, GameInputEnumerationKind enumerationKind, IntPtr context, [MarshalAs(UnmanagedType.FunctionPtr)] GameInputDeviceCallback callbackFunc, out ulong callbackToken);
 
     /// <summary>
-    /// 呼叫 IGameInput.RegisterSystemButtonCallback 對應的 GameInput 原生 COM 方法。
+    /// Calls the native GameInput COM method corresponding to IGameInput.RegisterSystemButtonCallback. 呼叫 IGameInput.RegisterSystemButtonCallback 對應的 GameInput 原生 COM 方法。
     /// </summary>
-    /// <param name="device">目標或回呼提供的 GameInput device。</param>
-    /// <param name="buttonFilter">要篩選的 system button。</param>
-    /// <param name="context">註冊 callback 時傳入的使用者內容指標。</param>
-    /// <param name="callbackFunc">要註冊的原生 callback delegate。</param>
-    /// <param name="callbackToken">GameInput 指派的 callback token。</param>
-    /// <returns>原生 HRESULT 值。</returns>
+    /// <param name="device">The target GameInput device, or the device provided by the callback. 目標或回呼提供的 GameInput device。</param>
+    /// <param name="buttonFilter">The system buttons to filter. 要篩選的 system button。</param>
+    /// <param name="context">The user context pointer supplied when the callback was registered. 註冊 callback 時傳入的使用者內容指標。</param>
+    /// <param name="callbackFunc">The native callback delegate to register. 要註冊的原生 callback delegate。</param>
+    /// <param name="callbackToken">The callback token assigned by GameInput. GameInput 指派的 callback token。</param>
+    /// <returns>The native HRESULT value. 原生 HRESULT 值。</returns>
     [PreserveSig]
     int RegisterSystemButtonCallback(IGameInputDevice? device, GameInputSystemButtons buttonFilter, IntPtr context, [MarshalAs(UnmanagedType.FunctionPtr)] GameInputSystemButtonCallback callbackFunc, out ulong callbackToken);
 
     /// <summary>
-    /// 呼叫 IGameInput.RegisterKeyboardLayoutCallback 對應的 GameInput 原生 COM 方法。
+    /// Calls the native GameInput COM method corresponding to IGameInput.RegisterKeyboardLayoutCallback. 呼叫 IGameInput.RegisterKeyboardLayoutCallback 對應的 GameInput 原生 COM 方法。
     /// </summary>
-    /// <param name="device">目標或回呼提供的 GameInput device。</param>
-    /// <param name="context">註冊 callback 時傳入的使用者內容指標。</param>
-    /// <param name="callbackFunc">要註冊的原生 callback delegate。</param>
-    /// <param name="callbackToken">GameInput 指派的 callback token。</param>
-    /// <returns>原生 HRESULT 值。</returns>
+    /// <param name="device">The target GameInput device, or the device provided by the callback. 目標或回呼提供的 GameInput device。</param>
+    /// <param name="context">The user context pointer supplied when the callback was registered. 註冊 callback 時傳入的使用者內容指標。</param>
+    /// <param name="callbackFunc">The native callback delegate to register. 要註冊的原生 callback delegate。</param>
+    /// <param name="callbackToken">The callback token assigned by GameInput. GameInput 指派的 callback token。</param>
+    /// <returns>The native HRESULT value. 原生 HRESULT 值。</returns>
     [PreserveSig]
     int RegisterKeyboardLayoutCallback(IGameInputDevice? device, IntPtr context, [MarshalAs(UnmanagedType.FunctionPtr)] GameInputKeyboardLayoutCallback callbackFunc, out ulong callbackToken);
 
     /// <summary>
-    /// 呼叫 IGameInput.StopCallback 對應的 GameInput 原生 COM 方法。
+    /// Calls the native GameInput COM method corresponding to IGameInput.StopCallback. 呼叫 IGameInput.StopCallback 對應的 GameInput 原生 COM 方法。
     /// </summary>
-    /// <param name="callbackToken">GameInput 指派的 callback token。</param>
+    /// <param name="callbackToken">The callback token assigned by GameInput. GameInput 指派的 callback token。</param>
     [PreserveSig]
     void StopCallback(ulong callbackToken);
 
     /// <summary>
-    /// 呼叫 IGameInput.UnregisterCallback 對應的 GameInput 原生 COM 方法。
+    /// Calls the native GameInput COM method corresponding to IGameInput.UnregisterCallback. 呼叫 IGameInput.UnregisterCallback 對應的 GameInput 原生 COM 方法。
     /// </summary>
-    /// <param name="callbackToken">GameInput 指派的 callback token。</param>
-    /// <returns>若原生 API 回報成功或指定狀態存在，傳回 true；否則傳回 false。</returns>
+    /// <param name="callbackToken">The callback token assigned by GameInput. GameInput 指派的 callback token。</param>
+    /// <returns>Returns true when the native API reports success or the requested state exists; otherwise returns false. 若原生 API 回報成功或指定狀態存在，傳回 true；否則傳回 false。</returns>
     [PreserveSig]
     [return: MarshalAs(UnmanagedType.I1)]
     bool UnregisterCallback(ulong callbackToken);
 
     /// <summary>
-    /// 呼叫 IGameInput.CreateDispatcher 對應的 GameInput 原生 COM 方法。
+    /// Calls the native GameInput COM method corresponding to IGameInput.CreateDispatcher. 呼叫 IGameInput.CreateDispatcher 對應的 GameInput 原生 COM 方法。
     /// </summary>
-    /// <param name="dispatcher">接收建立完成的 dispatcher。</param>
-    /// <returns>原生 HRESULT 值。</returns>
+    /// <param name="dispatcher">The output field that receives the created dispatcher. 接收建立完成的 dispatcher。</param>
+    /// <returns>The native HRESULT value. 原生 HRESULT 值。</returns>
     [PreserveSig]
     int CreateDispatcher(out IGameInputDispatcher? dispatcher);
 
     /// <summary>
-    /// 呼叫 IGameInput.FindDeviceFromId 對應的 GameInput 原生 COM 方法。
+    /// Calls the native GameInput COM method corresponding to IGameInput.FindDeviceFromId. 呼叫 IGameInput.FindDeviceFromId 對應的 GameInput 原生 COM 方法。
     /// </summary>
-    /// <param name="value">要傳入原生 API 的值。</param>
-    /// <param name="device">目標或回呼提供的 GameInput device。</param>
-    /// <returns>原生 HRESULT 值。</returns>
+    /// <param name="value">The value to pass to the native API. 要傳入原生 API 的值。</param>
+    /// <param name="device">The target GameInput device, or the device provided by the callback. 目標或回呼提供的 GameInput device。</param>
+    /// <returns>The native HRESULT value. 原生 HRESULT 值。</returns>
     [PreserveSig]
     int FindDeviceFromId(ref AppLocalDeviceId value, out IGameInputDevice? device);
 
     /// <summary>
-    /// 呼叫 IGameInput.FindDeviceFromPlatformString 對應的 GameInput 原生 COM 方法。
+    /// Calls the native GameInput COM method corresponding to IGameInput.FindDeviceFromPlatformString. 呼叫 IGameInput.FindDeviceFromPlatformString 對應的 GameInput 原生 COM 方法。
     /// </summary>
-    /// <param name="value">要傳入原生 API 的值。</param>
-    /// <param name="device">目標或回呼提供的 GameInput device。</param>
-    /// <returns>原生 HRESULT 值。</returns>
+    /// <param name="value">The value to pass to the native API. 要傳入原生 API 的值。</param>
+    /// <param name="device">The target GameInput device, or the device provided by the callback. 目標或回呼提供的 GameInput device。</param>
+    /// <returns>The native HRESULT value. 原生 HRESULT 值。</returns>
     [PreserveSig]
     int FindDeviceFromPlatformString([MarshalAs(UnmanagedType.LPWStr)] string value, out IGameInputDevice? device);
 
     /// <summary>
-    /// 呼叫 IGameInput.SetFocusPolicy 對應的 GameInput 原生 COM 方法。
+    /// Calls the native GameInput COM method corresponding to IGameInput.SetFocusPolicy. 呼叫 IGameInput.SetFocusPolicy 對應的 GameInput 原生 COM 方法。
     /// </summary>
-    /// <param name="policy">參數 policy。</param>
+    /// <param name="policy">The focus policy to apply. 參數 policy。</param>
     [PreserveSig]
     void SetFocusPolicy(GameInputFocusPolicy policy);
 
     /// <summary>
-    /// 呼叫 IGameInput.CreateAggregateDevice 對應的 GameInput 原生 COM 方法。
+    /// Calls the native GameInput COM method corresponding to IGameInput.CreateAggregateDevice. 呼叫 IGameInput.CreateAggregateDevice 對應的 GameInput 原生 COM 方法。
     /// </summary>
-    /// <param name="inputKind">要查詢或篩選的 GameInput 輸入種類。</param>
-    /// <param name="deviceId">GameInput 裝置識別值。</param>
-    /// <returns>原生 HRESULT 值。</returns>
+    /// <param name="inputKind">The GameInput input kind to query or filter. 要查詢或篩選的 GameInput 輸入種類。</param>
+    /// <param name="deviceId">The GameInput device identifier. GameInput 裝置識別值。</param>
+    /// <returns>The native HRESULT value. 原生 HRESULT 值。</returns>
     [PreserveSig]
     int CreateAggregateDevice(GameInputKind inputKind, out AppLocalDeviceId deviceId);
 
     /// <summary>
-    /// 呼叫 IGameInput.DisableAggregateDevice 對應的 GameInput 原生 COM 方法。
+    /// Calls the native GameInput COM method corresponding to IGameInput.DisableAggregateDevice. 呼叫 IGameInput.DisableAggregateDevice 對應的 GameInput 原生 COM 方法。
     /// </summary>
-    /// <param name="deviceId">GameInput 裝置識別值。</param>
-    /// <returns>原生 HRESULT 值。</returns>
+    /// <param name="deviceId">The GameInput device identifier. GameInput 裝置識別值。</param>
+    /// <returns>The native HRESULT value. 原生 HRESULT 值。</returns>
     [PreserveSig]
     int DisableAggregateDevice(ref AppLocalDeviceId deviceId);
 }
 
 /// <summary>
-/// 表示 IGameInputRawDeviceReport 對應的 GameInput COM 介面。
+/// Represents the GameInput COM interface corresponding to IGameInputRawDeviceReport. 表示 IGameInputRawDeviceReport 對應的 GameInput COM 介面。
 /// </summary>
 [ComImport]
 [Guid("05A42D89-2CB6-45A3-874D-E635723587AB")]
@@ -180,48 +180,48 @@ public interface IGameInput
 public interface IGameInputRawDeviceReport
 {
     /// <summary>
-    /// 呼叫 IGameInputRawDeviceReport.GetDevice 對應的 GameInput 原生 COM 方法。
+    /// Calls the native GameInput COM method corresponding to IGameInputRawDeviceReport.GetDevice. 呼叫 IGameInputRawDeviceReport.GetDevice 對應的 GameInput 原生 COM 方法。
     /// </summary>
-    /// <param name="device">目標或回呼提供的 GameInput device。</param>
+    /// <param name="device">The target GameInput device, or the device provided by the callback. 目標或回呼提供的 GameInput device。</param>
     [PreserveSig]
     void GetDevice(out IGameInputDevice? device);
 
     /// <summary>
-    /// 呼叫 IGameInputRawDeviceReport.GetReportInfo 對應的 GameInput 原生 COM 方法。
+    /// Calls the native GameInput COM method corresponding to IGameInputRawDeviceReport.GetReportInfo. 呼叫 IGameInputRawDeviceReport.GetReportInfo 對應的 GameInput 原生 COM 方法。
     /// </summary>
-    /// <param name="reportInfo">接收 raw device report 資訊的輸出欄位。</param>
+    /// <param name="reportInfo">The output field that receives the raw device report information. 接收 raw device report 資訊的輸出欄位。</param>
     [PreserveSig]
     void GetReportInfo(out GameInputRawDeviceReportInfo reportInfo);
 
     /// <summary>
-    /// 呼叫 IGameInputRawDeviceReport.GetRawDataSize 對應的 GameInput 原生 COM 方法。
+    /// Calls the native GameInput COM method corresponding to IGameInputRawDeviceReport.GetRawDataSize. 呼叫 IGameInputRawDeviceReport.GetRawDataSize 對應的 GameInput 原生 COM 方法。
     /// </summary>
-    /// <returns>原生 API 回傳的大小或位元組數。</returns>
+    /// <returns>The size or byte count returned by the native API. 原生 API 回傳的大小或位元組數。</returns>
     [PreserveSig]
     UIntPtr GetRawDataSize();
 
     /// <summary>
-    /// 呼叫 IGameInputRawDeviceReport.GetRawData 對應的 GameInput 原生 COM 方法。
+    /// Calls the native GameInput COM method corresponding to IGameInputRawDeviceReport.GetRawData. 呼叫 IGameInputRawDeviceReport.GetRawData 對應的 GameInput 原生 COM 方法。
     /// </summary>
-    /// <param name="bufferSize">緩衝區大小。</param>
-    /// <param name="buffer">原生緩衝區指標。</param>
-    /// <returns>原生 API 回傳的大小或位元組數。</returns>
+    /// <param name="bufferSize">The buffer size. 緩衝區大小。</param>
+    /// <param name="buffer">The native buffer pointer. 原生緩衝區指標。</param>
+    /// <returns>The size or byte count returned by the native API. 原生 API 回傳的大小或位元組數。</returns>
     [PreserveSig]
     UIntPtr GetRawData(UIntPtr bufferSize, IntPtr buffer);
 
     /// <summary>
-    /// 呼叫 IGameInputRawDeviceReport.SetRawData 對應的 GameInput 原生 COM 方法。
+    /// Calls the native GameInput COM method corresponding to IGameInputRawDeviceReport.SetRawData. 呼叫 IGameInputRawDeviceReport.SetRawData 對應的 GameInput 原生 COM 方法。
     /// </summary>
-    /// <param name="bufferSize">緩衝區大小。</param>
-    /// <param name="buffer">原生緩衝區指標。</param>
-    /// <returns>若原生 API 回報成功或指定狀態存在，傳回 true；否則傳回 false。</returns>
+    /// <param name="bufferSize">The buffer size. 緩衝區大小。</param>
+    /// <param name="buffer">The native buffer pointer. 原生緩衝區指標。</param>
+    /// <returns>Returns true when the native API reports success or the requested state exists; otherwise returns false. 若原生 API 回報成功或指定狀態存在，傳回 true；否則傳回 false。</returns>
     [PreserveSig]
     [return: MarshalAs(UnmanagedType.I1)]
     bool SetRawData(UIntPtr bufferSize, IntPtr buffer);
 }
 
 /// <summary>
-/// 表示 IGameInputReading 對應的 GameInput COM 介面。
+/// Represents the GameInput COM interface corresponding to IGameInputReading. 表示 IGameInputReading 對應的 GameInput COM 介面。
 /// </summary>
 [ComImport]
 [Guid("C81C4CDE-ED1A-4631-A30F-C556A6241A1F")]
@@ -229,156 +229,156 @@ public interface IGameInputRawDeviceReport
 public interface IGameInputReading
 {
     /// <summary>
-    /// 呼叫 IGameInputReading.GetInputKind 對應的 GameInput 原生 COM 方法。
+    /// Calls the native GameInput COM method corresponding to IGameInputReading.GetInputKind. 呼叫 IGameInputReading.GetInputKind 對應的 GameInput 原生 COM 方法。
     /// </summary>
-    /// <returns>原生 API 回傳的 GameInputKind 值。</returns>
+    /// <returns>The GameInputKind value returned by the native API. 原生 API 回傳的 GameInputKind 值。</returns>
     [PreserveSig]
     GameInputKind GetInputKind();
 
     /// <summary>
-    /// 呼叫 IGameInputReading.GetTimestamp 對應的 GameInput 原生 COM 方法。
+    /// Calls the native GameInput COM method corresponding to IGameInputReading.GetTimestamp. 呼叫 IGameInputReading.GetTimestamp 對應的 GameInput 原生 COM 方法。
     /// </summary>
-    /// <returns>原生 API 回傳的時間戳記或無號整數值。</returns>
+    /// <returns>The timestamp or unsigned integer value returned by the native API. 原生 API 回傳的時間戳記或無號整數值。</returns>
     [PreserveSig]
     ulong GetTimestamp();
 
     /// <summary>
-    /// 呼叫 IGameInputReading.GetDevice 對應的 GameInput 原生 COM 方法。
+    /// Calls the native GameInput COM method corresponding to IGameInputReading.GetDevice. 呼叫 IGameInputReading.GetDevice 對應的 GameInput 原生 COM 方法。
     /// </summary>
-    /// <param name="device">目標或回呼提供的 GameInput device。</param>
+    /// <param name="device">The target GameInput device, or the device provided by the callback. 目標或回呼提供的 GameInput device。</param>
     [PreserveSig]
     void GetDevice(out IGameInputDevice? device);
 
     /// <summary>
-    /// 呼叫 IGameInputReading.GetControllerAxisCount 對應的 GameInput 原生 COM 方法。
+    /// Calls the native GameInput COM method corresponding to IGameInputReading.GetControllerAxisCount. 呼叫 IGameInputReading.GetControllerAxisCount 對應的 GameInput 原生 COM 方法。
     /// </summary>
-    /// <returns>原生 API 回傳的無號整數值。</returns>
+    /// <returns>The unsigned integer value returned by the native API. 原生 API 回傳的無號整數值。</returns>
     [PreserveSig]
     uint GetControllerAxisCount();
 
     /// <summary>
-    /// 呼叫 IGameInputReading.GetControllerAxisState 對應的 GameInput 原生 COM 方法。
+    /// Calls the native GameInput COM method corresponding to IGameInputReading.GetControllerAxisState. 呼叫 IGameInputReading.GetControllerAxisState 對應的 GameInput 原生 COM 方法。
     /// </summary>
-    /// <param name="stateArrayCount">狀態陣列可容納的元素數。</param>
-    /// <param name="stateArray">接收狀態資料的 managed 陣列。</param>
-    /// <returns>原生 API 回傳的無號整數值。</returns>
+    /// <param name="stateArrayCount">The number of elements the state array can hold. 狀態陣列可容納的元素數。</param>
+    /// <param name="stateArray">The managed array that receives the state data. 接收狀態資料的 managed 陣列。</param>
+    /// <returns>The unsigned integer value returned by the native API. 原生 API 回傳的無號整數值。</returns>
     [PreserveSig]
     uint GetControllerAxisState(uint stateArrayCount, [Out] float[] stateArray);
 
     /// <summary>
-    /// 呼叫 IGameInputReading.GetControllerButtonCount 對應的 GameInput 原生 COM 方法。
+    /// Calls the native GameInput COM method corresponding to IGameInputReading.GetControllerButtonCount. 呼叫 IGameInputReading.GetControllerButtonCount 對應的 GameInput 原生 COM 方法。
     /// </summary>
-    /// <returns>原生 API 回傳的無號整數值。</returns>
+    /// <returns>The unsigned integer value returned by the native API. 原生 API 回傳的無號整數值。</returns>
     [PreserveSig]
     uint GetControllerButtonCount();
 
     /// <summary>
-    /// 呼叫 IGameInputReading.GetControllerButtonState 對應的 GameInput 原生 COM 方法。
+    /// Calls the native GameInput COM method corresponding to IGameInputReading.GetControllerButtonState. 呼叫 IGameInputReading.GetControllerButtonState 對應的 GameInput 原生 COM 方法。
     /// </summary>
-    /// <param name="stateArrayCount">狀態陣列可容納的元素數。</param>
-    /// <param name="stateArray">接收狀態資料的 managed 陣列。</param>
-    /// <returns>原生 API 回傳的無號整數值。</returns>
+    /// <param name="stateArrayCount">The number of elements the state array can hold. 狀態陣列可容納的元素數。</param>
+    /// <param name="stateArray">The managed array that receives the state data. 接收狀態資料的 managed 陣列。</param>
+    /// <returns>The unsigned integer value returned by the native API. 原生 API 回傳的無號整數值。</returns>
     [PreserveSig]
     uint GetControllerButtonState(uint stateArrayCount, [Out] byte[] stateArray);
 
     /// <summary>
-    /// 呼叫 IGameInputReading.GetControllerSwitchCount 對應的 GameInput 原生 COM 方法。
+    /// Calls the native GameInput COM method corresponding to IGameInputReading.GetControllerSwitchCount. 呼叫 IGameInputReading.GetControllerSwitchCount 對應的 GameInput 原生 COM 方法。
     /// </summary>
-    /// <returns>原生 API 回傳的無號整數值。</returns>
+    /// <returns>The unsigned integer value returned by the native API. 原生 API 回傳的無號整數值。</returns>
     [PreserveSig]
     uint GetControllerSwitchCount();
 
     /// <summary>
-    /// 呼叫 IGameInputReading.GetControllerSwitchState 對應的 GameInput 原生 COM 方法。
+    /// Calls the native GameInput COM method corresponding to IGameInputReading.GetControllerSwitchState. 呼叫 IGameInputReading.GetControllerSwitchState 對應的 GameInput 原生 COM 方法。
     /// </summary>
-    /// <param name="stateArrayCount">狀態陣列可容納的元素數。</param>
-    /// <param name="stateArray">接收狀態資料的 managed 陣列。</param>
-    /// <returns>原生 API 回傳的無號整數值。</returns>
+    /// <param name="stateArrayCount">The number of elements the state array can hold. 狀態陣列可容納的元素數。</param>
+    /// <param name="stateArray">The managed array that receives the state data. 接收狀態資料的 managed 陣列。</param>
+    /// <returns>The unsigned integer value returned by the native API. 原生 API 回傳的無號整數值。</returns>
     [PreserveSig]
     uint GetControllerSwitchState(uint stateArrayCount, [Out] GameInputSwitchPosition[] stateArray);
 
     /// <summary>
-    /// 呼叫 IGameInputReading.GetKeyCount 對應的 GameInput 原生 COM 方法。
+    /// Calls the native GameInput COM method corresponding to IGameInputReading.GetKeyCount. 呼叫 IGameInputReading.GetKeyCount 對應的 GameInput 原生 COM 方法。
     /// </summary>
-    /// <returns>原生 API 回傳的無號整數值。</returns>
+    /// <returns>The unsigned integer value returned by the native API. 原生 API 回傳的無號整數值。</returns>
     [PreserveSig]
     uint GetKeyCount();
 
     /// <summary>
-    /// 呼叫 IGameInputReading.GetKeyState 對應的 GameInput 原生 COM 方法。
+    /// Calls the native GameInput COM method corresponding to IGameInputReading.GetKeyState. 呼叫 IGameInputReading.GetKeyState 對應的 GameInput 原生 COM 方法。
     /// </summary>
-    /// <param name="stateArrayCount">狀態陣列可容納的元素數。</param>
-    /// <param name="stateArray">接收狀態資料的 managed 陣列。</param>
-    /// <returns>原生 API 回傳的無號整數值。</returns>
+    /// <param name="stateArrayCount">The number of elements the state array can hold. 狀態陣列可容納的元素數。</param>
+    /// <param name="stateArray">The managed array that receives the state data. 接收狀態資料的 managed 陣列。</param>
+    /// <returns>The unsigned integer value returned by the native API. 原生 API 回傳的無號整數值。</returns>
     [PreserveSig]
     uint GetKeyState(uint stateArrayCount, [Out] GameInputKeyState[] stateArray);
 
     /// <summary>
-    /// 呼叫 IGameInputReading.GetMouseState 對應的 GameInput 原生 COM 方法。
+    /// Calls the native GameInput COM method corresponding to IGameInputReading.GetMouseState. 呼叫 IGameInputReading.GetMouseState 對應的 GameInput 原生 COM 方法。
     /// </summary>
-    /// <param name="state">接收原生狀態資料的輸出欄位。</param>
-    /// <returns>若原生 API 回報成功或指定狀態存在，傳回 true；否則傳回 false。</returns>
+    /// <param name="state">The output field that receives the native state data. 接收原生狀態資料的輸出欄位。</param>
+    /// <returns>Returns true when the native API reports success or the requested state exists; otherwise returns false. 若原生 API 回報成功或指定狀態存在，傳回 true；否則傳回 false。</returns>
     [PreserveSig]
     [return: MarshalAs(UnmanagedType.I1)]
     bool GetMouseState(out GameInputMouseState state);
 
     /// <summary>
-    /// 呼叫 IGameInputReading.GetSensorsState 對應的 GameInput 原生 COM 方法。
+    /// Calls the native GameInput COM method corresponding to IGameInputReading.GetSensorsState. 呼叫 IGameInputReading.GetSensorsState 對應的 GameInput 原生 COM 方法。
     /// </summary>
-    /// <param name="state">接收原生狀態資料的輸出欄位。</param>
-    /// <returns>若原生 API 回報成功或指定狀態存在，傳回 true；否則傳回 false。</returns>
+    /// <param name="state">The output field that receives the native state data. 接收原生狀態資料的輸出欄位。</param>
+    /// <returns>Returns true when the native API reports success or the requested state exists; otherwise returns false. 若原生 API 回報成功或指定狀態存在，傳回 true；否則傳回 false。</returns>
     [PreserveSig]
     [return: MarshalAs(UnmanagedType.I1)]
     bool GetSensorsState(out GameInputSensorsState state);
 
     /// <summary>
-    /// 呼叫 IGameInputReading.GetArcadeStickState 對應的 GameInput 原生 COM 方法。
+    /// Calls the native GameInput COM method corresponding to IGameInputReading.GetArcadeStickState. 呼叫 IGameInputReading.GetArcadeStickState 對應的 GameInput 原生 COM 方法。
     /// </summary>
-    /// <param name="state">接收原生狀態資料的輸出欄位。</param>
-    /// <returns>若原生 API 回報成功或指定狀態存在，傳回 true；否則傳回 false。</returns>
+    /// <param name="state">The output field that receives the native state data. 接收原生狀態資料的輸出欄位。</param>
+    /// <returns>Returns true when the native API reports success or the requested state exists; otherwise returns false. 若原生 API 回報成功或指定狀態存在，傳回 true；否則傳回 false。</returns>
     [PreserveSig]
     [return: MarshalAs(UnmanagedType.I1)]
     bool GetArcadeStickState(out GameInputArcadeStickState state);
 
     /// <summary>
-    /// 呼叫 IGameInputReading.GetFlightStickState 對應的 GameInput 原生 COM 方法。
+    /// Calls the native GameInput COM method corresponding to IGameInputReading.GetFlightStickState. 呼叫 IGameInputReading.GetFlightStickState 對應的 GameInput 原生 COM 方法。
     /// </summary>
-    /// <param name="state">接收原生狀態資料的輸出欄位。</param>
-    /// <returns>若原生 API 回報成功或指定狀態存在，傳回 true；否則傳回 false。</returns>
+    /// <param name="state">The output field that receives the native state data. 接收原生狀態資料的輸出欄位。</param>
+    /// <returns>Returns true when the native API reports success or the requested state exists; otherwise returns false. 若原生 API 回報成功或指定狀態存在，傳回 true；否則傳回 false。</returns>
     [PreserveSig]
     [return: MarshalAs(UnmanagedType.I1)]
     bool GetFlightStickState(out GameInputFlightStickState state);
 
     /// <summary>
-    /// 呼叫 IGameInputReading.GetGamepadState 對應的 GameInput 原生 COM 方法。
+    /// Calls the native GameInput COM method corresponding to IGameInputReading.GetGamepadState. 呼叫 IGameInputReading.GetGamepadState 對應的 GameInput 原生 COM 方法。
     /// </summary>
-    /// <param name="state">接收原生狀態資料的輸出欄位。</param>
-    /// <returns>若原生 API 回報成功或指定狀態存在，傳回 true；否則傳回 false。</returns>
+    /// <param name="state">The output field that receives the native state data. 接收原生狀態資料的輸出欄位。</param>
+    /// <returns>Returns true when the native API reports success or the requested state exists; otherwise returns false. 若原生 API 回報成功或指定狀態存在，傳回 true；否則傳回 false。</returns>
     [PreserveSig]
     [return: MarshalAs(UnmanagedType.I1)]
     bool GetGamepadState(out GameInputGamepadState state);
 
     /// <summary>
-    /// 呼叫 IGameInputReading.GetRacingWheelState 對應的 GameInput 原生 COM 方法。
+    /// Calls the native GameInput COM method corresponding to IGameInputReading.GetRacingWheelState. 呼叫 IGameInputReading.GetRacingWheelState 對應的 GameInput 原生 COM 方法。
     /// </summary>
-    /// <param name="state">接收原生狀態資料的輸出欄位。</param>
-    /// <returns>若原生 API 回報成功或指定狀態存在，傳回 true；否則傳回 false。</returns>
+    /// <param name="state">The output field that receives the native state data. 接收原生狀態資料的輸出欄位。</param>
+    /// <returns>Returns true when the native API reports success or the requested state exists; otherwise returns false. 若原生 API 回報成功或指定狀態存在，傳回 true；否則傳回 false。</returns>
     [PreserveSig]
     [return: MarshalAs(UnmanagedType.I1)]
     bool GetRacingWheelState(out GameInputRacingWheelState state);
 
     /// <summary>
-    /// 呼叫 IGameInputReading.GetRawReport 對應的 GameInput 原生 COM 方法。
+    /// Calls the native GameInput COM method corresponding to IGameInputReading.GetRawReport. 呼叫 IGameInputReading.GetRawReport 對應的 GameInput 原生 COM 方法。
     /// </summary>
-    /// <param name="report">接收 raw device report 的輸出欄位。</param>
-    /// <returns>若原生 API 回報成功或指定狀態存在，傳回 true；否則傳回 false。</returns>
+    /// <param name="report">The output field that receives the raw device report. 接收 raw device report 的輸出欄位。</param>
+    /// <returns>Returns true when the native API reports success or the requested state exists; otherwise returns false. 若原生 API 回報成功或指定狀態存在，傳回 true；否則傳回 false。</returns>
     [PreserveSig]
     [return: MarshalAs(UnmanagedType.I1)]
     bool GetRawReport(out IGameInputRawDeviceReport? report);
 }
 
 /// <summary>
-/// 表示 IGameInputDevice 對應的 GameInput COM 介面。
+/// Represents the GameInput COM interface corresponding to IGameInputDevice. 表示 IGameInputDevice 對應的 GameInput COM 介面。
 /// </summary>
 [ComImport]
 [Guid("63E2F38B-A399-4275-8AE7-D4C6E524D12A")]
@@ -386,142 +386,142 @@ public interface IGameInputReading
 public interface IGameInputDevice
 {
     /// <summary>
-    /// 呼叫 IGameInputDevice.GetDeviceInfo 對應的 GameInput 原生 COM 方法。
+    /// Calls the native GameInput COM method corresponding to IGameInputDevice.GetDeviceInfo. 呼叫 IGameInputDevice.GetDeviceInfo 對應的 GameInput 原生 COM 方法。
     /// </summary>
-    /// <param name="info">接收或傳入原生資訊緩衝區的指標。</param>
-    /// <returns>原生 HRESULT 值。</returns>
+    /// <param name="info">The pointer to the native information buffer used for input or output. 接收或傳入原生資訊緩衝區的指標。</param>
+    /// <returns>The native HRESULT value. 原生 HRESULT 值。</returns>
     [PreserveSig]
     int GetDeviceInfo(out IntPtr info);
 
     /// <summary>
-    /// 呼叫 IGameInputDevice.GetHapticInfo 對應的 GameInput 原生 COM 方法。
+    /// Calls the native GameInput COM method corresponding to IGameInputDevice.GetHapticInfo. 呼叫 IGameInputDevice.GetHapticInfo 對應的 GameInput 原生 COM 方法。
     /// </summary>
-    /// <param name="info">接收或傳入原生資訊緩衝區的指標。</param>
-    /// <returns>原生 HRESULT 值。</returns>
+    /// <param name="info">The pointer to the native information buffer used for input or output. 接收或傳入原生資訊緩衝區的指標。</param>
+    /// <returns>The native HRESULT value. 原生 HRESULT 值。</returns>
     [PreserveSig]
     int GetHapticInfo(IntPtr info);
 
     /// <summary>
-    /// 呼叫 IGameInputDevice.GetDeviceStatus 對應的 GameInput 原生 COM 方法。
+    /// Calls the native GameInput COM method corresponding to IGameInputDevice.GetDeviceStatus. 呼叫 IGameInputDevice.GetDeviceStatus 對應的 GameInput 原生 COM 方法。
     /// </summary>
-    /// <returns>原生 API 回傳的 GameInputDeviceStatus 值。</returns>
+    /// <returns>The GameInputDeviceStatus value returned by the native API. 原生 API 回傳的 GameInputDeviceStatus 值。</returns>
     [PreserveSig]
     GameInputDeviceStatus GetDeviceStatus();
 
     /// <summary>
-    /// 呼叫 IGameInputDevice.CreateForceFeedbackEffect 對應的 GameInput 原生 COM 方法。
+    /// Calls the native GameInput COM method corresponding to IGameInputDevice.CreateForceFeedbackEffect. 呼叫 IGameInputDevice.CreateForceFeedbackEffect 對應的 GameInput 原生 COM 方法。
     /// </summary>
-    /// <param name="motorIndex">force feedback motor 索引。</param>
-    /// <param name="parameters">原生參數緩衝區指標。</param>
-    /// <param name="effect">參數 effect。</param>
-    /// <returns>原生 HRESULT 值。</returns>
+    /// <param name="motorIndex">The force feedback motor index. force feedback motor 索引。</param>
+    /// <param name="parameters">The native parameter buffer pointer. 原生參數緩衝區指標。</param>
+    /// <param name="effect">The force feedback effect parameter. 參數 effect。</param>
+    /// <returns>The native HRESULT value. 原生 HRESULT 值。</returns>
     [PreserveSig]
     int CreateForceFeedbackEffect(uint motorIndex, IntPtr parameters, out IGameInputForceFeedbackEffect? effect);
 
     /// <summary>
-    /// 呼叫 IGameInputDevice.IsForceFeedbackMotorPoweredOn 對應的 GameInput 原生 COM 方法。
+    /// Calls the native GameInput COM method corresponding to IGameInputDevice.IsForceFeedbackMotorPoweredOn. 呼叫 IGameInputDevice.IsForceFeedbackMotorPoweredOn 對應的 GameInput 原生 COM 方法。
     /// </summary>
-    /// <param name="motorIndex">force feedback motor 索引。</param>
-    /// <returns>若原生 API 回報成功或指定狀態存在，傳回 true；否則傳回 false。</returns>
+    /// <param name="motorIndex">The force feedback motor index. force feedback motor 索引。</param>
+    /// <returns>Returns true when the native API reports success or the requested state exists; otherwise returns false. 若原生 API 回報成功或指定狀態存在，傳回 true；否則傳回 false。</returns>
     [PreserveSig]
     [return: MarshalAs(UnmanagedType.I1)]
     bool IsForceFeedbackMotorPoweredOn(uint motorIndex);
 
     /// <summary>
-    /// 呼叫 IGameInputDevice.SetForceFeedbackMotorGain 對應的 GameInput 原生 COM 方法。
+    /// Calls the native GameInput COM method corresponding to IGameInputDevice.SetForceFeedbackMotorGain. 呼叫 IGameInputDevice.SetForceFeedbackMotorGain 對應的 GameInput 原生 COM 方法。
     /// </summary>
-    /// <param name="motorIndex">force feedback motor 索引。</param>
-    /// <param name="masterGain">要套用的 master gain。</param>
+    /// <param name="motorIndex">The force feedback motor index. force feedback motor 索引。</param>
+    /// <param name="masterGain">The master gain to apply. 要套用的 master gain。</param>
     [PreserveSig]
     void SetForceFeedbackMotorGain(uint motorIndex, float masterGain);
 
     /// <summary>
-    /// 呼叫 IGameInputDevice.SetRumbleState 對應的 GameInput 原生 COM 方法。
+    /// Calls the native GameInput COM method corresponding to IGameInputDevice.SetRumbleState. 呼叫 IGameInputDevice.SetRumbleState 對應的 GameInput 原生 COM 方法。
     /// </summary>
-    /// <param name="parameters">原生參數緩衝區指標。</param>
+    /// <param name="parameters">The native parameter buffer pointer. 原生參數緩衝區指標。</param>
     [PreserveSig]
     void SetRumbleState(IntPtr parameters);
 
     /// <summary>
-    /// 呼叫 IGameInputDevice.DirectInputEscape 對應的 GameInput 原生 COM 方法。
+    /// Calls the native GameInput COM method corresponding to IGameInputDevice.DirectInputEscape. 呼叫 IGameInputDevice.DirectInputEscape 對應的 GameInput 原生 COM 方法。
     /// </summary>
-    /// <param name="command">DirectInput escape 命令。</param>
-    /// <param name="bufferIn">輸入緩衝區指標。</param>
-    /// <param name="bufferInSize">輸入緩衝區大小。</param>
-    /// <param name="bufferOut">輸出緩衝區指標。</param>
-    /// <param name="bufferOutSize">輸出緩衝區大小。</param>
-    /// <param name="bufferOutSizeWritten">實際寫入輸出緩衝區的大小。</param>
-    /// <returns>原生 HRESULT 值。</returns>
+    /// <param name="command">The DirectInput escape command. DirectInput escape 命令。</param>
+    /// <param name="bufferIn">The input buffer pointer. 輸入緩衝區指標。</param>
+    /// <param name="bufferInSize">The input buffer size. 輸入緩衝區大小。</param>
+    /// <param name="bufferOut">The output buffer pointer. 輸出緩衝區指標。</param>
+    /// <param name="bufferOutSize">The output buffer size. 輸出緩衝區大小。</param>
+    /// <param name="bufferOutSizeWritten">The number of bytes actually written to the output buffer. 實際寫入輸出緩衝區的大小。</param>
+    /// <returns>The native HRESULT value. 原生 HRESULT 值。</returns>
     [PreserveSig]
     int DirectInputEscape(uint command, IntPtr bufferIn, uint bufferInSize, IntPtr bufferOut, uint bufferOutSize, out uint bufferOutSizeWritten);
 
     /// <summary>
-    /// 呼叫 IGameInputDevice.CreateInputMapper 對應的 GameInput 原生 COM 方法。
+    /// Calls the native GameInput COM method corresponding to IGameInputDevice.CreateInputMapper. 呼叫 IGameInputDevice.CreateInputMapper 對應的 GameInput 原生 COM 方法。
     /// </summary>
-    /// <param name="inputMapper">接收建立完成的 input mapper。</param>
-    /// <returns>原生 HRESULT 值。</returns>
+    /// <param name="inputMapper">The output field that receives the created input mapper. 接收建立完成的 input mapper。</param>
+    /// <returns>The native HRESULT value. 原生 HRESULT 值。</returns>
     [PreserveSig]
     int CreateInputMapper(out IGameInputMapper? inputMapper);
 
     /// <summary>
-    /// 呼叫 IGameInputDevice.GetExtraAxisCount 對應的 GameInput 原生 COM 方法。
+    /// Calls the native GameInput COM method corresponding to IGameInputDevice.GetExtraAxisCount. 呼叫 IGameInputDevice.GetExtraAxisCount 對應的 GameInput 原生 COM 方法。
     /// </summary>
-    /// <param name="inputKind">要查詢或篩選的 GameInput 輸入種類。</param>
-    /// <param name="extraAxisCount">額外 axis 數量。</param>
-    /// <returns>原生 HRESULT 值。</returns>
+    /// <param name="inputKind">The GameInput input kind to query or filter. 要查詢或篩選的 GameInput 輸入種類。</param>
+    /// <param name="extraAxisCount">The number of extra axes. 額外 axis 數量。</param>
+    /// <returns>The native HRESULT value. 原生 HRESULT 值。</returns>
     [PreserveSig]
     int GetExtraAxisCount(GameInputKind inputKind, out uint extraAxisCount);
 
     /// <summary>
-    /// 呼叫 IGameInputDevice.GetExtraButtonCount 對應的 GameInput 原生 COM 方法。
+    /// Calls the native GameInput COM method corresponding to IGameInputDevice.GetExtraButtonCount. 呼叫 IGameInputDevice.GetExtraButtonCount 對應的 GameInput 原生 COM 方法。
     /// </summary>
-    /// <param name="inputKind">要查詢或篩選的 GameInput 輸入種類。</param>
-    /// <param name="extraButtonCount">額外 button 數量。</param>
-    /// <returns>原生 HRESULT 值。</returns>
+    /// <param name="inputKind">The GameInput input kind to query or filter. 要查詢或篩選的 GameInput 輸入種類。</param>
+    /// <param name="extraButtonCount">The number of extra buttons. 額外 button 數量。</param>
+    /// <returns>The native HRESULT value. 原生 HRESULT 值。</returns>
     [PreserveSig]
     int GetExtraButtonCount(GameInputKind inputKind, out uint extraButtonCount);
 
     /// <summary>
-    /// 呼叫 IGameInputDevice.GetExtraAxisIndexes 對應的 GameInput 原生 COM 方法。
+    /// Calls the native GameInput COM method corresponding to IGameInputDevice.GetExtraAxisIndexes. 呼叫 IGameInputDevice.GetExtraAxisIndexes 對應的 GameInput 原生 COM 方法。
     /// </summary>
-    /// <param name="inputKind">要查詢或篩選的 GameInput 輸入種類。</param>
-    /// <param name="extraAxisCount">額外 axis 數量。</param>
-    /// <param name="extraAxisIndexes">接收額外 axis index 的陣列。</param>
-    /// <returns>原生 HRESULT 值。</returns>
+    /// <param name="inputKind">The GameInput input kind to query or filter. 要查詢或篩選的 GameInput 輸入種類。</param>
+    /// <param name="extraAxisCount">The number of extra axes. 額外 axis 數量。</param>
+    /// <param name="extraAxisIndexes">The array that receives the extra axis indexes. 接收額外 axis index 的陣列。</param>
+    /// <returns>The native HRESULT value. 原生 HRESULT 值。</returns>
     [PreserveSig]
     int GetExtraAxisIndexes(GameInputKind inputKind, uint extraAxisCount, [Out] byte[] extraAxisIndexes);
 
     /// <summary>
-    /// 呼叫 IGameInputDevice.GetExtraButtonIndexes 對應的 GameInput 原生 COM 方法。
+    /// Calls the native GameInput COM method corresponding to IGameInputDevice.GetExtraButtonIndexes. 呼叫 IGameInputDevice.GetExtraButtonIndexes 對應的 GameInput 原生 COM 方法。
     /// </summary>
-    /// <param name="inputKind">要查詢或篩選的 GameInput 輸入種類。</param>
-    /// <param name="extraButtonCount">額外 button 數量。</param>
-    /// <param name="extraButtonIndexes">接收額外 button index 的陣列。</param>
-    /// <returns>原生 HRESULT 值。</returns>
+    /// <param name="inputKind">The GameInput input kind to query or filter. 要查詢或篩選的 GameInput 輸入種類。</param>
+    /// <param name="extraButtonCount">The number of extra buttons. 額外 button 數量。</param>
+    /// <param name="extraButtonIndexes">The array that receives the extra button indexes. 接收額外 button index 的陣列。</param>
+    /// <returns>The native HRESULT value. 原生 HRESULT 值。</returns>
     [PreserveSig]
     int GetExtraButtonIndexes(GameInputKind inputKind, uint extraButtonCount, [Out] byte[] extraButtonIndexes);
 
     /// <summary>
-    /// 呼叫 IGameInputDevice.CreateRawDeviceReport 對應的 GameInput 原生 COM 方法。
+    /// Calls the native GameInput COM method corresponding to IGameInputDevice.CreateRawDeviceReport. 呼叫 IGameInputDevice.CreateRawDeviceReport 對應的 GameInput 原生 COM 方法。
     /// </summary>
-    /// <param name="reportId">raw device report 識別碼。</param>
-    /// <param name="reportKind">raw device report 種類。</param>
-    /// <param name="report">接收 raw device report 的輸出欄位。</param>
-    /// <returns>原生 HRESULT 值。</returns>
+    /// <param name="reportId">The raw device report identifier. raw device report 識別碼。</param>
+    /// <param name="reportKind">The raw device report kind. raw device report 種類。</param>
+    /// <param name="report">The output field that receives the raw device report. 接收 raw device report 的輸出欄位。</param>
+    /// <returns>The native HRESULT value. 原生 HRESULT 值。</returns>
     [PreserveSig]
     int CreateRawDeviceReport(uint reportId, GameInputRawDeviceReportKind reportKind, out IGameInputRawDeviceReport? report);
 
     /// <summary>
-    /// 呼叫 IGameInputDevice.SendRawDeviceOutput 對應的 GameInput 原生 COM 方法。
+    /// Calls the native GameInput COM method corresponding to IGameInputDevice.SendRawDeviceOutput. 呼叫 IGameInputDevice.SendRawDeviceOutput 對應的 GameInput 原生 COM 方法。
     /// </summary>
-    /// <param name="report">接收 raw device report 的輸出欄位。</param>
-    /// <returns>原生 HRESULT 值。</returns>
+    /// <param name="report">The output field that receives the raw device report. 接收 raw device report 的輸出欄位。</param>
+    /// <returns>The native HRESULT value. 原生 HRESULT 值。</returns>
     [PreserveSig]
     int SendRawDeviceOutput(IGameInputRawDeviceReport report);
 }
 
 /// <summary>
-/// 表示 IGameInputDispatcher 對應的 GameInput COM 介面。
+/// Represents the GameInput COM interface corresponding to IGameInputDispatcher. 表示 IGameInputDispatcher 對應的 GameInput COM 介面。
 /// </summary>
 [ComImport]
 [Guid("415EED2E-98CB-42C2-8F28-B94601074E31")]
@@ -529,25 +529,25 @@ public interface IGameInputDevice
 public interface IGameInputDispatcher
 {
     /// <summary>
-    /// 呼叫 IGameInputDispatcher.Dispatch 對應的 GameInput 原生 COM 方法。
+    /// Calls the native GameInput COM method corresponding to IGameInputDispatcher.Dispatch. 呼叫 IGameInputDispatcher.Dispatch 對應的 GameInput 原生 COM 方法。
     /// </summary>
-    /// <param name="quotaInMicroseconds">dispatcher 可使用的時間配額，單位為微秒。</param>
-    /// <returns>若原生 API 回報成功或指定狀態存在，傳回 true；否則傳回 false。</returns>
+    /// <param name="quotaInMicroseconds">The time quota available to the dispatcher, in microseconds. dispatcher 可使用的時間配額，單位為微秒。</param>
+    /// <returns>Returns true when the native API reports success or the requested state exists; otherwise returns false. 若原生 API 回報成功或指定狀態存在，傳回 true；否則傳回 false。</returns>
     [PreserveSig]
     [return: MarshalAs(UnmanagedType.I1)]
     bool Dispatch(ulong quotaInMicroseconds);
 
     /// <summary>
-    /// 呼叫 IGameInputDispatcher.OpenWaitHandle 對應的 GameInput 原生 COM 方法。
+    /// Calls the native GameInput COM method corresponding to IGameInputDispatcher.OpenWaitHandle. 呼叫 IGameInputDispatcher.OpenWaitHandle 對應的 GameInput 原生 COM 方法。
     /// </summary>
-    /// <param name="waitHandle">接收原生 wait handle 的輸出欄位。</param>
-    /// <returns>原生 HRESULT 值。</returns>
+    /// <param name="waitHandle">The output field that receives the native wait handle. 接收原生 wait handle 的輸出欄位。</param>
+    /// <returns>The native HRESULT value. 原生 HRESULT 值。</returns>
     [PreserveSig]
     int OpenWaitHandle(out IntPtr waitHandle);
 }
 
 /// <summary>
-/// 表示 IGameInputForceFeedbackEffect 對應的 GameInput COM 介面。
+/// Represents the GameInput COM interface corresponding to IGameInputForceFeedbackEffect. 表示 IGameInputForceFeedbackEffect 對應的 GameInput COM 介面。
 /// </summary>
 [ComImport]
 [Guid("FF61096A-3373-4093-A1DF-6D31846B3511")]
@@ -555,66 +555,66 @@ public interface IGameInputDispatcher
 public interface IGameInputForceFeedbackEffect
 {
     /// <summary>
-    /// 呼叫 IGameInputForceFeedbackEffect.GetDevice 對應的 GameInput 原生 COM 方法。
+    /// Calls the native GameInput COM method corresponding to IGameInputForceFeedbackEffect.GetDevice. 呼叫 IGameInputForceFeedbackEffect.GetDevice 對應的 GameInput 原生 COM 方法。
     /// </summary>
-    /// <param name="device">目標或回呼提供的 GameInput device。</param>
+    /// <param name="device">The target GameInput device, or the device provided by the callback. 目標或回呼提供的 GameInput device。</param>
     [PreserveSig]
     void GetDevice(out IGameInputDevice? device);
 
     /// <summary>
-    /// 呼叫 IGameInputForceFeedbackEffect.GetMotorIndex 對應的 GameInput 原生 COM 方法。
+    /// Calls the native GameInput COM method corresponding to IGameInputForceFeedbackEffect.GetMotorIndex. 呼叫 IGameInputForceFeedbackEffect.GetMotorIndex 對應的 GameInput 原生 COM 方法。
     /// </summary>
-    /// <returns>原生 API 回傳的無號整數值。</returns>
+    /// <returns>The unsigned integer value returned by the native API. 原生 API 回傳的無號整數值。</returns>
     [PreserveSig]
     uint GetMotorIndex();
 
     /// <summary>
-    /// 呼叫 IGameInputForceFeedbackEffect.GetGain 對應的 GameInput 原生 COM 方法。
+    /// Calls the native GameInput COM method corresponding to IGameInputForceFeedbackEffect.GetGain. 呼叫 IGameInputForceFeedbackEffect.GetGain 對應的 GameInput 原生 COM 方法。
     /// </summary>
-    /// <returns>原生 API 回傳的 float 值。</returns>
+    /// <returns>The float value returned by the native API. 原生 API 回傳的 float 值。</returns>
     [PreserveSig]
     float GetGain();
 
     /// <summary>
-    /// 呼叫 IGameInputForceFeedbackEffect.SetGain 對應的 GameInput 原生 COM 方法。
+    /// Calls the native GameInput COM method corresponding to IGameInputForceFeedbackEffect.SetGain. 呼叫 IGameInputForceFeedbackEffect.SetGain 對應的 GameInput 原生 COM 方法。
     /// </summary>
-    /// <param name="gain">force feedback gain 值。</param>
+    /// <param name="gain">The force feedback gain value. force feedback gain 值。</param>
     [PreserveSig]
     void SetGain(float gain);
 
     /// <summary>
-    /// 呼叫 IGameInputForceFeedbackEffect.GetParams 對應的 GameInput 原生 COM 方法。
+    /// Calls the native GameInput COM method corresponding to IGameInputForceFeedbackEffect.GetParams. 呼叫 IGameInputForceFeedbackEffect.GetParams 對應的 GameInput 原生 COM 方法。
     /// </summary>
-    /// <param name="parameters">原生參數緩衝區指標。</param>
+    /// <param name="parameters">The native parameter buffer pointer. 原生參數緩衝區指標。</param>
     [PreserveSig]
     void GetParams(IntPtr parameters);
 
     /// <summary>
-    /// 呼叫 IGameInputForceFeedbackEffect.SetParams 對應的 GameInput 原生 COM 方法。
+    /// Calls the native GameInput COM method corresponding to IGameInputForceFeedbackEffect.SetParams. 呼叫 IGameInputForceFeedbackEffect.SetParams 對應的 GameInput 原生 COM 方法。
     /// </summary>
-    /// <param name="parameters">原生參數緩衝區指標。</param>
-    /// <returns>若原生 API 回報成功或指定狀態存在，傳回 true；否則傳回 false。</returns>
+    /// <param name="parameters">The native parameter buffer pointer. 原生參數緩衝區指標。</param>
+    /// <returns>Returns true when the native API reports success or the requested state exists; otherwise returns false. 若原生 API 回報成功或指定狀態存在，傳回 true；否則傳回 false。</returns>
     [PreserveSig]
     [return: MarshalAs(UnmanagedType.I1)]
     bool SetParams(IntPtr parameters);
 
     /// <summary>
-    /// 呼叫 IGameInputForceFeedbackEffect.GetState 對應的 GameInput 原生 COM 方法。
+    /// Calls the native GameInput COM method corresponding to IGameInputForceFeedbackEffect.GetState. 呼叫 IGameInputForceFeedbackEffect.GetState 對應的 GameInput 原生 COM 方法。
     /// </summary>
-    /// <returns>原生 API 回傳的 GameInputFeedbackEffectState 值。</returns>
+    /// <returns>The GameInputFeedbackEffectState value returned by the native API. 原生 API 回傳的 GameInputFeedbackEffectState 值。</returns>
     [PreserveSig]
     GameInputFeedbackEffectState GetState();
 
     /// <summary>
-    /// 呼叫 IGameInputForceFeedbackEffect.SetState 對應的 GameInput 原生 COM 方法。
+    /// Calls the native GameInput COM method corresponding to IGameInputForceFeedbackEffect.SetState. 呼叫 IGameInputForceFeedbackEffect.SetState 對應的 GameInput 原生 COM 方法。
     /// </summary>
-    /// <param name="state">接收原生狀態資料的輸出欄位。</param>
+    /// <param name="state">The output field that receives the native state data. 接收原生狀態資料的輸出欄位。</param>
     [PreserveSig]
     void SetState(GameInputFeedbackEffectState state);
 }
 
 /// <summary>
-/// 表示 IGameInputMapper 對應的 GameInput COM 介面。
+/// Represents the GameInput COM interface corresponding to IGameInputMapper. 表示 IGameInputMapper 對應的 GameInput COM 介面。
 /// </summary>
 [ComImport]
 [Guid("3C600700-F16C-49CE-9BE6-6A2EF752ED5E")]
@@ -622,71 +622,71 @@ public interface IGameInputForceFeedbackEffect
 public interface IGameInputMapper
 {
     /// <summary>
-    /// 呼叫 IGameInputMapper.GetArcadeStickButtonMappingInfo 對應的 GameInput 原生 COM 方法。
+    /// Calls the native GameInput COM method corresponding to IGameInputMapper.GetArcadeStickButtonMappingInfo. 呼叫 IGameInputMapper.GetArcadeStickButtonMappingInfo 對應的 GameInput 原生 COM 方法。
     /// </summary>
-    /// <param name="buttonElement">要查詢 mapping 的 button 元素。</param>
-    /// <param name="mapping">接收 mapping 資訊的原生緩衝區。</param>
-    /// <returns>若原生 API 回報成功或指定狀態存在，傳回 true；否則傳回 false。</returns>
+    /// <param name="buttonElement">The button element whose mapping is queried. 要查詢 mapping 的 button 元素。</param>
+    /// <param name="mapping">The native buffer that receives the mapping information. 接收 mapping 資訊的原生緩衝區。</param>
+    /// <returns>Returns true when the native API reports success or the requested state exists; otherwise returns false. 若原生 API 回報成功或指定狀態存在，傳回 true；否則傳回 false。</returns>
     [PreserveSig]
     [return: MarshalAs(UnmanagedType.I1)]
     bool GetArcadeStickButtonMappingInfo(GameInputArcadeStickButtons buttonElement, IntPtr mapping);
 
     /// <summary>
-    /// 呼叫 IGameInputMapper.GetFlightStickAxisMappingInfo 對應的 GameInput 原生 COM 方法。
+    /// Calls the native GameInput COM method corresponding to IGameInputMapper.GetFlightStickAxisMappingInfo. 呼叫 IGameInputMapper.GetFlightStickAxisMappingInfo 對應的 GameInput 原生 COM 方法。
     /// </summary>
-    /// <param name="axisElement">要查詢 mapping 的 axis 元素。</param>
-    /// <param name="mapping">接收 mapping 資訊的原生緩衝區。</param>
-    /// <returns>若原生 API 回報成功或指定狀態存在，傳回 true；否則傳回 false。</returns>
+    /// <param name="axisElement">The axis element whose mapping is queried. 要查詢 mapping 的 axis 元素。</param>
+    /// <param name="mapping">The native buffer that receives the mapping information. 接收 mapping 資訊的原生緩衝區。</param>
+    /// <returns>Returns true when the native API reports success or the requested state exists; otherwise returns false. 若原生 API 回報成功或指定狀態存在，傳回 true；否則傳回 false。</returns>
     [PreserveSig]
     [return: MarshalAs(UnmanagedType.I1)]
     bool GetFlightStickAxisMappingInfo(GameInputFlightStickAxes axisElement, IntPtr mapping);
 
     /// <summary>
-    /// 呼叫 IGameInputMapper.GetFlightStickButtonMappingInfo 對應的 GameInput 原生 COM 方法。
+    /// Calls the native GameInput COM method corresponding to IGameInputMapper.GetFlightStickButtonMappingInfo. 呼叫 IGameInputMapper.GetFlightStickButtonMappingInfo 對應的 GameInput 原生 COM 方法。
     /// </summary>
-    /// <param name="buttonElement">要查詢 mapping 的 button 元素。</param>
-    /// <param name="mapping">接收 mapping 資訊的原生緩衝區。</param>
-    /// <returns>若原生 API 回報成功或指定狀態存在，傳回 true；否則傳回 false。</returns>
+    /// <param name="buttonElement">The button element whose mapping is queried. 要查詢 mapping 的 button 元素。</param>
+    /// <param name="mapping">The native buffer that receives the mapping information. 接收 mapping 資訊的原生緩衝區。</param>
+    /// <returns>Returns true when the native API reports success or the requested state exists; otherwise returns false. 若原生 API 回報成功或指定狀態存在，傳回 true；否則傳回 false。</returns>
     [PreserveSig]
     [return: MarshalAs(UnmanagedType.I1)]
     bool GetFlightStickButtonMappingInfo(GameInputFlightStickButtons buttonElement, IntPtr mapping);
 
     /// <summary>
-    /// 呼叫 IGameInputMapper.GetGamepadAxisMappingInfo 對應的 GameInput 原生 COM 方法。
+    /// Calls the native GameInput COM method corresponding to IGameInputMapper.GetGamepadAxisMappingInfo. 呼叫 IGameInputMapper.GetGamepadAxisMappingInfo 對應的 GameInput 原生 COM 方法。
     /// </summary>
-    /// <param name="axisElement">要查詢 mapping 的 axis 元素。</param>
-    /// <param name="mapping">接收 mapping 資訊的原生緩衝區。</param>
-    /// <returns>若原生 API 回報成功或指定狀態存在，傳回 true；否則傳回 false。</returns>
+    /// <param name="axisElement">The axis element whose mapping is queried. 要查詢 mapping 的 axis 元素。</param>
+    /// <param name="mapping">The native buffer that receives the mapping information. 接收 mapping 資訊的原生緩衝區。</param>
+    /// <returns>Returns true when the native API reports success or the requested state exists; otherwise returns false. 若原生 API 回報成功或指定狀態存在，傳回 true；否則傳回 false。</returns>
     [PreserveSig]
     [return: MarshalAs(UnmanagedType.I1)]
     bool GetGamepadAxisMappingInfo(GameInputGamepadAxes axisElement, IntPtr mapping);
 
     /// <summary>
-    /// 呼叫 IGameInputMapper.GetGamepadButtonMappingInfo 對應的 GameInput 原生 COM 方法。
+    /// Calls the native GameInput COM method corresponding to IGameInputMapper.GetGamepadButtonMappingInfo. 呼叫 IGameInputMapper.GetGamepadButtonMappingInfo 對應的 GameInput 原生 COM 方法。
     /// </summary>
-    /// <param name="buttonElement">要查詢 mapping 的 button 元素。</param>
-    /// <param name="mapping">接收 mapping 資訊的原生緩衝區。</param>
-    /// <returns>若原生 API 回報成功或指定狀態存在，傳回 true；否則傳回 false。</returns>
+    /// <param name="buttonElement">The button element whose mapping is queried. 要查詢 mapping 的 button 元素。</param>
+    /// <param name="mapping">The native buffer that receives the mapping information. 接收 mapping 資訊的原生緩衝區。</param>
+    /// <returns>Returns true when the native API reports success or the requested state exists; otherwise returns false. 若原生 API 回報成功或指定狀態存在，傳回 true；否則傳回 false。</returns>
     [PreserveSig]
     [return: MarshalAs(UnmanagedType.I1)]
     bool GetGamepadButtonMappingInfo(GameInputGamepadButtons buttonElement, IntPtr mapping);
 
     /// <summary>
-    /// 呼叫 IGameInputMapper.GetRacingWheelAxisMappingInfo 對應的 GameInput 原生 COM 方法。
+    /// Calls the native GameInput COM method corresponding to IGameInputMapper.GetRacingWheelAxisMappingInfo. 呼叫 IGameInputMapper.GetRacingWheelAxisMappingInfo 對應的 GameInput 原生 COM 方法。
     /// </summary>
-    /// <param name="axisElement">要查詢 mapping 的 axis 元素。</param>
-    /// <param name="mapping">接收 mapping 資訊的原生緩衝區。</param>
-    /// <returns>若原生 API 回報成功或指定狀態存在，傳回 true；否則傳回 false。</returns>
+    /// <param name="axisElement">The axis element whose mapping is queried. 要查詢 mapping 的 axis 元素。</param>
+    /// <param name="mapping">The native buffer that receives the mapping information. 接收 mapping 資訊的原生緩衝區。</param>
+    /// <returns>Returns true when the native API reports success or the requested state exists; otherwise returns false. 若原生 API 回報成功或指定狀態存在，傳回 true；否則傳回 false。</returns>
     [PreserveSig]
     [return: MarshalAs(UnmanagedType.I1)]
     bool GetRacingWheelAxisMappingInfo(GameInputRacingWheelAxes axisElement, IntPtr mapping);
 
     /// <summary>
-    /// 呼叫 IGameInputMapper.GetRacingWheelButtonMappingInfo 對應的 GameInput 原生 COM 方法。
+    /// Calls the native GameInput COM method corresponding to IGameInputMapper.GetRacingWheelButtonMappingInfo. 呼叫 IGameInputMapper.GetRacingWheelButtonMappingInfo 對應的 GameInput 原生 COM 方法。
     /// </summary>
-    /// <param name="buttonElement">要查詢 mapping 的 button 元素。</param>
-    /// <param name="mapping">接收 mapping 資訊的原生緩衝區。</param>
-    /// <returns>若原生 API 回報成功或指定狀態存在，傳回 true；否則傳回 false。</returns>
+    /// <param name="buttonElement">The button element whose mapping is queried. 要查詢 mapping 的 button 元素。</param>
+    /// <param name="mapping">The native buffer that receives the mapping information. 接收 mapping 資訊的原生緩衝區。</param>
+    /// <returns>Returns true when the native API reports success or the requested state exists; otherwise returns false. 若原生 API 回報成功或指定狀態存在，傳回 true；否則傳回 false。</returns>
     [PreserveSig]
     [return: MarshalAs(UnmanagedType.I1)]
     bool GetRacingWheelButtonMappingInfo(GameInputRacingWheelButtons buttonElement, IntPtr mapping);

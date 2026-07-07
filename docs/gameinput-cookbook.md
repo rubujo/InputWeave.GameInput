@@ -248,6 +248,8 @@ byte[] data = report.GetData();
 Console.WriteLine($"Raw report {report.Info.Id}: {data.Length} bytes");
 ```
 
+原生回報的 raw report 大小超過 `GameInputRawDeviceReport.MaxRawDataSize`（64 KB）時，視為裝置或驅動程式回報異常：`TryGetRawReportSnapshot`／`GetCurrentRawReport` 會回傳 `false`／`null`，直接呼叫 `GameInputRawDeviceReport.GetRawDataSize()`／`GetRawData()` 則會拋出 `InvalidOperationException`。實際裝置的 report 遠小於這個上限，一般不會遇到。
+
 ## 非同步 API
 
 `RefreshDevicesAsync`／`EnumerateDevicesAsync` 只是把阻塞式列舉包在 `Task.Run` 中執行，方便 UI 執行緒呼叫；`WaitForDeviceEventAsync`／`WaitForReadingAsync` 則是真正等待原生事件的非同步方法，內部註冊一次性回呼，完成或取消後會在背景執行緒解除註冊。

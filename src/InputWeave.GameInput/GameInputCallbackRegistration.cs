@@ -3,6 +3,7 @@ using System.Runtime.InteropServices;
 namespace InputWeave.GameInput;
 
 /// <summary>
+/// A native GameInput callback registration.
 /// GameInput 原生回呼註冊。
 /// </summary>
 public sealed class GameInputCallbackRegistration : IDisposable
@@ -30,19 +31,22 @@ public sealed class GameInputCallbackRegistration : IDisposable
     }
 
     /// <summary>
+    /// The native GameInput callback token.
     /// 原生 GameInput callback token。
     /// </summary>
     public ulong Token { get; }
 
     /// <summary>
+    /// Whether the registration has been disposed.
     /// 註冊是否已釋放。
     /// </summary>
     public bool IsDisposed { get; private set; }
 
     /// <summary>
+    /// Unregisters the callback and releases the related managed state.
     /// 取消註冊 callback 並釋放相關 managed 狀態。
     /// </summary>
-    /// <exception cref="InvalidOperationException">在原生回呼執行緒中同步呼叫此方法。</exception>
+    /// <exception cref="InvalidOperationException">This method was called synchronously on the native callback thread. 在原生回呼執行緒中同步呼叫此方法。</exception>
     public void Dispose()
     {
         if (IsDisposed)
@@ -79,11 +83,15 @@ public sealed class GameInputCallbackRegistration : IDisposable
     }
 
     /// <summary>
+    /// The safe disposal method for internal library use: disposes synchronously via <see cref="Dispose"/> when not on the native
+    /// callback thread; when on the native callback thread, invokes <see cref="Dispose"/> on a background thread and waits
+    /// synchronously for it to finish, so the caller knows the registration has truly been torn down on return instead of
+    /// possibly still pending like a fire-and-forget deferral.
     /// 供程式庫內部呼叫的安全釋放方法：不在原生回呼執行緒中時直接同步 <see cref="Dispose"/>；
     /// 在原生回呼執行緒中時，改在背景執行緒呼叫 <see cref="Dispose"/> 並同步等待其完成，
     /// 讓呼叫端可以確定回傳時這個註冊已經真正解除，而不是像 fire-and-forget 延後那樣可能還沒完成。
     /// </summary>
-    /// <returns>釋放過程中發生的例外；順利完成時為 <c>null</c>。</returns>
+    /// <returns>The exception raised during disposal; <c>null</c> when disposal completed successfully. 釋放過程中發生的例外；順利完成時為 <c>null</c>。</returns>
     internal Exception? DisposeSafely()
     {
         if (!GameInputCallbackThread.IsExecutingCallback)

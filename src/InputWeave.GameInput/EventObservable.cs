@@ -1,9 +1,11 @@
 namespace InputWeave.GameInput;
 
 /// <summary>
+/// A lightweight <see cref="IObservable{T}"/> implementation that does not depend on System.Reactive, used for internal data
+/// pushing.
 /// 輕量、不依賴 System.Reactive 的 <see cref="IObservable{T}"/> 實作，供內部推送資料使用。
 /// </summary>
-/// <typeparam name="T">推送資料型別。</typeparam>
+/// <typeparam name="T">The pushed data type. 推送資料型別。</typeparam>
 internal sealed class EventObservable<T>(Action? onFirstSubscribe = null, Action? onLastUnsubscribe = null) : IObservable<T>
 {
     private readonly List<IObserver<T>> _observers = [];
@@ -56,6 +58,12 @@ internal sealed class EventObservable<T>(Action? onFirstSubscribe = null, Action
     }
 
     /// <summary>
+    /// Takes a snapshot of the observers inside the lock and invokes them outside the lock, so a stuck observer cannot block the
+    /// native callback thread while the lock is held, nor block other threads calling <see cref="Subscribe"/>,
+    /// <see cref="OnNext"/>, or <see cref="Complete"/> on the same source. This sacrifices the strict serialization guarantee
+    /// that no <see cref="OnNext"/> ever follows <see cref="Complete"/> (possible only in the extremely narrow window where
+    /// <see cref="Complete"/> coincides with a native event), in exchange for avoiding the more serious risk of one stuck
+    /// observer stalling the whole native callback thread.
     /// 只在鎖定範圍內取快照，實際呼叫 observer 在鎖外執行，避免持有鎖期間卡住原生回呼執行緒、
     /// 或阻擋其他執行緒對同一個來源的 <see cref="Subscribe"/>／<see cref="OnNext"/>／<see cref="Complete"/> 呼叫。
     /// 這犧牲了「<see cref="Complete"/> 之後絕不再有 <see cref="OnNext"/>」的嚴格序列化保證

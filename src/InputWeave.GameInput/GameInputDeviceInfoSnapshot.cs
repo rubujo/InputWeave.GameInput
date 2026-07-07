@@ -5,9 +5,15 @@ using InputWeave.GameInput.Interop;
 namespace InputWeave.GameInput;
 
 /// <summary>
+/// A GameInput device information snapshot that holds no native pointers.
 /// 不持有原生指標的 GameInput 裝置資訊快照。
 /// </summary>
 /// <remarks>
+/// <see cref="ForceFeedbackMotors"/>, <see cref="InputReports"/>, and <see cref="OutputReports"/> are collection members;
+/// value equality compares their contents element by element instead of comparing the references of the copied arrays.
+/// The diagnostic-only native pointer fields inside <see cref="Native"/> (such as <see cref="GameInputDeviceInfo.DisplayName"/>
+/// and <see cref="GameInputDeviceInfo.PnpPath"/>) do not participate in equality comparison, because those pointer values
+/// are valid only within a single enumeration call and do not represent logical content differences.
 /// <see cref="ForceFeedbackMotors"/>、<see cref="InputReports"/>、<see cref="OutputReports"/> 是集合欄位，
 /// 值相等性採逐一比較內容，而不是比較複本陣列的參考。<see cref="Native"/> 內僅供診斷的原生指標欄位
 /// （<see cref="GameInputDeviceInfo.DisplayName"/>、<see cref="GameInputDeviceInfo.PnpPath"/> 等）不參與相等性比較，
@@ -48,9 +54,15 @@ public readonly record struct GameInputDeviceInfoSnapshot : IEquatable<GameInput
     }
 
     /// <summary>
+    /// The snapshot of the native fixed fields; all pointer fields are for diagnostics only and must not be dereferenced outside the snapshot.
     /// 原生固定欄位快照；所有指標欄位只供診斷，不應在快照外解參考。
     /// </summary>
     /// <remarks>
+    /// The string and array fields in this structure (such as <see cref="GameInputDeviceInfo.DisplayName"/> and
+    /// <see cref="GameInputDeviceInfo.PnpPath"/>) are pointers into native memory whose lifetime is bound to the underlying COM
+    /// object of the original device; dereferencing them after the device is released causes undefined behavior. In typical
+    /// scenarios, use the copied members provided by this type, such as <see cref="DisplayName"/> and <see cref="PnpPath"/>,
+    /// instead of reading the pointer fields of <see cref="Native"/> directly.
     /// 這個結構中的字串與陣列欄位（例如 <see cref="GameInputDeviceInfo.DisplayName"/>、
     /// <see cref="GameInputDeviceInfo.PnpPath"/>）是指向原生記憶體的指標，生命週期綁定於原始裝置的底層 COM
     /// 物件；裝置釋放後解參考會導致未定義行為。一般情境應改用本類別提供的
@@ -59,6 +71,7 @@ public readonly record struct GameInputDeviceInfoSnapshot : IEquatable<GameInput
     public GameInputDeviceInfo Native { get; }
 
     /// <summary>
+    /// The USB or HID vendor id.
     /// USB 或 HID vendor id。
     /// </summary>
     public ushort VendorId
@@ -70,6 +83,7 @@ public readonly record struct GameInputDeviceInfoSnapshot : IEquatable<GameInput
     }
 
     /// <summary>
+    /// The USB or HID product id.
     /// USB 或 HID product id。
     /// </summary>
     public ushort ProductId
@@ -81,6 +95,7 @@ public readonly record struct GameInputDeviceInfoSnapshot : IEquatable<GameInput
     }
 
     /// <summary>
+    /// The device revision number.
     /// 裝置修訂版本號。
     /// </summary>
     public ushort RevisionNumber
@@ -92,6 +107,7 @@ public readonly record struct GameInputDeviceInfoSnapshot : IEquatable<GameInput
     }
 
     /// <summary>
+    /// The HID usage information of the device.
     /// 裝置的 HID usage 資訊。
     /// </summary>
     public GameInputUsage Usage
@@ -103,6 +119,7 @@ public readonly record struct GameInputDeviceInfoSnapshot : IEquatable<GameInput
     }
 
     /// <summary>
+    /// The GameInput device family the device belongs to.
     /// 裝置所屬的 GameInput device family。
     /// </summary>
     public GameInputDeviceFamily DeviceFamily
@@ -114,6 +131,7 @@ public readonly record struct GameInputDeviceInfoSnapshot : IEquatable<GameInput
     }
 
     /// <summary>
+    /// The set of input kinds supported by the device.
     /// 裝置支援的輸入種類集合。
     /// </summary>
     public GameInputKind SupportedInput
@@ -125,6 +143,7 @@ public readonly record struct GameInputDeviceInfoSnapshot : IEquatable<GameInput
     }
 
     /// <summary>
+    /// The set of rumble motors supported by the device.
     /// 裝置支援的 rumble motor 集合。
     /// </summary>
     public GameInputRumbleMotors SupportedRumbleMotors
@@ -136,6 +155,7 @@ public readonly record struct GameInputDeviceInfoSnapshot : IEquatable<GameInput
     }
 
     /// <summary>
+    /// The set of system buttons supported by the device.
     /// 裝置支援的 system button 集合。
     /// </summary>
     public GameInputSystemButtons SupportedSystemButtons
@@ -147,6 +167,7 @@ public readonly record struct GameInputDeviceInfoSnapshot : IEquatable<GameInput
     }
 
     /// <summary>
+    /// The device container identifier.
     /// 裝置容器識別碼。
     /// </summary>
     public Guid ContainerId
@@ -158,76 +179,92 @@ public readonly record struct GameInputDeviceInfoSnapshot : IEquatable<GameInput
     }
 
     /// <summary>
+    /// The human-readable device display name.
     /// 使用者可讀的裝置顯示名稱。
     /// </summary>
     public string? DisplayName { get; }
 
     /// <summary>
+    /// The Plug and Play path of the device.
     /// 裝置的 Plug and Play 路徑。
     /// </summary>
     public string? PnpPath { get; }
 
     /// <summary>
+    /// The keyboard sub-information; null when the device does not support keyboard input.
     /// 鍵盤子資訊；裝置不支援鍵盤時為 null。
     /// </summary>
     public GameInputKeyboardInfo? Keyboard { get; }
 
     /// <summary>
+    /// The mouse sub-information; null when the device does not support mouse input.
     /// 滑鼠子資訊；裝置不支援滑鼠時為 null。
     /// </summary>
     public GameInputMouseInfo? Mouse { get; }
 
     /// <summary>
+    /// The sensors sub-information; null when the device does not support sensors.
     /// 感測器子資訊；裝置不支援感測器時為 null。
     /// </summary>
     public GameInputSensorsInfo? Sensors { get; }
 
     /// <summary>
+    /// The controller sub-information; null when the device does not support controller input.
     /// 一般 controller 子資訊；裝置不支援 controller 時為 null。
     /// </summary>
     public GameInputControllerInfoSnapshot? Controller { get; }
 
     /// <summary>
+    /// The arcade stick sub-information; null when the device does not support arcade stick input.
     /// Arcade stick 子資訊；裝置不支援 arcade stick 時為 null。
     /// </summary>
     public GameInputArcadeStickInfo? ArcadeStick { get; }
 
     /// <summary>
+    /// The flight stick sub-information; null when the device does not support flight stick input.
     /// Flight stick 子資訊；裝置不支援 flight stick 時為 null。
     /// </summary>
     public GameInputFlightStickInfo? FlightStick { get; }
 
     /// <summary>
+    /// The gamepad sub-information; null when the device does not support gamepad input.
     /// Gamepad 子資訊；裝置不支援 gamepad 時為 null。
     /// </summary>
     public GameInputGamepadInfo? Gamepad { get; }
 
     /// <summary>
+    /// The racing wheel sub-information; null when the device does not support racing wheel input.
     /// Racing wheel 子資訊；裝置不支援 racing wheel 時為 null。
     /// </summary>
     public GameInputRacingWheelInfo? RacingWheel { get; }
 
     /// <summary>
+    /// The force feedback motor capability information snapshots.
     /// Force feedback motor 能力資訊快照。
     /// </summary>
     public IReadOnlyList<GameInputForceFeedbackMotorInfo> ForceFeedbackMotors { get; }
 
     /// <summary>
+    /// The raw input report information the device can provide.
     /// 裝置可提供的 raw input report 資訊。
     /// </summary>
     public IReadOnlyList<GameInputRawDeviceReportInfo> InputReports { get; }
 
     /// <summary>
+    /// The raw output report information the device can accept.
     /// 裝置可接受的 raw output report 資訊。
     /// </summary>
     public IReadOnlyList<GameInputRawDeviceReportInfo> OutputReports { get; }
 
     /// <summary>
+    /// Compares all members for value equality, where <see cref="ForceFeedbackMotors"/>, <see cref="InputReports"/>, and
+    /// <see cref="OutputReports"/> are compared element by element; the diagnostics-only native pointer fields inside
+    /// <see cref="Native"/> do not participate in the comparison.
     /// 比較所有欄位的值相等性，其中 <see cref="ForceFeedbackMotors"/>、<see cref="InputReports"/>、
     /// <see cref="OutputReports"/> 採逐一比較內容；<see cref="Native"/> 內僅供診斷的原生指標欄位不參與比較。
     /// </summary>
-    /// <param name="other">要比較的另一個快照。</param>
-    /// <returns>兩個快照的所有欄位皆相同時，傳回 true。</returns>
+    /// <param name="other">The other snapshot to compare. 要比較的另一個快照。</param>
+    /// <returns>Returns true when all members of the two snapshots are equal. 兩個快照的所有欄位皆相同時，傳回 true。</returns>
     public bool Equals(GameInputDeviceInfoSnapshot other)
     {
         return VendorId == other.VendorId
@@ -259,9 +296,11 @@ public readonly record struct GameInputDeviceInfoSnapshot : IEquatable<GameInput
     }
 
     /// <summary>
+    /// Computes the hash code from all member contents; the diagnostics-only native pointer fields inside <see cref="Native"/> do
+    /// not participate.
     /// 依所有欄位內容計算雜湊碼；<see cref="Native"/> 內僅供診斷的原生指標欄位不參與計算。
     /// </summary>
-    /// <returns>雜湊碼。</returns>
+    /// <returns>The hash code. 雜湊碼。</returns>
     public override int GetHashCode()
     {
         int hash = VendorId.GetHashCode();
@@ -341,7 +380,7 @@ public readonly record struct GameInputDeviceInfoSnapshot : IEquatable<GameInput
         TypeCode underlyingTypeCode = isEnum ? Type.GetTypeCode(Enum.GetUnderlyingType(type)) : TypeCode.Empty;
         int itemSize = isEnum ? GetUnderlyingTypeSize(underlyingTypeCode) : Marshal.SizeOf<T>();
 
-        T[] values = new T[checked((int)count)];
+        T[] values = new T[NativeSizeGuard.EnsureCount(count, NativeSizeGuard.MaxElementCount, "裝置資訊陣列元素數量")];
         for (int index = 0; index < values.Length; index++)
         {
             IntPtr elementPointer = IntPtr.Add(pointer, checked(index * itemSize));
@@ -383,9 +422,14 @@ public readonly record struct GameInputDeviceInfoSnapshot : IEquatable<GameInput
 }
 
 /// <summary>
+/// A controller sub-information snapshot that holds no native pointers.
 /// 不持有原生指標的 controller 子資訊快照。
 /// </summary>
 /// <remarks>
+/// <see cref="AxisLabels"/>, <see cref="ButtonLabels"/>, and <see cref="Switches"/> are collection members; value equality
+/// compares their contents element by element instead of comparing the references of the copied arrays. <see cref="Native"/> does
+/// not participate in equality at all — it only has count fields and diagnostics-only native pointer fields, and the counts are
+/// already fully reflected in the lengths of the collection members above.
 /// <see cref="AxisLabels"/>、<see cref="ButtonLabels"/>、<see cref="Switches"/> 是集合欄位，
 /// 值相等性採逐一比較內容，而不是比較複本陣列的參考。<see cref="Native"/> 完全不參與相等性比較——
 /// 它只有 Count 欄位與僅供診斷的原生指標欄位，Count 已完整反映在上述集合欄位的長度中。
@@ -405,9 +449,14 @@ public readonly record struct GameInputControllerInfoSnapshot : IEquatable<GameI
     }
 
     /// <summary>
+    /// The snapshot of the native controller fixed fields; the pointer fields are for diagnostics only.
     /// 原生 controller 固定欄位快照；指標欄位只供診斷。
     /// </summary>
     /// <remarks>
+    /// The array fields in this structure (such as <see cref="GameInputControllerInfo.ControllerAxisLabels"/>) are pointers into
+    /// native memory whose lifetime is bound to the underlying COM object of the original device; dereferencing them after the
+    /// device is released causes undefined behavior. In typical scenarios use the copied members provided by this type, such as
+    /// <see cref="AxisLabels"/>, <see cref="ButtonLabels"/>, and <see cref="Switches"/>.
     /// 這個結構中的陣列欄位（例如 <see cref="GameInputControllerInfo.ControllerAxisLabels"/>）是指向原生記憶體的指標，
     /// 生命週期綁定於原始裝置的底層 COM 物件；裝置釋放後解參考會導致未定義行為。一般情境應改用本類別提供的
     /// <see cref="AxisLabels"/>、<see cref="ButtonLabels"/>、<see cref="Switches"/> 等已複製欄位。
@@ -415,26 +464,32 @@ public readonly record struct GameInputControllerInfoSnapshot : IEquatable<GameI
     public GameInputControllerInfo Native { get; }
 
     /// <summary>
+    /// The controller axis label list.
     /// Controller axis label 清單。
     /// </summary>
     public IReadOnlyList<GameInputLabel> AxisLabels { get; }
 
     /// <summary>
+    /// The controller button label list.
     /// Controller button label 清單。
     /// </summary>
     public IReadOnlyList<GameInputLabel> ButtonLabels { get; }
 
     /// <summary>
+    /// The controller switch information snapshot list.
     /// Controller switch 資訊快照清單。
     /// </summary>
     public IReadOnlyList<GameInputControllerSwitchInfoSnapshot> Switches { get; }
 
     /// <summary>
+    /// Compares the contents of <see cref="AxisLabels"/>, <see cref="ButtonLabels"/>, and <see cref="Switches"/> element by
+    /// element for value equality; the diagnostics-only native pointer fields inside <see cref="Native"/> do not participate
+    /// (their count fields are already fully reflected in the collection lengths).
     /// 逐一比較 <see cref="AxisLabels"/>、<see cref="ButtonLabels"/>、<see cref="Switches"/> 內容的值相等性；
     /// <see cref="Native"/> 內僅供診斷的原生指標欄位不參與比較（其 Count 欄位已完整反映在各集合欄位長度中）。
     /// </summary>
-    /// <param name="other">要比較的另一個快照。</param>
-    /// <returns>兩個快照的所有欄位皆相同時，傳回 true。</returns>
+    /// <param name="other">The other snapshot to compare. 要比較的另一個快照。</param>
+    /// <returns>Returns true when all members of the two snapshots are equal. 兩個快照的所有欄位皆相同時，傳回 true。</returns>
     public bool Equals(GameInputControllerInfoSnapshot other)
     {
         return AxisLabels.SequenceEqual(other.AxisLabels)
@@ -443,9 +498,11 @@ public readonly record struct GameInputControllerInfoSnapshot : IEquatable<GameI
     }
 
     /// <summary>
+    /// Computes the hash code from the contents of <see cref="AxisLabels"/>, <see cref="ButtonLabels"/>, and
+    /// <see cref="Switches"/>.
     /// 依 <see cref="AxisLabels"/>、<see cref="ButtonLabels"/>、<see cref="Switches"/> 內容計算雜湊碼。
     /// </summary>
-    /// <returns>雜湊碼。</returns>
+    /// <returns>The hash code. 雜湊碼。</returns>
     public override int GetHashCode()
     {
         int hash = 17;
@@ -490,9 +547,12 @@ public readonly record struct GameInputControllerInfoSnapshot : IEquatable<GameI
 }
 
 /// <summary>
+/// A controller switch sub-information snapshot that holds no fixed buffers.
 /// 不持有 fixed buffer 的 controller switch 子資訊快照。
 /// </summary>
 /// <remarks>
+/// <see cref="Labels"/> is a collection member; value equality compares its contents element by element instead of comparing the
+/// references of the copied arrays.
 /// <see cref="Labels"/> 是集合欄位，值相等性採逐一比較內容，而不是比較複本陣列的參考。
 /// </remarks>
 public readonly record struct GameInputControllerSwitchInfoSnapshot : IEquatable<GameInputControllerSwitchInfoSnapshot>
@@ -504,29 +564,33 @@ public readonly record struct GameInputControllerSwitchInfoSnapshot : IEquatable
     }
 
     /// <summary>
+    /// The label list for each switch position.
     /// Switch 每個位置對應的 label 清單。
     /// </summary>
     public IReadOnlyList<GameInputLabel> Labels { get; }
 
     /// <summary>
+    /// The native switch kind.
     /// Switch 的原生種類。
     /// </summary>
     public GameInputSwitchKind Kind { get; }
 
     /// <summary>
+    /// Compares the contents of <see cref="Labels"/> element by element for value equality.
     /// 逐一比較 <see cref="Labels"/> 內容的值相等性。
     /// </summary>
-    /// <param name="other">要比較的另一個快照。</param>
-    /// <returns>兩個快照的 <see cref="Kind"/> 與 <see cref="Labels"/> 內容皆相同時，傳回 true。</returns>
+    /// <param name="other">The other snapshot to compare. 要比較的另一個快照。</param>
+    /// <returns>Returns true when the <see cref="Kind"/> and <see cref="Labels"/> contents of the two snapshots are equal. 兩個快照的 <see cref="Kind"/> 與 <see cref="Labels"/> 內容皆相同時，傳回 true。</returns>
     public bool Equals(GameInputControllerSwitchInfoSnapshot other)
     {
         return Kind == other.Kind && Labels.SequenceEqual(other.Labels);
     }
 
     /// <summary>
+    /// Computes the hash code from <see cref="Kind"/> and the contents of <see cref="Labels"/>.
     /// 依 <see cref="Kind"/> 與 <see cref="Labels"/> 內容計算雜湊碼。
     /// </summary>
-    /// <returns>雜湊碼。</returns>
+    /// <returns>The hash code. 雜湊碼。</returns>
     public override int GetHashCode()
     {
         return HashCodeCombiner.CombineRange(Kind.GetHashCode(), Labels);
@@ -545,9 +609,12 @@ public readonly record struct GameInputControllerSwitchInfoSnapshot : IEquatable
 }
 
 /// <summary>
+/// A haptic information snapshot that holds no native haptic buffers.
 /// 不持有原生 haptic 緩衝區的觸覺資訊快照。
 /// </summary>
 /// <remarks>
+/// <see cref="Locations"/> is a collection member; value equality compares its contents element by element instead of comparing
+/// the references of the copied arrays.
 /// <see cref="Locations"/> 是集合欄位，值相等性採逐一比較內容，而不是比較複本陣列的參考。
 /// </remarks>
 public readonly record struct GameInputHapticInfoSnapshot : IEquatable<GameInputHapticInfoSnapshot>
@@ -559,29 +626,33 @@ public readonly record struct GameInputHapticInfoSnapshot : IEquatable<GameInput
     }
 
     /// <summary>
+    /// The haptic audio endpoint identifier.
     /// Haptic 音訊端點識別碼。
     /// </summary>
     public string AudioEndpointId { get; }
 
     /// <summary>
+    /// The haptic location identifier list.
     /// Haptic 位置識別碼清單。
     /// </summary>
     public IReadOnlyList<Guid> Locations { get; }
 
     /// <summary>
+    /// Compares the contents of <see cref="Locations"/> element by element for value equality.
     /// 逐一比較 <see cref="Locations"/> 內容的值相等性。
     /// </summary>
-    /// <param name="other">要比較的另一個快照。</param>
-    /// <returns>兩個快照的 <see cref="AudioEndpointId"/> 與 <see cref="Locations"/> 內容皆相同時，傳回 true。</returns>
+    /// <param name="other">The other snapshot to compare. 要比較的另一個快照。</param>
+    /// <returns>Returns true when the <see cref="AudioEndpointId"/> and <see cref="Locations"/> contents of the two snapshots are equal. 兩個快照的 <see cref="AudioEndpointId"/> 與 <see cref="Locations"/> 內容皆相同時，傳回 true。</returns>
     public bool Equals(GameInputHapticInfoSnapshot other)
     {
         return AudioEndpointId == other.AudioEndpointId && Locations.SequenceEqual(other.Locations);
     }
 
     /// <summary>
+    /// Computes the hash code from <see cref="AudioEndpointId"/> and the contents of <see cref="Locations"/>.
     /// 依 <see cref="AudioEndpointId"/> 與 <see cref="Locations"/> 內容計算雜湊碼。
     /// </summary>
-    /// <returns>雜湊碼。</returns>
+    /// <returns>The hash code. 雜湊碼。</returns>
     public override int GetHashCode()
     {
         return HashCodeCombiner.CombineRange(AudioEndpointId.GetHashCode(), Locations);

@@ -76,6 +76,27 @@ public sealed class GameInputReadingTests
         Assert.AreEqual(0u, buffer[2].ScanCode);
     }
 
+    [TestMethod]
+    public void GetControllerAxisStateThrowsInvalidOperationExceptionWhenNativeCountExceedsLimit()
+    {
+        using NativeReadingStub stub = NativeReadingStub.Create(axisCountOverride: (uint)NativeSizeGuard.MaxElementCount + 1);
+        using GameInputReading reading = new(stub.Native);
+
+        _ = Assert.ThrowsExactly<InvalidOperationException>(() => reading.GetControllerAxisState());
+    }
+
+    [TestMethod]
+    public void TryGetControllerSnapshotReturnsFalseWhenNativeCountExceedsLimit()
+    {
+        using NativeReadingStub stub = NativeReadingStub.Create(axisCountOverride: (uint)NativeSizeGuard.MaxElementCount + 1);
+        using GameInputReading reading = new(stub.Native);
+
+        bool result = reading.TryGetControllerSnapshot(out ControllerReadingSnapshot? snapshot);
+
+        Assert.IsFalse(result, "原生回報的軸數量超過上限時，Try 方法應回傳 false 而不是拋出例外。");
+        Assert.IsNull(snapshot);
+    }
+
     /// <summary>
     /// 在原生記憶體中組出最小可用的 IGameInputReading vtable，供單元測試在沒有真實 GameInput 硬體時
     /// 驗證 <see cref="GameInputReading"/> 對陣列緩衝區方法的釘選與轉呼叫行為。
@@ -94,6 +115,9 @@ public sealed class GameInputReadingTests
         [ThreadStatic]
         private static GameInputKeyState[]? t_keys;
 
+        [ThreadStatic]
+        private static uint? t_axisCountOverride;
+
         private readonly IntPtr _vtbl;
         private readonly IntPtr _object;
         private bool _disposed;
@@ -110,18 +134,22 @@ public sealed class GameInputReadingTests
             float[]? axes = null,
             byte[]? buttons = null,
             GameInputSwitchPosition[]? switches = null,
-            GameInputKeyState[]? keys = null)
+            GameInputKeyState[]? keys = null,
+            uint? axisCountOverride = null)
         {
             t_axes = axes ?? [];
             t_buttons = buttons ?? [];
             t_switches = switches ?? [];
             t_keys = keys ?? [];
+            t_axisCountOverride = axisCountOverride;
 
             IntPtr vtbl = Marshal.AllocHGlobal(sizeof(IGameInputReadingVtbl));
             *(IGameInputReadingVtbl*)vtbl = default;
             IGameInputReadingVtbl* vtblPtr = (IGameInputReadingVtbl*)vtbl;
             vtblPtr->AddRef = &NoOpRefCount;
             vtblPtr->Release = &NoOpRefCount;
+            vtblPtr->GetInputKind = &GetInputKind;
+            vtblPtr->GetTimestamp = &GetTimestamp;
             vtblPtr->GetControllerAxisCount = &GetControllerAxisCount;
             vtblPtr->GetControllerAxisState = &GetControllerAxisState;
             vtblPtr->GetControllerButtonCount = &GetControllerButtonCount;
@@ -155,9 +183,21 @@ public sealed class GameInputReadingTests
         }
 
         [UnmanagedCallersOnly(CallConvs = [typeof(CallConvStdcall)])]
+        private static GameInputKind GetInputKind(IntPtr self)
+        {
+            return GameInputKind.GameInputKindController;
+        }
+
+        [UnmanagedCallersOnly(CallConvs = [typeof(CallConvStdcall)])]
+        private static ulong GetTimestamp(IntPtr self)
+        {
+            return 1234;
+        }
+
+        [UnmanagedCallersOnly(CallConvs = [typeof(CallConvStdcall)])]
         private static uint GetControllerAxisCount(IntPtr self)
         {
-            return (uint)(t_axes?.Length ?? 0);
+            return t_axisCountOverride ?? (uint)(t_axes?.Length ?? 0);
         }
 
         [UnmanagedCallersOnly(CallConvs = [typeof(CallConvStdcall)])]

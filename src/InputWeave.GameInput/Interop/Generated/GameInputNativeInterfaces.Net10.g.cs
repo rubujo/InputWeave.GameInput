@@ -33,11 +33,12 @@ internal unsafe struct IGameInputVtbl
 }
 
 /// <summary>
-/// 表示 IGameInput 對應的 GameInput COM 介面。
+/// Represents the GameInput COM interface corresponding to IGameInput. 表示 IGameInput 對應的 GameInput COM 介面。
 /// </summary>
 internal readonly unsafe struct IGameInput(IntPtr pointer) : IEquatable<IGameInput>
 {
     /// <summary>
+    /// The native COM pointer held by this wrapper.
     /// 這個包裝所持有的原生 COM 指標。
     /// </summary>
     public IntPtr Pointer { get; } = pointer;
@@ -45,28 +46,31 @@ internal readonly unsafe struct IGameInput(IntPtr pointer) : IEquatable<IGameInp
     private IGameInputVtbl* Vtbl => (IGameInputVtbl*)(*(void**)Pointer);
 
     /// <summary>
+    /// Calls AddRef on the native vtable to increment the reference count.
     /// 呼叫原生 vtable 的 AddRef，增加參考計數。
     /// </summary>
-    /// <returns>呼叫後的參考計數。</returns>
+    /// <returns>The reference count after the call. 呼叫後的參考計數。</returns>
     public uint AddRef()
     {
         return Vtbl->AddRef(Pointer);
     }
 
     /// <summary>
+    /// Calls Release on the native vtable to decrement the reference count and release the native object when needed.
     /// 呼叫原生 vtable 的 Release，減少參考計數並視需要釋放原生物件。
     /// </summary>
-    /// <returns>呼叫後的參考計數。</returns>
+    /// <returns>The reference count after the call. 呼叫後的參考計數。</returns>
     public uint Release()
     {
         return Vtbl->Release(Pointer);
     }
 
     /// <summary>
+    /// Determines whether two IGameInput values point to the same native object.
     /// 比較兩個 IGameInput 是否指向同一個原生物件。
     /// </summary>
-    /// <param name="other">要比較的另一個 IGameInput。</param>
-    /// <returns>原生指標相同時傳回 true；否則傳回 false。</returns>
+    /// <param name="other">The other IGameInput to compare. 要比較的另一個 IGameInput。</param>
+    /// <returns>Returns true when the native pointers are identical; otherwise returns false. 原生指標相同時傳回 true；否則傳回 false。</returns>
     public bool Equals(IGameInput other)
     {
         return Pointer == other.Pointer;
@@ -85,21 +89,21 @@ internal readonly unsafe struct IGameInput(IntPtr pointer) : IEquatable<IGameInp
     }
 
     /// <summary>
-    /// 呼叫 IGameInput.GetCurrentTimestamp 對應的 GameInput 原生 COM 方法。
+    /// Calls the native GameInput COM method corresponding to IGameInput.GetCurrentTimestamp. 呼叫 IGameInput.GetCurrentTimestamp 對應的 GameInput 原生 COM 方法。
     /// </summary>
-    /// <returns>原生 API 回傳的時間戳記或無號整數值。</returns>
+    /// <returns>The timestamp or unsigned integer value returned by the native API. 原生 API 回傳的時間戳記或無號整數值。</returns>
     public unsafe ulong GetCurrentTimestamp()
     {
         return Vtbl->GetCurrentTimestamp(Pointer);
     }
 
     /// <summary>
-    /// 呼叫 IGameInput.GetCurrentReading 對應的 GameInput 原生 COM 方法。
+    /// Calls the native GameInput COM method corresponding to IGameInput.GetCurrentReading. 呼叫 IGameInput.GetCurrentReading 對應的 GameInput 原生 COM 方法。
     /// </summary>
-    /// <param name="inputKind">要查詢或篩選的 GameInput 輸入種類。</param>
-    /// <param name="device">目標或回呼提供的 GameInput device。</param>
-    /// <param name="reading">回呼提供的原生 GameInput reading。</param>
-    /// <returns>原生 HRESULT 值。</returns>
+    /// <param name="inputKind">The GameInput input kind to query or filter. 要查詢或篩選的 GameInput 輸入種類。</param>
+    /// <param name="device">The target GameInput device, or the device provided by the callback. 目標或回呼提供的 GameInput device。</param>
+    /// <param name="reading">The native GameInput reading provided by the callback. 回呼提供的原生 GameInput reading。</param>
+    /// <returns>The native HRESULT value. 原生 HRESULT 值。</returns>
     public unsafe int GetCurrentReading(GameInputKind inputKind, IGameInputDevice? device, out IGameInputReading? reading)
     {
         void* readingRaw = null;
@@ -109,13 +113,13 @@ internal readonly unsafe struct IGameInput(IntPtr pointer) : IEquatable<IGameInp
     }
 
     /// <summary>
-    /// 呼叫 IGameInput.GetNextReading 對應的 GameInput 原生 COM 方法。
+    /// Calls the native GameInput COM method corresponding to IGameInput.GetNextReading. 呼叫 IGameInput.GetNextReading 對應的 GameInput 原生 COM 方法。
     /// </summary>
-    /// <param name="referenceReading">作為查詢基準的 GameInput reading。</param>
-    /// <param name="inputKind">要查詢或篩選的 GameInput 輸入種類。</param>
-    /// <param name="device">目標或回呼提供的 GameInput device。</param>
-    /// <param name="reading">回呼提供的原生 GameInput reading。</param>
-    /// <returns>原生 HRESULT 值。</returns>
+    /// <param name="referenceReading">The GameInput reading used as the reference for the query. 作為查詢基準的 GameInput reading。</param>
+    /// <param name="inputKind">The GameInput input kind to query or filter. 要查詢或篩選的 GameInput 輸入種類。</param>
+    /// <param name="device">The target GameInput device, or the device provided by the callback. 目標或回呼提供的 GameInput device。</param>
+    /// <param name="reading">The native GameInput reading provided by the callback. 回呼提供的原生 GameInput reading。</param>
+    /// <returns>The native HRESULT value. 原生 HRESULT 值。</returns>
     public unsafe int GetNextReading(IGameInputReading referenceReading, GameInputKind inputKind, IGameInputDevice? device, out IGameInputReading? reading)
     {
         void* readingRaw = null;
@@ -125,13 +129,13 @@ internal readonly unsafe struct IGameInput(IntPtr pointer) : IEquatable<IGameInp
     }
 
     /// <summary>
-    /// 呼叫 IGameInput.GetPreviousReading 對應的 GameInput 原生 COM 方法。
+    /// Calls the native GameInput COM method corresponding to IGameInput.GetPreviousReading. 呼叫 IGameInput.GetPreviousReading 對應的 GameInput 原生 COM 方法。
     /// </summary>
-    /// <param name="referenceReading">作為查詢基準的 GameInput reading。</param>
-    /// <param name="inputKind">要查詢或篩選的 GameInput 輸入種類。</param>
-    /// <param name="device">目標或回呼提供的 GameInput device。</param>
-    /// <param name="reading">回呼提供的原生 GameInput reading。</param>
-    /// <returns>原生 HRESULT 值。</returns>
+    /// <param name="referenceReading">The GameInput reading used as the reference for the query. 作為查詢基準的 GameInput reading。</param>
+    /// <param name="inputKind">The GameInput input kind to query or filter. 要查詢或篩選的 GameInput 輸入種類。</param>
+    /// <param name="device">The target GameInput device, or the device provided by the callback. 目標或回呼提供的 GameInput device。</param>
+    /// <param name="reading">The native GameInput reading provided by the callback. 回呼提供的原生 GameInput reading。</param>
+    /// <returns>The native HRESULT value. 原生 HRESULT 值。</returns>
     public unsafe int GetPreviousReading(IGameInputReading referenceReading, GameInputKind inputKind, IGameInputDevice? device, out IGameInputReading? reading)
     {
         void* readingRaw = null;
@@ -141,14 +145,14 @@ internal readonly unsafe struct IGameInput(IntPtr pointer) : IEquatable<IGameInp
     }
 
     /// <summary>
-    /// 呼叫 IGameInput.RegisterReadingCallback 對應的 GameInput 原生 COM 方法。
+    /// Calls the native GameInput COM method corresponding to IGameInput.RegisterReadingCallback. 呼叫 IGameInput.RegisterReadingCallback 對應的 GameInput 原生 COM 方法。
     /// </summary>
-    /// <param name="device">目標或回呼提供的 GameInput device。</param>
-    /// <param name="inputKind">要查詢或篩選的 GameInput 輸入種類。</param>
-    /// <param name="context">註冊 callback 時傳入的使用者內容指標。</param>
-    /// <param name="callbackFunc">要註冊的原生 callback delegate。</param>
-    /// <param name="callbackToken">GameInput 指派的 callback token。</param>
-    /// <returns>原生 HRESULT 值。</returns>
+    /// <param name="device">The target GameInput device, or the device provided by the callback. 目標或回呼提供的 GameInput device。</param>
+    /// <param name="inputKind">The GameInput input kind to query or filter. 要查詢或篩選的 GameInput 輸入種類。</param>
+    /// <param name="context">The user context pointer supplied when the callback was registered. 註冊 callback 時傳入的使用者內容指標。</param>
+    /// <param name="callbackFunc">The native callback delegate to register. 要註冊的原生 callback delegate。</param>
+    /// <param name="callbackToken">The callback token assigned by GameInput. GameInput 指派的 callback token。</param>
+    /// <returns>The native HRESULT value. 原生 HRESULT 值。</returns>
     public unsafe int RegisterReadingCallback(IGameInputDevice? device, GameInputKind inputKind, IntPtr context, IntPtr callbackFunc, out ulong callbackToken)
     {
         fixed (ulong* callbackTokenPtr = &callbackToken)
@@ -158,16 +162,16 @@ internal readonly unsafe struct IGameInput(IntPtr pointer) : IEquatable<IGameInp
     }
 
     /// <summary>
-    /// 呼叫 IGameInput.RegisterDeviceCallback 對應的 GameInput 原生 COM 方法。
+    /// Calls the native GameInput COM method corresponding to IGameInput.RegisterDeviceCallback. 呼叫 IGameInput.RegisterDeviceCallback 對應的 GameInput 原生 COM 方法。
     /// </summary>
-    /// <param name="device">目標或回呼提供的 GameInput device。</param>
-    /// <param name="inputKind">要查詢或篩選的 GameInput 輸入種類。</param>
-    /// <param name="statusFilter">要篩選的裝置狀態。</param>
-    /// <param name="enumerationKind">裝置列舉模式。</param>
-    /// <param name="context">註冊 callback 時傳入的使用者內容指標。</param>
-    /// <param name="callbackFunc">要註冊的原生 callback delegate。</param>
-    /// <param name="callbackToken">GameInput 指派的 callback token。</param>
-    /// <returns>原生 HRESULT 值。</returns>
+    /// <param name="device">The target GameInput device, or the device provided by the callback. 目標或回呼提供的 GameInput device。</param>
+    /// <param name="inputKind">The GameInput input kind to query or filter. 要查詢或篩選的 GameInput 輸入種類。</param>
+    /// <param name="statusFilter">The device status to filter. 要篩選的裝置狀態。</param>
+    /// <param name="enumerationKind">The device enumeration mode. 裝置列舉模式。</param>
+    /// <param name="context">The user context pointer supplied when the callback was registered. 註冊 callback 時傳入的使用者內容指標。</param>
+    /// <param name="callbackFunc">The native callback delegate to register. 要註冊的原生 callback delegate。</param>
+    /// <param name="callbackToken">The callback token assigned by GameInput. GameInput 指派的 callback token。</param>
+    /// <returns>The native HRESULT value. 原生 HRESULT 值。</returns>
     public unsafe int RegisterDeviceCallback(IGameInputDevice? device, GameInputKind inputKind, GameInputDeviceStatus statusFilter, GameInputEnumerationKind enumerationKind, IntPtr context, IntPtr callbackFunc, out ulong callbackToken)
     {
         fixed (ulong* callbackTokenPtr = &callbackToken)
@@ -177,14 +181,14 @@ internal readonly unsafe struct IGameInput(IntPtr pointer) : IEquatable<IGameInp
     }
 
     /// <summary>
-    /// 呼叫 IGameInput.RegisterSystemButtonCallback 對應的 GameInput 原生 COM 方法。
+    /// Calls the native GameInput COM method corresponding to IGameInput.RegisterSystemButtonCallback. 呼叫 IGameInput.RegisterSystemButtonCallback 對應的 GameInput 原生 COM 方法。
     /// </summary>
-    /// <param name="device">目標或回呼提供的 GameInput device。</param>
-    /// <param name="buttonFilter">要篩選的 system button。</param>
-    /// <param name="context">註冊 callback 時傳入的使用者內容指標。</param>
-    /// <param name="callbackFunc">要註冊的原生 callback delegate。</param>
-    /// <param name="callbackToken">GameInput 指派的 callback token。</param>
-    /// <returns>原生 HRESULT 值。</returns>
+    /// <param name="device">The target GameInput device, or the device provided by the callback. 目標或回呼提供的 GameInput device。</param>
+    /// <param name="buttonFilter">The system buttons to filter. 要篩選的 system button。</param>
+    /// <param name="context">The user context pointer supplied when the callback was registered. 註冊 callback 時傳入的使用者內容指標。</param>
+    /// <param name="callbackFunc">The native callback delegate to register. 要註冊的原生 callback delegate。</param>
+    /// <param name="callbackToken">The callback token assigned by GameInput. GameInput 指派的 callback token。</param>
+    /// <returns>The native HRESULT value. 原生 HRESULT 值。</returns>
     public unsafe int RegisterSystemButtonCallback(IGameInputDevice? device, GameInputSystemButtons buttonFilter, IntPtr context, IntPtr callbackFunc, out ulong callbackToken)
     {
         fixed (ulong* callbackTokenPtr = &callbackToken)
@@ -194,13 +198,13 @@ internal readonly unsafe struct IGameInput(IntPtr pointer) : IEquatable<IGameInp
     }
 
     /// <summary>
-    /// 呼叫 IGameInput.RegisterKeyboardLayoutCallback 對應的 GameInput 原生 COM 方法。
+    /// Calls the native GameInput COM method corresponding to IGameInput.RegisterKeyboardLayoutCallback. 呼叫 IGameInput.RegisterKeyboardLayoutCallback 對應的 GameInput 原生 COM 方法。
     /// </summary>
-    /// <param name="device">目標或回呼提供的 GameInput device。</param>
-    /// <param name="context">註冊 callback 時傳入的使用者內容指標。</param>
-    /// <param name="callbackFunc">要註冊的原生 callback delegate。</param>
-    /// <param name="callbackToken">GameInput 指派的 callback token。</param>
-    /// <returns>原生 HRESULT 值。</returns>
+    /// <param name="device">The target GameInput device, or the device provided by the callback. 目標或回呼提供的 GameInput device。</param>
+    /// <param name="context">The user context pointer supplied when the callback was registered. 註冊 callback 時傳入的使用者內容指標。</param>
+    /// <param name="callbackFunc">The native callback delegate to register. 要註冊的原生 callback delegate。</param>
+    /// <param name="callbackToken">The callback token assigned by GameInput. GameInput 指派的 callback token。</param>
+    /// <returns>The native HRESULT value. 原生 HRESULT 值。</returns>
     public unsafe int RegisterKeyboardLayoutCallback(IGameInputDevice? device, IntPtr context, IntPtr callbackFunc, out ulong callbackToken)
     {
         fixed (ulong* callbackTokenPtr = &callbackToken)
@@ -210,29 +214,29 @@ internal readonly unsafe struct IGameInput(IntPtr pointer) : IEquatable<IGameInp
     }
 
     /// <summary>
-    /// 呼叫 IGameInput.StopCallback 對應的 GameInput 原生 COM 方法。
+    /// Calls the native GameInput COM method corresponding to IGameInput.StopCallback. 呼叫 IGameInput.StopCallback 對應的 GameInput 原生 COM 方法。
     /// </summary>
-    /// <param name="callbackToken">GameInput 指派的 callback token。</param>
+    /// <param name="callbackToken">The callback token assigned by GameInput. GameInput 指派的 callback token。</param>
     public unsafe void StopCallback(ulong callbackToken)
     {
         Vtbl->StopCallback(Pointer, callbackToken);
     }
 
     /// <summary>
-    /// 呼叫 IGameInput.UnregisterCallback 對應的 GameInput 原生 COM 方法。
+    /// Calls the native GameInput COM method corresponding to IGameInput.UnregisterCallback. 呼叫 IGameInput.UnregisterCallback 對應的 GameInput 原生 COM 方法。
     /// </summary>
-    /// <param name="callbackToken">GameInput 指派的 callback token。</param>
-    /// <returns>若原生 API 回報成功或指定狀態存在，傳回 true；否則傳回 false。</returns>
+    /// <param name="callbackToken">The callback token assigned by GameInput. GameInput 指派的 callback token。</param>
+    /// <returns>Returns true when the native API reports success or the requested state exists; otherwise returns false. 若原生 API 回報成功或指定狀態存在，傳回 true；否則傳回 false。</returns>
     public unsafe bool UnregisterCallback(ulong callbackToken)
     {
         return Vtbl->UnregisterCallback(Pointer, callbackToken) != 0;
     }
 
     /// <summary>
-    /// 呼叫 IGameInput.CreateDispatcher 對應的 GameInput 原生 COM 方法。
+    /// Calls the native GameInput COM method corresponding to IGameInput.CreateDispatcher. 呼叫 IGameInput.CreateDispatcher 對應的 GameInput 原生 COM 方法。
     /// </summary>
-    /// <param name="dispatcher">接收建立完成的 dispatcher。</param>
-    /// <returns>原生 HRESULT 值。</returns>
+    /// <param name="dispatcher">The output field that receives the created dispatcher. 接收建立完成的 dispatcher。</param>
+    /// <returns>The native HRESULT value. 原生 HRESULT 值。</returns>
     public unsafe int CreateDispatcher(out IGameInputDispatcher? dispatcher)
     {
         void* dispatcherRaw = null;
@@ -242,11 +246,11 @@ internal readonly unsafe struct IGameInput(IntPtr pointer) : IEquatable<IGameInp
     }
 
     /// <summary>
-    /// 呼叫 IGameInput.FindDeviceFromId 對應的 GameInput 原生 COM 方法。
+    /// Calls the native GameInput COM method corresponding to IGameInput.FindDeviceFromId. 呼叫 IGameInput.FindDeviceFromId 對應的 GameInput 原生 COM 方法。
     /// </summary>
-    /// <param name="value">要傳入原生 API 的值。</param>
-    /// <param name="device">目標或回呼提供的 GameInput device。</param>
-    /// <returns>原生 HRESULT 值。</returns>
+    /// <param name="value">The value to pass to the native API. 要傳入原生 API 的值。</param>
+    /// <param name="device">The target GameInput device, or the device provided by the callback. 目標或回呼提供的 GameInput device。</param>
+    /// <returns>The native HRESULT value. 原生 HRESULT 值。</returns>
     public unsafe int FindDeviceFromId(ref AppLocalDeviceId value, out IGameInputDevice? device)
     {
         void* deviceRaw = null;
@@ -260,11 +264,11 @@ internal readonly unsafe struct IGameInput(IntPtr pointer) : IEquatable<IGameInp
     }
 
     /// <summary>
-    /// 呼叫 IGameInput.FindDeviceFromPlatformString 對應的 GameInput 原生 COM 方法。
+    /// Calls the native GameInput COM method corresponding to IGameInput.FindDeviceFromPlatformString. 呼叫 IGameInput.FindDeviceFromPlatformString 對應的 GameInput 原生 COM 方法。
     /// </summary>
-    /// <param name="value">要傳入原生 API 的值。</param>
-    /// <param name="device">目標或回呼提供的 GameInput device。</param>
-    /// <returns>原生 HRESULT 值。</returns>
+    /// <param name="value">The value to pass to the native API. 要傳入原生 API 的值。</param>
+    /// <param name="device">The target GameInput device, or the device provided by the callback. 目標或回呼提供的 GameInput device。</param>
+    /// <returns>The native HRESULT value. 原生 HRESULT 值。</returns>
     public unsafe int FindDeviceFromPlatformString(string value, out IGameInputDevice? device)
     {
         void* deviceRaw = null;
@@ -278,20 +282,20 @@ internal readonly unsafe struct IGameInput(IntPtr pointer) : IEquatable<IGameInp
     }
 
     /// <summary>
-    /// 呼叫 IGameInput.SetFocusPolicy 對應的 GameInput 原生 COM 方法。
+    /// Calls the native GameInput COM method corresponding to IGameInput.SetFocusPolicy. 呼叫 IGameInput.SetFocusPolicy 對應的 GameInput 原生 COM 方法。
     /// </summary>
-    /// <param name="policy">參數 policy。</param>
+    /// <param name="policy">The focus policy to apply. 參數 policy。</param>
     public unsafe void SetFocusPolicy(GameInputFocusPolicy policy)
     {
         Vtbl->SetFocusPolicy(Pointer, policy);
     }
 
     /// <summary>
-    /// 呼叫 IGameInput.CreateAggregateDevice 對應的 GameInput 原生 COM 方法。
+    /// Calls the native GameInput COM method corresponding to IGameInput.CreateAggregateDevice. 呼叫 IGameInput.CreateAggregateDevice 對應的 GameInput 原生 COM 方法。
     /// </summary>
-    /// <param name="inputKind">要查詢或篩選的 GameInput 輸入種類。</param>
-    /// <param name="deviceId">GameInput 裝置識別值。</param>
-    /// <returns>原生 HRESULT 值。</returns>
+    /// <param name="inputKind">The GameInput input kind to query or filter. 要查詢或篩選的 GameInput 輸入種類。</param>
+    /// <param name="deviceId">The GameInput device identifier. GameInput 裝置識別值。</param>
+    /// <returns>The native HRESULT value. 原生 HRESULT 值。</returns>
     public unsafe int CreateAggregateDevice(GameInputKind inputKind, out AppLocalDeviceId deviceId)
     {
         fixed (AppLocalDeviceId* deviceIdPtr = &deviceId)
@@ -301,10 +305,10 @@ internal readonly unsafe struct IGameInput(IntPtr pointer) : IEquatable<IGameInp
     }
 
     /// <summary>
-    /// 呼叫 IGameInput.DisableAggregateDevice 對應的 GameInput 原生 COM 方法。
+    /// Calls the native GameInput COM method corresponding to IGameInput.DisableAggregateDevice. 呼叫 IGameInput.DisableAggregateDevice 對應的 GameInput 原生 COM 方法。
     /// </summary>
-    /// <param name="deviceId">GameInput 裝置識別值。</param>
-    /// <returns>原生 HRESULT 值。</returns>
+    /// <param name="deviceId">The GameInput device identifier. GameInput 裝置識別值。</param>
+    /// <returns>The native HRESULT value. 原生 HRESULT 值。</returns>
     public unsafe int DisableAggregateDevice(ref AppLocalDeviceId deviceId)
     {
         fixed (AppLocalDeviceId* deviceIdPtr = &deviceId)
@@ -328,11 +332,12 @@ internal unsafe struct IGameInputRawDeviceReportVtbl
 }
 
 /// <summary>
-/// 表示 IGameInputRawDeviceReport 對應的 GameInput COM 介面。
+/// Represents the GameInput COM interface corresponding to IGameInputRawDeviceReport. 表示 IGameInputRawDeviceReport 對應的 GameInput COM 介面。
 /// </summary>
 internal readonly unsafe struct IGameInputRawDeviceReport(IntPtr pointer) : IEquatable<IGameInputRawDeviceReport>
 {
     /// <summary>
+    /// The native COM pointer held by this wrapper.
     /// 這個包裝所持有的原生 COM 指標。
     /// </summary>
     public IntPtr Pointer { get; } = pointer;
@@ -340,28 +345,31 @@ internal readonly unsafe struct IGameInputRawDeviceReport(IntPtr pointer) : IEqu
     private IGameInputRawDeviceReportVtbl* Vtbl => (IGameInputRawDeviceReportVtbl*)(*(void**)Pointer);
 
     /// <summary>
+    /// Calls AddRef on the native vtable to increment the reference count.
     /// 呼叫原生 vtable 的 AddRef，增加參考計數。
     /// </summary>
-    /// <returns>呼叫後的參考計數。</returns>
+    /// <returns>The reference count after the call. 呼叫後的參考計數。</returns>
     public uint AddRef()
     {
         return Vtbl->AddRef(Pointer);
     }
 
     /// <summary>
+    /// Calls Release on the native vtable to decrement the reference count and release the native object when needed.
     /// 呼叫原生 vtable 的 Release，減少參考計數並視需要釋放原生物件。
     /// </summary>
-    /// <returns>呼叫後的參考計數。</returns>
+    /// <returns>The reference count after the call. 呼叫後的參考計數。</returns>
     public uint Release()
     {
         return Vtbl->Release(Pointer);
     }
 
     /// <summary>
+    /// Determines whether two IGameInputRawDeviceReport values point to the same native object.
     /// 比較兩個 IGameInputRawDeviceReport 是否指向同一個原生物件。
     /// </summary>
-    /// <param name="other">要比較的另一個 IGameInputRawDeviceReport。</param>
-    /// <returns>原生指標相同時傳回 true；否則傳回 false。</returns>
+    /// <param name="other">The other IGameInputRawDeviceReport to compare. 要比較的另一個 IGameInputRawDeviceReport。</param>
+    /// <returns>Returns true when the native pointers are identical; otherwise returns false. 原生指標相同時傳回 true；否則傳回 false。</returns>
     public bool Equals(IGameInputRawDeviceReport other)
     {
         return Pointer == other.Pointer;
@@ -380,9 +388,9 @@ internal readonly unsafe struct IGameInputRawDeviceReport(IntPtr pointer) : IEqu
     }
 
     /// <summary>
-    /// 呼叫 IGameInputRawDeviceReport.GetDevice 對應的 GameInput 原生 COM 方法。
+    /// Calls the native GameInput COM method corresponding to IGameInputRawDeviceReport.GetDevice. 呼叫 IGameInputRawDeviceReport.GetDevice 對應的 GameInput 原生 COM 方法。
     /// </summary>
-    /// <param name="device">目標或回呼提供的 GameInput device。</param>
+    /// <param name="device">The target GameInput device, or the device provided by the callback. 目標或回呼提供的 GameInput device。</param>
     public unsafe void GetDevice(out IGameInputDevice? device)
     {
         void* deviceRaw = null;
@@ -391,9 +399,9 @@ internal readonly unsafe struct IGameInputRawDeviceReport(IntPtr pointer) : IEqu
     }
 
     /// <summary>
-    /// 呼叫 IGameInputRawDeviceReport.GetReportInfo 對應的 GameInput 原生 COM 方法。
+    /// Calls the native GameInput COM method corresponding to IGameInputRawDeviceReport.GetReportInfo. 呼叫 IGameInputRawDeviceReport.GetReportInfo 對應的 GameInput 原生 COM 方法。
     /// </summary>
-    /// <param name="reportInfo">接收 raw device report 資訊的輸出欄位。</param>
+    /// <param name="reportInfo">The output field that receives the raw device report information. 接收 raw device report 資訊的輸出欄位。</param>
     public unsafe void GetReportInfo(out GameInputRawDeviceReportInfo reportInfo)
     {
         fixed (GameInputRawDeviceReportInfo* reportInfoPtr = &reportInfo)
@@ -403,31 +411,31 @@ internal readonly unsafe struct IGameInputRawDeviceReport(IntPtr pointer) : IEqu
     }
 
     /// <summary>
-    /// 呼叫 IGameInputRawDeviceReport.GetRawDataSize 對應的 GameInput 原生 COM 方法。
+    /// Calls the native GameInput COM method corresponding to IGameInputRawDeviceReport.GetRawDataSize. 呼叫 IGameInputRawDeviceReport.GetRawDataSize 對應的 GameInput 原生 COM 方法。
     /// </summary>
-    /// <returns>原生 API 回傳的大小或位元組數。</returns>
+    /// <returns>The size or byte count returned by the native API. 原生 API 回傳的大小或位元組數。</returns>
     public unsafe UIntPtr GetRawDataSize()
     {
         return Vtbl->GetRawDataSize(Pointer);
     }
 
     /// <summary>
-    /// 呼叫 IGameInputRawDeviceReport.GetRawData 對應的 GameInput 原生 COM 方法。
+    /// Calls the native GameInput COM method corresponding to IGameInputRawDeviceReport.GetRawData. 呼叫 IGameInputRawDeviceReport.GetRawData 對應的 GameInput 原生 COM 方法。
     /// </summary>
-    /// <param name="bufferSize">緩衝區大小。</param>
-    /// <param name="buffer">原生緩衝區指標。</param>
-    /// <returns>原生 API 回傳的大小或位元組數。</returns>
+    /// <param name="bufferSize">The buffer size. 緩衝區大小。</param>
+    /// <param name="buffer">The native buffer pointer. 原生緩衝區指標。</param>
+    /// <returns>The size or byte count returned by the native API. 原生 API 回傳的大小或位元組數。</returns>
     public unsafe UIntPtr GetRawData(UIntPtr bufferSize, IntPtr buffer)
     {
         return Vtbl->GetRawData(Pointer, bufferSize, buffer);
     }
 
     /// <summary>
-    /// 呼叫 IGameInputRawDeviceReport.SetRawData 對應的 GameInput 原生 COM 方法。
+    /// Calls the native GameInput COM method corresponding to IGameInputRawDeviceReport.SetRawData. 呼叫 IGameInputRawDeviceReport.SetRawData 對應的 GameInput 原生 COM 方法。
     /// </summary>
-    /// <param name="bufferSize">緩衝區大小。</param>
-    /// <param name="buffer">原生緩衝區指標。</param>
-    /// <returns>若原生 API 回報成功或指定狀態存在，傳回 true；否則傳回 false。</returns>
+    /// <param name="bufferSize">The buffer size. 緩衝區大小。</param>
+    /// <param name="buffer">The native buffer pointer. 原生緩衝區指標。</param>
+    /// <returns>Returns true when the native API reports success or the requested state exists; otherwise returns false. 若原生 API 回報成功或指定狀態存在，傳回 true；否則傳回 false。</returns>
     public unsafe bool SetRawData(UIntPtr bufferSize, IntPtr buffer)
     {
         return Vtbl->SetRawData(Pointer, bufferSize, buffer) != 0;
@@ -461,11 +469,12 @@ internal unsafe struct IGameInputReadingVtbl
 }
 
 /// <summary>
-/// 表示 IGameInputReading 對應的 GameInput COM 介面。
+/// Represents the GameInput COM interface corresponding to IGameInputReading. 表示 IGameInputReading 對應的 GameInput COM 介面。
 /// </summary>
 internal readonly unsafe struct IGameInputReading(IntPtr pointer) : IEquatable<IGameInputReading>
 {
     /// <summary>
+    /// The native COM pointer held by this wrapper.
     /// 這個包裝所持有的原生 COM 指標。
     /// </summary>
     public IntPtr Pointer { get; } = pointer;
@@ -473,28 +482,31 @@ internal readonly unsafe struct IGameInputReading(IntPtr pointer) : IEquatable<I
     private IGameInputReadingVtbl* Vtbl => (IGameInputReadingVtbl*)(*(void**)Pointer);
 
     /// <summary>
+    /// Calls AddRef on the native vtable to increment the reference count.
     /// 呼叫原生 vtable 的 AddRef，增加參考計數。
     /// </summary>
-    /// <returns>呼叫後的參考計數。</returns>
+    /// <returns>The reference count after the call. 呼叫後的參考計數。</returns>
     public uint AddRef()
     {
         return Vtbl->AddRef(Pointer);
     }
 
     /// <summary>
+    /// Calls Release on the native vtable to decrement the reference count and release the native object when needed.
     /// 呼叫原生 vtable 的 Release，減少參考計數並視需要釋放原生物件。
     /// </summary>
-    /// <returns>呼叫後的參考計數。</returns>
+    /// <returns>The reference count after the call. 呼叫後的參考計數。</returns>
     public uint Release()
     {
         return Vtbl->Release(Pointer);
     }
 
     /// <summary>
+    /// Determines whether two IGameInputReading values point to the same native object.
     /// 比較兩個 IGameInputReading 是否指向同一個原生物件。
     /// </summary>
-    /// <param name="other">要比較的另一個 IGameInputReading。</param>
-    /// <returns>原生指標相同時傳回 true；否則傳回 false。</returns>
+    /// <param name="other">The other IGameInputReading to compare. 要比較的另一個 IGameInputReading。</param>
+    /// <returns>Returns true when the native pointers are identical; otherwise returns false. 原生指標相同時傳回 true；否則傳回 false。</returns>
     public bool Equals(IGameInputReading other)
     {
         return Pointer == other.Pointer;
@@ -513,27 +525,27 @@ internal readonly unsafe struct IGameInputReading(IntPtr pointer) : IEquatable<I
     }
 
     /// <summary>
-    /// 呼叫 IGameInputReading.GetInputKind 對應的 GameInput 原生 COM 方法。
+    /// Calls the native GameInput COM method corresponding to IGameInputReading.GetInputKind. 呼叫 IGameInputReading.GetInputKind 對應的 GameInput 原生 COM 方法。
     /// </summary>
-    /// <returns>原生 API 回傳的 GameInputKind 值。</returns>
+    /// <returns>The GameInputKind value returned by the native API. 原生 API 回傳的 GameInputKind 值。</returns>
     public unsafe GameInputKind GetInputKind()
     {
         return Vtbl->GetInputKind(Pointer);
     }
 
     /// <summary>
-    /// 呼叫 IGameInputReading.GetTimestamp 對應的 GameInput 原生 COM 方法。
+    /// Calls the native GameInput COM method corresponding to IGameInputReading.GetTimestamp. 呼叫 IGameInputReading.GetTimestamp 對應的 GameInput 原生 COM 方法。
     /// </summary>
-    /// <returns>原生 API 回傳的時間戳記或無號整數值。</returns>
+    /// <returns>The timestamp or unsigned integer value returned by the native API. 原生 API 回傳的時間戳記或無號整數值。</returns>
     public unsafe ulong GetTimestamp()
     {
         return Vtbl->GetTimestamp(Pointer);
     }
 
     /// <summary>
-    /// 呼叫 IGameInputReading.GetDevice 對應的 GameInput 原生 COM 方法。
+    /// Calls the native GameInput COM method corresponding to IGameInputReading.GetDevice. 呼叫 IGameInputReading.GetDevice 對應的 GameInput 原生 COM 方法。
     /// </summary>
-    /// <param name="device">目標或回呼提供的 GameInput device。</param>
+    /// <param name="device">The target GameInput device, or the device provided by the callback. 目標或回呼提供的 GameInput device。</param>
     public unsafe void GetDevice(out IGameInputDevice? device)
     {
         void* deviceRaw = null;
@@ -542,90 +554,90 @@ internal readonly unsafe struct IGameInputReading(IntPtr pointer) : IEquatable<I
     }
 
     /// <summary>
-    /// 呼叫 IGameInputReading.GetControllerAxisCount 對應的 GameInput 原生 COM 方法。
+    /// Calls the native GameInput COM method corresponding to IGameInputReading.GetControllerAxisCount. 呼叫 IGameInputReading.GetControllerAxisCount 對應的 GameInput 原生 COM 方法。
     /// </summary>
-    /// <returns>原生 API 回傳的無號整數值。</returns>
+    /// <returns>The unsigned integer value returned by the native API. 原生 API 回傳的無號整數值。</returns>
     public unsafe uint GetControllerAxisCount()
     {
         return Vtbl->GetControllerAxisCount(Pointer);
     }
 
     /// <summary>
-    /// 呼叫 IGameInputReading.GetControllerAxisState 對應的 GameInput 原生 COM 方法。
+    /// Calls the native GameInput COM method corresponding to IGameInputReading.GetControllerAxisState. 呼叫 IGameInputReading.GetControllerAxisState 對應的 GameInput 原生 COM 方法。
     /// </summary>
-    /// <param name="stateArrayCount">狀態陣列可容納的元素數。</param>
-    /// <param name="stateArray">接收狀態資料的 managed 陣列。</param>
-    /// <returns>原生 API 回傳的無號整數值。</returns>
+    /// <param name="stateArrayCount">The number of elements the state array can hold. 狀態陣列可容納的元素數。</param>
+    /// <param name="stateArray">The managed array that receives the state data. 接收狀態資料的 managed 陣列。</param>
+    /// <returns>The unsigned integer value returned by the native API. 原生 API 回傳的無號整數值。</returns>
     public unsafe uint GetControllerAxisState(uint stateArrayCount, IntPtr stateArray)
     {
         return Vtbl->GetControllerAxisState(Pointer, stateArrayCount, stateArray);
     }
 
     /// <summary>
-    /// 呼叫 IGameInputReading.GetControllerButtonCount 對應的 GameInput 原生 COM 方法。
+    /// Calls the native GameInput COM method corresponding to IGameInputReading.GetControllerButtonCount. 呼叫 IGameInputReading.GetControllerButtonCount 對應的 GameInput 原生 COM 方法。
     /// </summary>
-    /// <returns>原生 API 回傳的無號整數值。</returns>
+    /// <returns>The unsigned integer value returned by the native API. 原生 API 回傳的無號整數值。</returns>
     public unsafe uint GetControllerButtonCount()
     {
         return Vtbl->GetControllerButtonCount(Pointer);
     }
 
     /// <summary>
-    /// 呼叫 IGameInputReading.GetControllerButtonState 對應的 GameInput 原生 COM 方法。
+    /// Calls the native GameInput COM method corresponding to IGameInputReading.GetControllerButtonState. 呼叫 IGameInputReading.GetControllerButtonState 對應的 GameInput 原生 COM 方法。
     /// </summary>
-    /// <param name="stateArrayCount">狀態陣列可容納的元素數。</param>
-    /// <param name="stateArray">接收狀態資料的 managed 陣列。</param>
-    /// <returns>原生 API 回傳的無號整數值。</returns>
+    /// <param name="stateArrayCount">The number of elements the state array can hold. 狀態陣列可容納的元素數。</param>
+    /// <param name="stateArray">The managed array that receives the state data. 接收狀態資料的 managed 陣列。</param>
+    /// <returns>The unsigned integer value returned by the native API. 原生 API 回傳的無號整數值。</returns>
     public unsafe uint GetControllerButtonState(uint stateArrayCount, IntPtr stateArray)
     {
         return Vtbl->GetControllerButtonState(Pointer, stateArrayCount, stateArray);
     }
 
     /// <summary>
-    /// 呼叫 IGameInputReading.GetControllerSwitchCount 對應的 GameInput 原生 COM 方法。
+    /// Calls the native GameInput COM method corresponding to IGameInputReading.GetControllerSwitchCount. 呼叫 IGameInputReading.GetControllerSwitchCount 對應的 GameInput 原生 COM 方法。
     /// </summary>
-    /// <returns>原生 API 回傳的無號整數值。</returns>
+    /// <returns>The unsigned integer value returned by the native API. 原生 API 回傳的無號整數值。</returns>
     public unsafe uint GetControllerSwitchCount()
     {
         return Vtbl->GetControllerSwitchCount(Pointer);
     }
 
     /// <summary>
-    /// 呼叫 IGameInputReading.GetControllerSwitchState 對應的 GameInput 原生 COM 方法。
+    /// Calls the native GameInput COM method corresponding to IGameInputReading.GetControllerSwitchState. 呼叫 IGameInputReading.GetControllerSwitchState 對應的 GameInput 原生 COM 方法。
     /// </summary>
-    /// <param name="stateArrayCount">狀態陣列可容納的元素數。</param>
-    /// <param name="stateArray">接收狀態資料的 managed 陣列。</param>
-    /// <returns>原生 API 回傳的無號整數值。</returns>
+    /// <param name="stateArrayCount">The number of elements the state array can hold. 狀態陣列可容納的元素數。</param>
+    /// <param name="stateArray">The managed array that receives the state data. 接收狀態資料的 managed 陣列。</param>
+    /// <returns>The unsigned integer value returned by the native API. 原生 API 回傳的無號整數值。</returns>
     public unsafe uint GetControllerSwitchState(uint stateArrayCount, IntPtr stateArray)
     {
         return Vtbl->GetControllerSwitchState(Pointer, stateArrayCount, stateArray);
     }
 
     /// <summary>
-    /// 呼叫 IGameInputReading.GetKeyCount 對應的 GameInput 原生 COM 方法。
+    /// Calls the native GameInput COM method corresponding to IGameInputReading.GetKeyCount. 呼叫 IGameInputReading.GetKeyCount 對應的 GameInput 原生 COM 方法。
     /// </summary>
-    /// <returns>原生 API 回傳的無號整數值。</returns>
+    /// <returns>The unsigned integer value returned by the native API. 原生 API 回傳的無號整數值。</returns>
     public unsafe uint GetKeyCount()
     {
         return Vtbl->GetKeyCount(Pointer);
     }
 
     /// <summary>
-    /// 呼叫 IGameInputReading.GetKeyState 對應的 GameInput 原生 COM 方法。
+    /// Calls the native GameInput COM method corresponding to IGameInputReading.GetKeyState. 呼叫 IGameInputReading.GetKeyState 對應的 GameInput 原生 COM 方法。
     /// </summary>
-    /// <param name="stateArrayCount">狀態陣列可容納的元素數。</param>
-    /// <param name="stateArray">接收狀態資料的 managed 陣列。</param>
-    /// <returns>原生 API 回傳的無號整數值。</returns>
+    /// <param name="stateArrayCount">The number of elements the state array can hold. 狀態陣列可容納的元素數。</param>
+    /// <param name="stateArray">The managed array that receives the state data. 接收狀態資料的 managed 陣列。</param>
+    /// <returns>The unsigned integer value returned by the native API. 原生 API 回傳的無號整數值。</returns>
     public unsafe uint GetKeyState(uint stateArrayCount, IntPtr stateArray)
     {
         return Vtbl->GetKeyState(Pointer, stateArrayCount, stateArray);
     }
 
     /// <summary>
-    /// 呼叫 IGameInputReading.GetMouseState 對應的 GameInput 原生 COM 方法。
+    /// Calls the native GameInput COM method corresponding to IGameInputReading.GetMouseState. 呼叫 IGameInputReading.GetMouseState 對應的 GameInput 原生 COM 方法。
     /// </summary>
-    /// <param name="state">接收原生狀態資料的輸出欄位。</param>
-    /// <returns>若原生 API 回報成功或指定狀態存在，傳回 true；否則傳回 false。</returns>
+    /// <param name="state">The output field that receives the native state data. 接收原生狀態資料的輸出欄位。</param>
+    /// <returns>Returns true when the native API reports success or the requested state exists; otherwise returns false. 若原生 API 回報成功或指定狀態存在，傳回 true；否則傳回 false。</returns>
     public unsafe bool GetMouseState(out GameInputMouseState state)
     {
         fixed (GameInputMouseState* statePtr = &state)
@@ -635,10 +647,10 @@ internal readonly unsafe struct IGameInputReading(IntPtr pointer) : IEquatable<I
     }
 
     /// <summary>
-    /// 呼叫 IGameInputReading.GetSensorsState 對應的 GameInput 原生 COM 方法。
+    /// Calls the native GameInput COM method corresponding to IGameInputReading.GetSensorsState. 呼叫 IGameInputReading.GetSensorsState 對應的 GameInput 原生 COM 方法。
     /// </summary>
-    /// <param name="state">接收原生狀態資料的輸出欄位。</param>
-    /// <returns>若原生 API 回報成功或指定狀態存在，傳回 true；否則傳回 false。</returns>
+    /// <param name="state">The output field that receives the native state data. 接收原生狀態資料的輸出欄位。</param>
+    /// <returns>Returns true when the native API reports success or the requested state exists; otherwise returns false. 若原生 API 回報成功或指定狀態存在，傳回 true；否則傳回 false。</returns>
     public unsafe bool GetSensorsState(out GameInputSensorsState state)
     {
         fixed (GameInputSensorsState* statePtr = &state)
@@ -648,10 +660,10 @@ internal readonly unsafe struct IGameInputReading(IntPtr pointer) : IEquatable<I
     }
 
     /// <summary>
-    /// 呼叫 IGameInputReading.GetArcadeStickState 對應的 GameInput 原生 COM 方法。
+    /// Calls the native GameInput COM method corresponding to IGameInputReading.GetArcadeStickState. 呼叫 IGameInputReading.GetArcadeStickState 對應的 GameInput 原生 COM 方法。
     /// </summary>
-    /// <param name="state">接收原生狀態資料的輸出欄位。</param>
-    /// <returns>若原生 API 回報成功或指定狀態存在，傳回 true；否則傳回 false。</returns>
+    /// <param name="state">The output field that receives the native state data. 接收原生狀態資料的輸出欄位。</param>
+    /// <returns>Returns true when the native API reports success or the requested state exists; otherwise returns false. 若原生 API 回報成功或指定狀態存在，傳回 true；否則傳回 false。</returns>
     public unsafe bool GetArcadeStickState(out GameInputArcadeStickState state)
     {
         fixed (GameInputArcadeStickState* statePtr = &state)
@@ -661,10 +673,10 @@ internal readonly unsafe struct IGameInputReading(IntPtr pointer) : IEquatable<I
     }
 
     /// <summary>
-    /// 呼叫 IGameInputReading.GetFlightStickState 對應的 GameInput 原生 COM 方法。
+    /// Calls the native GameInput COM method corresponding to IGameInputReading.GetFlightStickState. 呼叫 IGameInputReading.GetFlightStickState 對應的 GameInput 原生 COM 方法。
     /// </summary>
-    /// <param name="state">接收原生狀態資料的輸出欄位。</param>
-    /// <returns>若原生 API 回報成功或指定狀態存在，傳回 true；否則傳回 false。</returns>
+    /// <param name="state">The output field that receives the native state data. 接收原生狀態資料的輸出欄位。</param>
+    /// <returns>Returns true when the native API reports success or the requested state exists; otherwise returns false. 若原生 API 回報成功或指定狀態存在，傳回 true；否則傳回 false。</returns>
     public unsafe bool GetFlightStickState(out GameInputFlightStickState state)
     {
         fixed (GameInputFlightStickState* statePtr = &state)
@@ -674,10 +686,10 @@ internal readonly unsafe struct IGameInputReading(IntPtr pointer) : IEquatable<I
     }
 
     /// <summary>
-    /// 呼叫 IGameInputReading.GetGamepadState 對應的 GameInput 原生 COM 方法。
+    /// Calls the native GameInput COM method corresponding to IGameInputReading.GetGamepadState. 呼叫 IGameInputReading.GetGamepadState 對應的 GameInput 原生 COM 方法。
     /// </summary>
-    /// <param name="state">接收原生狀態資料的輸出欄位。</param>
-    /// <returns>若原生 API 回報成功或指定狀態存在，傳回 true；否則傳回 false。</returns>
+    /// <param name="state">The output field that receives the native state data. 接收原生狀態資料的輸出欄位。</param>
+    /// <returns>Returns true when the native API reports success or the requested state exists; otherwise returns false. 若原生 API 回報成功或指定狀態存在，傳回 true；否則傳回 false。</returns>
     public unsafe bool GetGamepadState(out GameInputGamepadState state)
     {
         fixed (GameInputGamepadState* statePtr = &state)
@@ -687,10 +699,10 @@ internal readonly unsafe struct IGameInputReading(IntPtr pointer) : IEquatable<I
     }
 
     /// <summary>
-    /// 呼叫 IGameInputReading.GetRacingWheelState 對應的 GameInput 原生 COM 方法。
+    /// Calls the native GameInput COM method corresponding to IGameInputReading.GetRacingWheelState. 呼叫 IGameInputReading.GetRacingWheelState 對應的 GameInput 原生 COM 方法。
     /// </summary>
-    /// <param name="state">接收原生狀態資料的輸出欄位。</param>
-    /// <returns>若原生 API 回報成功或指定狀態存在，傳回 true；否則傳回 false。</returns>
+    /// <param name="state">The output field that receives the native state data. 接收原生狀態資料的輸出欄位。</param>
+    /// <returns>Returns true when the native API reports success or the requested state exists; otherwise returns false. 若原生 API 回報成功或指定狀態存在，傳回 true；否則傳回 false。</returns>
     public unsafe bool GetRacingWheelState(out GameInputRacingWheelState state)
     {
         fixed (GameInputRacingWheelState* statePtr = &state)
@@ -700,10 +712,10 @@ internal readonly unsafe struct IGameInputReading(IntPtr pointer) : IEquatable<I
     }
 
     /// <summary>
-    /// 呼叫 IGameInputReading.GetRawReport 對應的 GameInput 原生 COM 方法。
+    /// Calls the native GameInput COM method corresponding to IGameInputReading.GetRawReport. 呼叫 IGameInputReading.GetRawReport 對應的 GameInput 原生 COM 方法。
     /// </summary>
-    /// <param name="report">接收 raw device report 的輸出欄位。</param>
-    /// <returns>若原生 API 回報成功或指定狀態存在，傳回 true；否則傳回 false。</returns>
+    /// <param name="report">The output field that receives the raw device report. 接收 raw device report 的輸出欄位。</param>
+    /// <returns>Returns true when the native API reports success or the requested state exists; otherwise returns false. 若原生 API 回報成功或指定狀態存在，傳回 true；否則傳回 false。</returns>
     public unsafe bool GetRawReport(out IGameInputRawDeviceReport? report)
     {
         void* reportRaw = null;
@@ -737,11 +749,12 @@ internal unsafe struct IGameInputDeviceVtbl
 }
 
 /// <summary>
-/// 表示 IGameInputDevice 對應的 GameInput COM 介面。
+/// Represents the GameInput COM interface corresponding to IGameInputDevice. 表示 IGameInputDevice 對應的 GameInput COM 介面。
 /// </summary>
 internal readonly unsafe struct IGameInputDevice(IntPtr pointer) : IEquatable<IGameInputDevice>
 {
     /// <summary>
+    /// The native COM pointer held by this wrapper.
     /// 這個包裝所持有的原生 COM 指標。
     /// </summary>
     public IntPtr Pointer { get; } = pointer;
@@ -749,28 +762,31 @@ internal readonly unsafe struct IGameInputDevice(IntPtr pointer) : IEquatable<IG
     private IGameInputDeviceVtbl* Vtbl => (IGameInputDeviceVtbl*)(*(void**)Pointer);
 
     /// <summary>
+    /// Calls AddRef on the native vtable to increment the reference count.
     /// 呼叫原生 vtable 的 AddRef，增加參考計數。
     /// </summary>
-    /// <returns>呼叫後的參考計數。</returns>
+    /// <returns>The reference count after the call. 呼叫後的參考計數。</returns>
     public uint AddRef()
     {
         return Vtbl->AddRef(Pointer);
     }
 
     /// <summary>
+    /// Calls Release on the native vtable to decrement the reference count and release the native object when needed.
     /// 呼叫原生 vtable 的 Release，減少參考計數並視需要釋放原生物件。
     /// </summary>
-    /// <returns>呼叫後的參考計數。</returns>
+    /// <returns>The reference count after the call. 呼叫後的參考計數。</returns>
     public uint Release()
     {
         return Vtbl->Release(Pointer);
     }
 
     /// <summary>
+    /// Determines whether two IGameInputDevice values point to the same native object.
     /// 比較兩個 IGameInputDevice 是否指向同一個原生物件。
     /// </summary>
-    /// <param name="other">要比較的另一個 IGameInputDevice。</param>
-    /// <returns>原生指標相同時傳回 true；否則傳回 false。</returns>
+    /// <param name="other">The other IGameInputDevice to compare. 要比較的另一個 IGameInputDevice。</param>
+    /// <returns>Returns true when the native pointers are identical; otherwise returns false. 原生指標相同時傳回 true；否則傳回 false。</returns>
     public bool Equals(IGameInputDevice other)
     {
         return Pointer == other.Pointer;
@@ -789,10 +805,10 @@ internal readonly unsafe struct IGameInputDevice(IntPtr pointer) : IEquatable<IG
     }
 
     /// <summary>
-    /// 呼叫 IGameInputDevice.GetDeviceInfo 對應的 GameInput 原生 COM 方法。
+    /// Calls the native GameInput COM method corresponding to IGameInputDevice.GetDeviceInfo. 呼叫 IGameInputDevice.GetDeviceInfo 對應的 GameInput 原生 COM 方法。
     /// </summary>
-    /// <param name="info">接收或傳入原生資訊緩衝區的指標。</param>
-    /// <returns>原生 HRESULT 值。</returns>
+    /// <param name="info">The pointer to the native information buffer used for input or output. 接收或傳入原生資訊緩衝區的指標。</param>
+    /// <returns>The native HRESULT value. 原生 HRESULT 值。</returns>
     public unsafe int GetDeviceInfo(out IntPtr info)
     {
         fixed (IntPtr* infoPtr = &info)
@@ -802,31 +818,31 @@ internal readonly unsafe struct IGameInputDevice(IntPtr pointer) : IEquatable<IG
     }
 
     /// <summary>
-    /// 呼叫 IGameInputDevice.GetHapticInfo 對應的 GameInput 原生 COM 方法。
+    /// Calls the native GameInput COM method corresponding to IGameInputDevice.GetHapticInfo. 呼叫 IGameInputDevice.GetHapticInfo 對應的 GameInput 原生 COM 方法。
     /// </summary>
-    /// <param name="info">接收或傳入原生資訊緩衝區的指標。</param>
-    /// <returns>原生 HRESULT 值。</returns>
+    /// <param name="info">The pointer to the native information buffer used for input or output. 接收或傳入原生資訊緩衝區的指標。</param>
+    /// <returns>The native HRESULT value. 原生 HRESULT 值。</returns>
     public unsafe int GetHapticInfo(IntPtr info)
     {
         return Vtbl->GetHapticInfo(Pointer, info);
     }
 
     /// <summary>
-    /// 呼叫 IGameInputDevice.GetDeviceStatus 對應的 GameInput 原生 COM 方法。
+    /// Calls the native GameInput COM method corresponding to IGameInputDevice.GetDeviceStatus. 呼叫 IGameInputDevice.GetDeviceStatus 對應的 GameInput 原生 COM 方法。
     /// </summary>
-    /// <returns>原生 API 回傳的 GameInputDeviceStatus 值。</returns>
+    /// <returns>The GameInputDeviceStatus value returned by the native API. 原生 API 回傳的 GameInputDeviceStatus 值。</returns>
     public unsafe GameInputDeviceStatus GetDeviceStatus()
     {
         return Vtbl->GetDeviceStatus(Pointer);
     }
 
     /// <summary>
-    /// 呼叫 IGameInputDevice.CreateForceFeedbackEffect 對應的 GameInput 原生 COM 方法。
+    /// Calls the native GameInput COM method corresponding to IGameInputDevice.CreateForceFeedbackEffect. 呼叫 IGameInputDevice.CreateForceFeedbackEffect 對應的 GameInput 原生 COM 方法。
     /// </summary>
-    /// <param name="motorIndex">force feedback motor 索引。</param>
-    /// <param name="parameters">原生參數緩衝區指標。</param>
-    /// <param name="effect">參數 effect。</param>
-    /// <returns>原生 HRESULT 值。</returns>
+    /// <param name="motorIndex">The force feedback motor index. force feedback motor 索引。</param>
+    /// <param name="parameters">The native parameter buffer pointer. 原生參數緩衝區指標。</param>
+    /// <param name="effect">The force feedback effect parameter. 參數 effect。</param>
+    /// <returns>The native HRESULT value. 原生 HRESULT 值。</returns>
     public unsafe int CreateForceFeedbackEffect(uint motorIndex, IntPtr parameters, out IGameInputForceFeedbackEffect? effect)
     {
         void* effectRaw = null;
@@ -836,44 +852,44 @@ internal readonly unsafe struct IGameInputDevice(IntPtr pointer) : IEquatable<IG
     }
 
     /// <summary>
-    /// 呼叫 IGameInputDevice.IsForceFeedbackMotorPoweredOn 對應的 GameInput 原生 COM 方法。
+    /// Calls the native GameInput COM method corresponding to IGameInputDevice.IsForceFeedbackMotorPoweredOn. 呼叫 IGameInputDevice.IsForceFeedbackMotorPoweredOn 對應的 GameInput 原生 COM 方法。
     /// </summary>
-    /// <param name="motorIndex">force feedback motor 索引。</param>
-    /// <returns>若原生 API 回報成功或指定狀態存在，傳回 true；否則傳回 false。</returns>
+    /// <param name="motorIndex">The force feedback motor index. force feedback motor 索引。</param>
+    /// <returns>Returns true when the native API reports success or the requested state exists; otherwise returns false. 若原生 API 回報成功或指定狀態存在，傳回 true；否則傳回 false。</returns>
     public unsafe bool IsForceFeedbackMotorPoweredOn(uint motorIndex)
     {
         return Vtbl->IsForceFeedbackMotorPoweredOn(Pointer, motorIndex) != 0;
     }
 
     /// <summary>
-    /// 呼叫 IGameInputDevice.SetForceFeedbackMotorGain 對應的 GameInput 原生 COM 方法。
+    /// Calls the native GameInput COM method corresponding to IGameInputDevice.SetForceFeedbackMotorGain. 呼叫 IGameInputDevice.SetForceFeedbackMotorGain 對應的 GameInput 原生 COM 方法。
     /// </summary>
-    /// <param name="motorIndex">force feedback motor 索引。</param>
-    /// <param name="masterGain">要套用的 master gain。</param>
+    /// <param name="motorIndex">The force feedback motor index. force feedback motor 索引。</param>
+    /// <param name="masterGain">The master gain to apply. 要套用的 master gain。</param>
     public unsafe void SetForceFeedbackMotorGain(uint motorIndex, float masterGain)
     {
         Vtbl->SetForceFeedbackMotorGain(Pointer, motorIndex, masterGain);
     }
 
     /// <summary>
-    /// 呼叫 IGameInputDevice.SetRumbleState 對應的 GameInput 原生 COM 方法。
+    /// Calls the native GameInput COM method corresponding to IGameInputDevice.SetRumbleState. 呼叫 IGameInputDevice.SetRumbleState 對應的 GameInput 原生 COM 方法。
     /// </summary>
-    /// <param name="parameters">原生參數緩衝區指標。</param>
+    /// <param name="parameters">The native parameter buffer pointer. 原生參數緩衝區指標。</param>
     public unsafe void SetRumbleState(IntPtr parameters)
     {
         Vtbl->SetRumbleState(Pointer, parameters);
     }
 
     /// <summary>
-    /// 呼叫 IGameInputDevice.DirectInputEscape 對應的 GameInput 原生 COM 方法。
+    /// Calls the native GameInput COM method corresponding to IGameInputDevice.DirectInputEscape. 呼叫 IGameInputDevice.DirectInputEscape 對應的 GameInput 原生 COM 方法。
     /// </summary>
-    /// <param name="command">DirectInput escape 命令。</param>
-    /// <param name="bufferIn">輸入緩衝區指標。</param>
-    /// <param name="bufferInSize">輸入緩衝區大小。</param>
-    /// <param name="bufferOut">輸出緩衝區指標。</param>
-    /// <param name="bufferOutSize">輸出緩衝區大小。</param>
-    /// <param name="bufferOutSizeWritten">實際寫入輸出緩衝區的大小。</param>
-    /// <returns>原生 HRESULT 值。</returns>
+    /// <param name="command">The DirectInput escape command. DirectInput escape 命令。</param>
+    /// <param name="bufferIn">The input buffer pointer. 輸入緩衝區指標。</param>
+    /// <param name="bufferInSize">The input buffer size. 輸入緩衝區大小。</param>
+    /// <param name="bufferOut">The output buffer pointer. 輸出緩衝區指標。</param>
+    /// <param name="bufferOutSize">The output buffer size. 輸出緩衝區大小。</param>
+    /// <param name="bufferOutSizeWritten">The number of bytes actually written to the output buffer. 實際寫入輸出緩衝區的大小。</param>
+    /// <returns>The native HRESULT value. 原生 HRESULT 值。</returns>
     public unsafe int DirectInputEscape(uint command, IntPtr bufferIn, uint bufferInSize, IntPtr bufferOut, uint bufferOutSize, out uint bufferOutSizeWritten)
     {
         fixed (uint* bufferOutSizeWrittenPtr = &bufferOutSizeWritten)
@@ -883,10 +899,10 @@ internal readonly unsafe struct IGameInputDevice(IntPtr pointer) : IEquatable<IG
     }
 
     /// <summary>
-    /// 呼叫 IGameInputDevice.CreateInputMapper 對應的 GameInput 原生 COM 方法。
+    /// Calls the native GameInput COM method corresponding to IGameInputDevice.CreateInputMapper. 呼叫 IGameInputDevice.CreateInputMapper 對應的 GameInput 原生 COM 方法。
     /// </summary>
-    /// <param name="inputMapper">接收建立完成的 input mapper。</param>
-    /// <returns>原生 HRESULT 值。</returns>
+    /// <param name="inputMapper">The output field that receives the created input mapper. 接收建立完成的 input mapper。</param>
+    /// <returns>The native HRESULT value. 原生 HRESULT 值。</returns>
     public unsafe int CreateInputMapper(out IGameInputMapper? inputMapper)
     {
         void* inputMapperRaw = null;
@@ -896,11 +912,11 @@ internal readonly unsafe struct IGameInputDevice(IntPtr pointer) : IEquatable<IG
     }
 
     /// <summary>
-    /// 呼叫 IGameInputDevice.GetExtraAxisCount 對應的 GameInput 原生 COM 方法。
+    /// Calls the native GameInput COM method corresponding to IGameInputDevice.GetExtraAxisCount. 呼叫 IGameInputDevice.GetExtraAxisCount 對應的 GameInput 原生 COM 方法。
     /// </summary>
-    /// <param name="inputKind">要查詢或篩選的 GameInput 輸入種類。</param>
-    /// <param name="extraAxisCount">額外 axis 數量。</param>
-    /// <returns>原生 HRESULT 值。</returns>
+    /// <param name="inputKind">The GameInput input kind to query or filter. 要查詢或篩選的 GameInput 輸入種類。</param>
+    /// <param name="extraAxisCount">The number of extra axes. 額外 axis 數量。</param>
+    /// <returns>The native HRESULT value. 原生 HRESULT 值。</returns>
     public unsafe int GetExtraAxisCount(GameInputKind inputKind, out uint extraAxisCount)
     {
         fixed (uint* extraAxisCountPtr = &extraAxisCount)
@@ -910,11 +926,11 @@ internal readonly unsafe struct IGameInputDevice(IntPtr pointer) : IEquatable<IG
     }
 
     /// <summary>
-    /// 呼叫 IGameInputDevice.GetExtraButtonCount 對應的 GameInput 原生 COM 方法。
+    /// Calls the native GameInput COM method corresponding to IGameInputDevice.GetExtraButtonCount. 呼叫 IGameInputDevice.GetExtraButtonCount 對應的 GameInput 原生 COM 方法。
     /// </summary>
-    /// <param name="inputKind">要查詢或篩選的 GameInput 輸入種類。</param>
-    /// <param name="extraButtonCount">額外 button 數量。</param>
-    /// <returns>原生 HRESULT 值。</returns>
+    /// <param name="inputKind">The GameInput input kind to query or filter. 要查詢或篩選的 GameInput 輸入種類。</param>
+    /// <param name="extraButtonCount">The number of extra buttons. 額外 button 數量。</param>
+    /// <returns>The native HRESULT value. 原生 HRESULT 值。</returns>
     public unsafe int GetExtraButtonCount(GameInputKind inputKind, out uint extraButtonCount)
     {
         fixed (uint* extraButtonCountPtr = &extraButtonCount)
@@ -924,36 +940,36 @@ internal readonly unsafe struct IGameInputDevice(IntPtr pointer) : IEquatable<IG
     }
 
     /// <summary>
-    /// 呼叫 IGameInputDevice.GetExtraAxisIndexes 對應的 GameInput 原生 COM 方法。
+    /// Calls the native GameInput COM method corresponding to IGameInputDevice.GetExtraAxisIndexes. 呼叫 IGameInputDevice.GetExtraAxisIndexes 對應的 GameInput 原生 COM 方法。
     /// </summary>
-    /// <param name="inputKind">要查詢或篩選的 GameInput 輸入種類。</param>
-    /// <param name="extraAxisCount">額外 axis 數量。</param>
-    /// <param name="extraAxisIndexes">接收額外 axis index 的陣列。</param>
-    /// <returns>原生 HRESULT 值。</returns>
+    /// <param name="inputKind">The GameInput input kind to query or filter. 要查詢或篩選的 GameInput 輸入種類。</param>
+    /// <param name="extraAxisCount">The number of extra axes. 額外 axis 數量。</param>
+    /// <param name="extraAxisIndexes">The array that receives the extra axis indexes. 接收額外 axis index 的陣列。</param>
+    /// <returns>The native HRESULT value. 原生 HRESULT 值。</returns>
     public unsafe int GetExtraAxisIndexes(GameInputKind inputKind, uint extraAxisCount, IntPtr extraAxisIndexes)
     {
         return Vtbl->GetExtraAxisIndexes(Pointer, inputKind, extraAxisCount, extraAxisIndexes);
     }
 
     /// <summary>
-    /// 呼叫 IGameInputDevice.GetExtraButtonIndexes 對應的 GameInput 原生 COM 方法。
+    /// Calls the native GameInput COM method corresponding to IGameInputDevice.GetExtraButtonIndexes. 呼叫 IGameInputDevice.GetExtraButtonIndexes 對應的 GameInput 原生 COM 方法。
     /// </summary>
-    /// <param name="inputKind">要查詢或篩選的 GameInput 輸入種類。</param>
-    /// <param name="extraButtonCount">額外 button 數量。</param>
-    /// <param name="extraButtonIndexes">接收額外 button index 的陣列。</param>
-    /// <returns>原生 HRESULT 值。</returns>
+    /// <param name="inputKind">The GameInput input kind to query or filter. 要查詢或篩選的 GameInput 輸入種類。</param>
+    /// <param name="extraButtonCount">The number of extra buttons. 額外 button 數量。</param>
+    /// <param name="extraButtonIndexes">The array that receives the extra button indexes. 接收額外 button index 的陣列。</param>
+    /// <returns>The native HRESULT value. 原生 HRESULT 值。</returns>
     public unsafe int GetExtraButtonIndexes(GameInputKind inputKind, uint extraButtonCount, IntPtr extraButtonIndexes)
     {
         return Vtbl->GetExtraButtonIndexes(Pointer, inputKind, extraButtonCount, extraButtonIndexes);
     }
 
     /// <summary>
-    /// 呼叫 IGameInputDevice.CreateRawDeviceReport 對應的 GameInput 原生 COM 方法。
+    /// Calls the native GameInput COM method corresponding to IGameInputDevice.CreateRawDeviceReport. 呼叫 IGameInputDevice.CreateRawDeviceReport 對應的 GameInput 原生 COM 方法。
     /// </summary>
-    /// <param name="reportId">raw device report 識別碼。</param>
-    /// <param name="reportKind">raw device report 種類。</param>
-    /// <param name="report">接收 raw device report 的輸出欄位。</param>
-    /// <returns>原生 HRESULT 值。</returns>
+    /// <param name="reportId">The raw device report identifier. raw device report 識別碼。</param>
+    /// <param name="reportKind">The raw device report kind. raw device report 種類。</param>
+    /// <param name="report">The output field that receives the raw device report. 接收 raw device report 的輸出欄位。</param>
+    /// <returns>The native HRESULT value. 原生 HRESULT 值。</returns>
     public unsafe int CreateRawDeviceReport(uint reportId, GameInputRawDeviceReportKind reportKind, out IGameInputRawDeviceReport? report)
     {
         void* reportRaw = null;
@@ -963,10 +979,10 @@ internal readonly unsafe struct IGameInputDevice(IntPtr pointer) : IEquatable<IG
     }
 
     /// <summary>
-    /// 呼叫 IGameInputDevice.SendRawDeviceOutput 對應的 GameInput 原生 COM 方法。
+    /// Calls the native GameInput COM method corresponding to IGameInputDevice.SendRawDeviceOutput. 呼叫 IGameInputDevice.SendRawDeviceOutput 對應的 GameInput 原生 COM 方法。
     /// </summary>
-    /// <param name="report">接收 raw device report 的輸出欄位。</param>
-    /// <returns>原生 HRESULT 值。</returns>
+    /// <param name="report">The output field that receives the raw device report. 接收 raw device report 的輸出欄位。</param>
+    /// <returns>The native HRESULT value. 原生 HRESULT 值。</returns>
     public unsafe int SendRawDeviceOutput(IGameInputRawDeviceReport report)
     {
         return Vtbl->SendRawDeviceOutput(Pointer, report.Pointer);
@@ -984,11 +1000,12 @@ internal unsafe struct IGameInputDispatcherVtbl
 }
 
 /// <summary>
-/// 表示 IGameInputDispatcher 對應的 GameInput COM 介面。
+/// Represents the GameInput COM interface corresponding to IGameInputDispatcher. 表示 IGameInputDispatcher 對應的 GameInput COM 介面。
 /// </summary>
 internal readonly unsafe struct IGameInputDispatcher(IntPtr pointer) : IEquatable<IGameInputDispatcher>
 {
     /// <summary>
+    /// The native COM pointer held by this wrapper.
     /// 這個包裝所持有的原生 COM 指標。
     /// </summary>
     public IntPtr Pointer { get; } = pointer;
@@ -996,28 +1013,31 @@ internal readonly unsafe struct IGameInputDispatcher(IntPtr pointer) : IEquatabl
     private IGameInputDispatcherVtbl* Vtbl => (IGameInputDispatcherVtbl*)(*(void**)Pointer);
 
     /// <summary>
+    /// Calls AddRef on the native vtable to increment the reference count.
     /// 呼叫原生 vtable 的 AddRef，增加參考計數。
     /// </summary>
-    /// <returns>呼叫後的參考計數。</returns>
+    /// <returns>The reference count after the call. 呼叫後的參考計數。</returns>
     public uint AddRef()
     {
         return Vtbl->AddRef(Pointer);
     }
 
     /// <summary>
+    /// Calls Release on the native vtable to decrement the reference count and release the native object when needed.
     /// 呼叫原生 vtable 的 Release，減少參考計數並視需要釋放原生物件。
     /// </summary>
-    /// <returns>呼叫後的參考計數。</returns>
+    /// <returns>The reference count after the call. 呼叫後的參考計數。</returns>
     public uint Release()
     {
         return Vtbl->Release(Pointer);
     }
 
     /// <summary>
+    /// Determines whether two IGameInputDispatcher values point to the same native object.
     /// 比較兩個 IGameInputDispatcher 是否指向同一個原生物件。
     /// </summary>
-    /// <param name="other">要比較的另一個 IGameInputDispatcher。</param>
-    /// <returns>原生指標相同時傳回 true；否則傳回 false。</returns>
+    /// <param name="other">The other IGameInputDispatcher to compare. 要比較的另一個 IGameInputDispatcher。</param>
+    /// <returns>Returns true when the native pointers are identical; otherwise returns false. 原生指標相同時傳回 true；否則傳回 false。</returns>
     public bool Equals(IGameInputDispatcher other)
     {
         return Pointer == other.Pointer;
@@ -1036,20 +1056,20 @@ internal readonly unsafe struct IGameInputDispatcher(IntPtr pointer) : IEquatabl
     }
 
     /// <summary>
-    /// 呼叫 IGameInputDispatcher.Dispatch 對應的 GameInput 原生 COM 方法。
+    /// Calls the native GameInput COM method corresponding to IGameInputDispatcher.Dispatch. 呼叫 IGameInputDispatcher.Dispatch 對應的 GameInput 原生 COM 方法。
     /// </summary>
-    /// <param name="quotaInMicroseconds">dispatcher 可使用的時間配額，單位為微秒。</param>
-    /// <returns>若原生 API 回報成功或指定狀態存在，傳回 true；否則傳回 false。</returns>
+    /// <param name="quotaInMicroseconds">The time quota available to the dispatcher, in microseconds. dispatcher 可使用的時間配額，單位為微秒。</param>
+    /// <returns>Returns true when the native API reports success or the requested state exists; otherwise returns false. 若原生 API 回報成功或指定狀態存在，傳回 true；否則傳回 false。</returns>
     public unsafe bool Dispatch(ulong quotaInMicroseconds)
     {
         return Vtbl->Dispatch(Pointer, quotaInMicroseconds) != 0;
     }
 
     /// <summary>
-    /// 呼叫 IGameInputDispatcher.OpenWaitHandle 對應的 GameInput 原生 COM 方法。
+    /// Calls the native GameInput COM method corresponding to IGameInputDispatcher.OpenWaitHandle. 呼叫 IGameInputDispatcher.OpenWaitHandle 對應的 GameInput 原生 COM 方法。
     /// </summary>
-    /// <param name="waitHandle">接收原生 wait handle 的輸出欄位。</param>
-    /// <returns>原生 HRESULT 值。</returns>
+    /// <param name="waitHandle">The output field that receives the native wait handle. 接收原生 wait handle 的輸出欄位。</param>
+    /// <returns>The native HRESULT value. 原生 HRESULT 值。</returns>
     public unsafe int OpenWaitHandle(out IntPtr waitHandle)
     {
         fixed (IntPtr* waitHandlePtr = &waitHandle)
@@ -1076,11 +1096,12 @@ internal unsafe struct IGameInputForceFeedbackEffectVtbl
 }
 
 /// <summary>
-/// 表示 IGameInputForceFeedbackEffect 對應的 GameInput COM 介面。
+/// Represents the GameInput COM interface corresponding to IGameInputForceFeedbackEffect. 表示 IGameInputForceFeedbackEffect 對應的 GameInput COM 介面。
 /// </summary>
 internal readonly unsafe struct IGameInputForceFeedbackEffect(IntPtr pointer) : IEquatable<IGameInputForceFeedbackEffect>
 {
     /// <summary>
+    /// The native COM pointer held by this wrapper.
     /// 這個包裝所持有的原生 COM 指標。
     /// </summary>
     public IntPtr Pointer { get; } = pointer;
@@ -1088,28 +1109,31 @@ internal readonly unsafe struct IGameInputForceFeedbackEffect(IntPtr pointer) : 
     private IGameInputForceFeedbackEffectVtbl* Vtbl => (IGameInputForceFeedbackEffectVtbl*)(*(void**)Pointer);
 
     /// <summary>
+    /// Calls AddRef on the native vtable to increment the reference count.
     /// 呼叫原生 vtable 的 AddRef，增加參考計數。
     /// </summary>
-    /// <returns>呼叫後的參考計數。</returns>
+    /// <returns>The reference count after the call. 呼叫後的參考計數。</returns>
     public uint AddRef()
     {
         return Vtbl->AddRef(Pointer);
     }
 
     /// <summary>
+    /// Calls Release on the native vtable to decrement the reference count and release the native object when needed.
     /// 呼叫原生 vtable 的 Release，減少參考計數並視需要釋放原生物件。
     /// </summary>
-    /// <returns>呼叫後的參考計數。</returns>
+    /// <returns>The reference count after the call. 呼叫後的參考計數。</returns>
     public uint Release()
     {
         return Vtbl->Release(Pointer);
     }
 
     /// <summary>
+    /// Determines whether two IGameInputForceFeedbackEffect values point to the same native object.
     /// 比較兩個 IGameInputForceFeedbackEffect 是否指向同一個原生物件。
     /// </summary>
-    /// <param name="other">要比較的另一個 IGameInputForceFeedbackEffect。</param>
-    /// <returns>原生指標相同時傳回 true；否則傳回 false。</returns>
+    /// <param name="other">The other IGameInputForceFeedbackEffect to compare. 要比較的另一個 IGameInputForceFeedbackEffect。</param>
+    /// <returns>Returns true when the native pointers are identical; otherwise returns false. 原生指標相同時傳回 true；否則傳回 false。</returns>
     public bool Equals(IGameInputForceFeedbackEffect other)
     {
         return Pointer == other.Pointer;
@@ -1128,9 +1152,9 @@ internal readonly unsafe struct IGameInputForceFeedbackEffect(IntPtr pointer) : 
     }
 
     /// <summary>
-    /// 呼叫 IGameInputForceFeedbackEffect.GetDevice 對應的 GameInput 原生 COM 方法。
+    /// Calls the native GameInput COM method corresponding to IGameInputForceFeedbackEffect.GetDevice. 呼叫 IGameInputForceFeedbackEffect.GetDevice 對應的 GameInput 原生 COM 方法。
     /// </summary>
-    /// <param name="device">目標或回呼提供的 GameInput device。</param>
+    /// <param name="device">The target GameInput device, or the device provided by the callback. 目標或回呼提供的 GameInput device。</param>
     public unsafe void GetDevice(out IGameInputDevice? device)
     {
         void* deviceRaw = null;
@@ -1139,64 +1163,64 @@ internal readonly unsafe struct IGameInputForceFeedbackEffect(IntPtr pointer) : 
     }
 
     /// <summary>
-    /// 呼叫 IGameInputForceFeedbackEffect.GetMotorIndex 對應的 GameInput 原生 COM 方法。
+    /// Calls the native GameInput COM method corresponding to IGameInputForceFeedbackEffect.GetMotorIndex. 呼叫 IGameInputForceFeedbackEffect.GetMotorIndex 對應的 GameInput 原生 COM 方法。
     /// </summary>
-    /// <returns>原生 API 回傳的無號整數值。</returns>
+    /// <returns>The unsigned integer value returned by the native API. 原生 API 回傳的無號整數值。</returns>
     public unsafe uint GetMotorIndex()
     {
         return Vtbl->GetMotorIndex(Pointer);
     }
 
     /// <summary>
-    /// 呼叫 IGameInputForceFeedbackEffect.GetGain 對應的 GameInput 原生 COM 方法。
+    /// Calls the native GameInput COM method corresponding to IGameInputForceFeedbackEffect.GetGain. 呼叫 IGameInputForceFeedbackEffect.GetGain 對應的 GameInput 原生 COM 方法。
     /// </summary>
-    /// <returns>原生 API 回傳的 float 值。</returns>
+    /// <returns>The float value returned by the native API. 原生 API 回傳的 float 值。</returns>
     public unsafe float GetGain()
     {
         return Vtbl->GetGain(Pointer);
     }
 
     /// <summary>
-    /// 呼叫 IGameInputForceFeedbackEffect.SetGain 對應的 GameInput 原生 COM 方法。
+    /// Calls the native GameInput COM method corresponding to IGameInputForceFeedbackEffect.SetGain. 呼叫 IGameInputForceFeedbackEffect.SetGain 對應的 GameInput 原生 COM 方法。
     /// </summary>
-    /// <param name="gain">force feedback gain 值。</param>
+    /// <param name="gain">The force feedback gain value. force feedback gain 值。</param>
     public unsafe void SetGain(float gain)
     {
         Vtbl->SetGain(Pointer, gain);
     }
 
     /// <summary>
-    /// 呼叫 IGameInputForceFeedbackEffect.GetParams 對應的 GameInput 原生 COM 方法。
+    /// Calls the native GameInput COM method corresponding to IGameInputForceFeedbackEffect.GetParams. 呼叫 IGameInputForceFeedbackEffect.GetParams 對應的 GameInput 原生 COM 方法。
     /// </summary>
-    /// <param name="parameters">原生參數緩衝區指標。</param>
+    /// <param name="parameters">The native parameter buffer pointer. 原生參數緩衝區指標。</param>
     public unsafe void GetParams(IntPtr parameters)
     {
         Vtbl->GetParams(Pointer, parameters);
     }
 
     /// <summary>
-    /// 呼叫 IGameInputForceFeedbackEffect.SetParams 對應的 GameInput 原生 COM 方法。
+    /// Calls the native GameInput COM method corresponding to IGameInputForceFeedbackEffect.SetParams. 呼叫 IGameInputForceFeedbackEffect.SetParams 對應的 GameInput 原生 COM 方法。
     /// </summary>
-    /// <param name="parameters">原生參數緩衝區指標。</param>
-    /// <returns>若原生 API 回報成功或指定狀態存在，傳回 true；否則傳回 false。</returns>
+    /// <param name="parameters">The native parameter buffer pointer. 原生參數緩衝區指標。</param>
+    /// <returns>Returns true when the native API reports success or the requested state exists; otherwise returns false. 若原生 API 回報成功或指定狀態存在，傳回 true；否則傳回 false。</returns>
     public unsafe bool SetParams(IntPtr parameters)
     {
         return Vtbl->SetParams(Pointer, parameters) != 0;
     }
 
     /// <summary>
-    /// 呼叫 IGameInputForceFeedbackEffect.GetState 對應的 GameInput 原生 COM 方法。
+    /// Calls the native GameInput COM method corresponding to IGameInputForceFeedbackEffect.GetState. 呼叫 IGameInputForceFeedbackEffect.GetState 對應的 GameInput 原生 COM 方法。
     /// </summary>
-    /// <returns>原生 API 回傳的 GameInputFeedbackEffectState 值。</returns>
+    /// <returns>The GameInputFeedbackEffectState value returned by the native API. 原生 API 回傳的 GameInputFeedbackEffectState 值。</returns>
     public unsafe GameInputFeedbackEffectState GetState()
     {
         return Vtbl->GetState(Pointer);
     }
 
     /// <summary>
-    /// 呼叫 IGameInputForceFeedbackEffect.SetState 對應的 GameInput 原生 COM 方法。
+    /// Calls the native GameInput COM method corresponding to IGameInputForceFeedbackEffect.SetState. 呼叫 IGameInputForceFeedbackEffect.SetState 對應的 GameInput 原生 COM 方法。
     /// </summary>
-    /// <param name="state">接收原生狀態資料的輸出欄位。</param>
+    /// <param name="state">The output field that receives the native state data. 接收原生狀態資料的輸出欄位。</param>
     public unsafe void SetState(GameInputFeedbackEffectState state)
     {
         Vtbl->SetState(Pointer, state);
@@ -1219,11 +1243,12 @@ internal unsafe struct IGameInputMapperVtbl
 }
 
 /// <summary>
-/// 表示 IGameInputMapper 對應的 GameInput COM 介面。
+/// Represents the GameInput COM interface corresponding to IGameInputMapper. 表示 IGameInputMapper 對應的 GameInput COM 介面。
 /// </summary>
 internal readonly unsafe struct IGameInputMapper(IntPtr pointer) : IEquatable<IGameInputMapper>
 {
     /// <summary>
+    /// The native COM pointer held by this wrapper.
     /// 這個包裝所持有的原生 COM 指標。
     /// </summary>
     public IntPtr Pointer { get; } = pointer;
@@ -1231,28 +1256,31 @@ internal readonly unsafe struct IGameInputMapper(IntPtr pointer) : IEquatable<IG
     private IGameInputMapperVtbl* Vtbl => (IGameInputMapperVtbl*)(*(void**)Pointer);
 
     /// <summary>
+    /// Calls AddRef on the native vtable to increment the reference count.
     /// 呼叫原生 vtable 的 AddRef，增加參考計數。
     /// </summary>
-    /// <returns>呼叫後的參考計數。</returns>
+    /// <returns>The reference count after the call. 呼叫後的參考計數。</returns>
     public uint AddRef()
     {
         return Vtbl->AddRef(Pointer);
     }
 
     /// <summary>
+    /// Calls Release on the native vtable to decrement the reference count and release the native object when needed.
     /// 呼叫原生 vtable 的 Release，減少參考計數並視需要釋放原生物件。
     /// </summary>
-    /// <returns>呼叫後的參考計數。</returns>
+    /// <returns>The reference count after the call. 呼叫後的參考計數。</returns>
     public uint Release()
     {
         return Vtbl->Release(Pointer);
     }
 
     /// <summary>
+    /// Determines whether two IGameInputMapper values point to the same native object.
     /// 比較兩個 IGameInputMapper 是否指向同一個原生物件。
     /// </summary>
-    /// <param name="other">要比較的另一個 IGameInputMapper。</param>
-    /// <returns>原生指標相同時傳回 true；否則傳回 false。</returns>
+    /// <param name="other">The other IGameInputMapper to compare. 要比較的另一個 IGameInputMapper。</param>
+    /// <returns>Returns true when the native pointers are identical; otherwise returns false. 原生指標相同時傳回 true；否則傳回 false。</returns>
     public bool Equals(IGameInputMapper other)
     {
         return Pointer == other.Pointer;
@@ -1271,77 +1299,77 @@ internal readonly unsafe struct IGameInputMapper(IntPtr pointer) : IEquatable<IG
     }
 
     /// <summary>
-    /// 呼叫 IGameInputMapper.GetArcadeStickButtonMappingInfo 對應的 GameInput 原生 COM 方法。
+    /// Calls the native GameInput COM method corresponding to IGameInputMapper.GetArcadeStickButtonMappingInfo. 呼叫 IGameInputMapper.GetArcadeStickButtonMappingInfo 對應的 GameInput 原生 COM 方法。
     /// </summary>
-    /// <param name="buttonElement">要查詢 mapping 的 button 元素。</param>
-    /// <param name="mapping">接收 mapping 資訊的原生緩衝區。</param>
-    /// <returns>若原生 API 回報成功或指定狀態存在，傳回 true；否則傳回 false。</returns>
+    /// <param name="buttonElement">The button element whose mapping is queried. 要查詢 mapping 的 button 元素。</param>
+    /// <param name="mapping">The native buffer that receives the mapping information. 接收 mapping 資訊的原生緩衝區。</param>
+    /// <returns>Returns true when the native API reports success or the requested state exists; otherwise returns false. 若原生 API 回報成功或指定狀態存在，傳回 true；否則傳回 false。</returns>
     public unsafe bool GetArcadeStickButtonMappingInfo(GameInputArcadeStickButtons buttonElement, IntPtr mapping)
     {
         return Vtbl->GetArcadeStickButtonMappingInfo(Pointer, buttonElement, mapping) != 0;
     }
 
     /// <summary>
-    /// 呼叫 IGameInputMapper.GetFlightStickAxisMappingInfo 對應的 GameInput 原生 COM 方法。
+    /// Calls the native GameInput COM method corresponding to IGameInputMapper.GetFlightStickAxisMappingInfo. 呼叫 IGameInputMapper.GetFlightStickAxisMappingInfo 對應的 GameInput 原生 COM 方法。
     /// </summary>
-    /// <param name="axisElement">要查詢 mapping 的 axis 元素。</param>
-    /// <param name="mapping">接收 mapping 資訊的原生緩衝區。</param>
-    /// <returns>若原生 API 回報成功或指定狀態存在，傳回 true；否則傳回 false。</returns>
+    /// <param name="axisElement">The axis element whose mapping is queried. 要查詢 mapping 的 axis 元素。</param>
+    /// <param name="mapping">The native buffer that receives the mapping information. 接收 mapping 資訊的原生緩衝區。</param>
+    /// <returns>Returns true when the native API reports success or the requested state exists; otherwise returns false. 若原生 API 回報成功或指定狀態存在，傳回 true；否則傳回 false。</returns>
     public unsafe bool GetFlightStickAxisMappingInfo(GameInputFlightStickAxes axisElement, IntPtr mapping)
     {
         return Vtbl->GetFlightStickAxisMappingInfo(Pointer, axisElement, mapping) != 0;
     }
 
     /// <summary>
-    /// 呼叫 IGameInputMapper.GetFlightStickButtonMappingInfo 對應的 GameInput 原生 COM 方法。
+    /// Calls the native GameInput COM method corresponding to IGameInputMapper.GetFlightStickButtonMappingInfo. 呼叫 IGameInputMapper.GetFlightStickButtonMappingInfo 對應的 GameInput 原生 COM 方法。
     /// </summary>
-    /// <param name="buttonElement">要查詢 mapping 的 button 元素。</param>
-    /// <param name="mapping">接收 mapping 資訊的原生緩衝區。</param>
-    /// <returns>若原生 API 回報成功或指定狀態存在，傳回 true；否則傳回 false。</returns>
+    /// <param name="buttonElement">The button element whose mapping is queried. 要查詢 mapping 的 button 元素。</param>
+    /// <param name="mapping">The native buffer that receives the mapping information. 接收 mapping 資訊的原生緩衝區。</param>
+    /// <returns>Returns true when the native API reports success or the requested state exists; otherwise returns false. 若原生 API 回報成功或指定狀態存在，傳回 true；否則傳回 false。</returns>
     public unsafe bool GetFlightStickButtonMappingInfo(GameInputFlightStickButtons buttonElement, IntPtr mapping)
     {
         return Vtbl->GetFlightStickButtonMappingInfo(Pointer, buttonElement, mapping) != 0;
     }
 
     /// <summary>
-    /// 呼叫 IGameInputMapper.GetGamepadAxisMappingInfo 對應的 GameInput 原生 COM 方法。
+    /// Calls the native GameInput COM method corresponding to IGameInputMapper.GetGamepadAxisMappingInfo. 呼叫 IGameInputMapper.GetGamepadAxisMappingInfo 對應的 GameInput 原生 COM 方法。
     /// </summary>
-    /// <param name="axisElement">要查詢 mapping 的 axis 元素。</param>
-    /// <param name="mapping">接收 mapping 資訊的原生緩衝區。</param>
-    /// <returns>若原生 API 回報成功或指定狀態存在，傳回 true；否則傳回 false。</returns>
+    /// <param name="axisElement">The axis element whose mapping is queried. 要查詢 mapping 的 axis 元素。</param>
+    /// <param name="mapping">The native buffer that receives the mapping information. 接收 mapping 資訊的原生緩衝區。</param>
+    /// <returns>Returns true when the native API reports success or the requested state exists; otherwise returns false. 若原生 API 回報成功或指定狀態存在，傳回 true；否則傳回 false。</returns>
     public unsafe bool GetGamepadAxisMappingInfo(GameInputGamepadAxes axisElement, IntPtr mapping)
     {
         return Vtbl->GetGamepadAxisMappingInfo(Pointer, axisElement, mapping) != 0;
     }
 
     /// <summary>
-    /// 呼叫 IGameInputMapper.GetGamepadButtonMappingInfo 對應的 GameInput 原生 COM 方法。
+    /// Calls the native GameInput COM method corresponding to IGameInputMapper.GetGamepadButtonMappingInfo. 呼叫 IGameInputMapper.GetGamepadButtonMappingInfo 對應的 GameInput 原生 COM 方法。
     /// </summary>
-    /// <param name="buttonElement">要查詢 mapping 的 button 元素。</param>
-    /// <param name="mapping">接收 mapping 資訊的原生緩衝區。</param>
-    /// <returns>若原生 API 回報成功或指定狀態存在，傳回 true；否則傳回 false。</returns>
+    /// <param name="buttonElement">The button element whose mapping is queried. 要查詢 mapping 的 button 元素。</param>
+    /// <param name="mapping">The native buffer that receives the mapping information. 接收 mapping 資訊的原生緩衝區。</param>
+    /// <returns>Returns true when the native API reports success or the requested state exists; otherwise returns false. 若原生 API 回報成功或指定狀態存在，傳回 true；否則傳回 false。</returns>
     public unsafe bool GetGamepadButtonMappingInfo(GameInputGamepadButtons buttonElement, IntPtr mapping)
     {
         return Vtbl->GetGamepadButtonMappingInfo(Pointer, buttonElement, mapping) != 0;
     }
 
     /// <summary>
-    /// 呼叫 IGameInputMapper.GetRacingWheelAxisMappingInfo 對應的 GameInput 原生 COM 方法。
+    /// Calls the native GameInput COM method corresponding to IGameInputMapper.GetRacingWheelAxisMappingInfo. 呼叫 IGameInputMapper.GetRacingWheelAxisMappingInfo 對應的 GameInput 原生 COM 方法。
     /// </summary>
-    /// <param name="axisElement">要查詢 mapping 的 axis 元素。</param>
-    /// <param name="mapping">接收 mapping 資訊的原生緩衝區。</param>
-    /// <returns>若原生 API 回報成功或指定狀態存在，傳回 true；否則傳回 false。</returns>
+    /// <param name="axisElement">The axis element whose mapping is queried. 要查詢 mapping 的 axis 元素。</param>
+    /// <param name="mapping">The native buffer that receives the mapping information. 接收 mapping 資訊的原生緩衝區。</param>
+    /// <returns>Returns true when the native API reports success or the requested state exists; otherwise returns false. 若原生 API 回報成功或指定狀態存在，傳回 true；否則傳回 false。</returns>
     public unsafe bool GetRacingWheelAxisMappingInfo(GameInputRacingWheelAxes axisElement, IntPtr mapping)
     {
         return Vtbl->GetRacingWheelAxisMappingInfo(Pointer, axisElement, mapping) != 0;
     }
 
     /// <summary>
-    /// 呼叫 IGameInputMapper.GetRacingWheelButtonMappingInfo 對應的 GameInput 原生 COM 方法。
+    /// Calls the native GameInput COM method corresponding to IGameInputMapper.GetRacingWheelButtonMappingInfo. 呼叫 IGameInputMapper.GetRacingWheelButtonMappingInfo 對應的 GameInput 原生 COM 方法。
     /// </summary>
-    /// <param name="buttonElement">要查詢 mapping 的 button 元素。</param>
-    /// <param name="mapping">接收 mapping 資訊的原生緩衝區。</param>
-    /// <returns>若原生 API 回報成功或指定狀態存在，傳回 true；否則傳回 false。</returns>
+    /// <param name="buttonElement">The button element whose mapping is queried. 要查詢 mapping 的 button 元素。</param>
+    /// <param name="mapping">The native buffer that receives the mapping information. 接收 mapping 資訊的原生緩衝區。</param>
+    /// <returns>Returns true when the native API reports success or the requested state exists; otherwise returns false. 若原生 API 回報成功或指定狀態存在，傳回 true；否則傳回 false。</returns>
     public unsafe bool GetRacingWheelButtonMappingInfo(GameInputRacingWheelButtons buttonElement, IntPtr mapping)
     {
         return Vtbl->GetRacingWheelButtonMappingInfo(Pointer, buttonElement, mapping) != 0;

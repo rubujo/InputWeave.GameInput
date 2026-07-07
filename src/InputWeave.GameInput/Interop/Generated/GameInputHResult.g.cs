@@ -5,57 +5,57 @@
 namespace InputWeave.GameInput.Interop;
 
 /// <summary>
-/// 提供 GameInputHResult 對應的 GameInput 原生常數。
+/// Provides the native GameInput constants corresponding to GameInputHResult. 提供 GameInputHResult 對應的 GameInput 原生常數。
 /// </summary>
 public static class GameInputHResult
 {
     /// <summary>
-    /// 表示 GameInputHResult.DeviceDisconnected 對應的 GameInput 原生欄位或常數。
+    /// Represents the native GameInput field or constant corresponding to GameInputHResult.DeviceDisconnected. 表示 GameInputHResult.DeviceDisconnected 對應的 GameInput 原生欄位或常數。
     /// </summary>
     public const int DeviceDisconnected = unchecked((int)0x838A0001);
 
     /// <summary>
-    /// 表示 GameInputHResult.DeviceNotFound 對應的 GameInput 原生欄位或常數。
+    /// Represents the native GameInput field or constant corresponding to GameInputHResult.DeviceNotFound. 表示 GameInputHResult.DeviceNotFound 對應的 GameInput 原生欄位或常數。
     /// </summary>
     public const int DeviceNotFound = unchecked((int)0x838A0002);
 
     /// <summary>
-    /// 表示 GameInputHResult.ReadingNotFound 對應的 GameInput 原生欄位或常數。
+    /// Represents the native GameInput field or constant corresponding to GameInputHResult.ReadingNotFound. 表示 GameInputHResult.ReadingNotFound 對應的 GameInput 原生欄位或常數。
     /// </summary>
     public const int ReadingNotFound = unchecked((int)0x838A0003);
 
     /// <summary>
-    /// 表示 GameInputHResult.ReferenceReadingTooOld 對應的 GameInput 原生欄位或常數。
+    /// Represents the native GameInput field or constant corresponding to GameInputHResult.ReferenceReadingTooOld. 表示 GameInputHResult.ReferenceReadingTooOld 對應的 GameInput 原生欄位或常數。
     /// </summary>
     public const int ReferenceReadingTooOld = unchecked((int)0x838A0004);
 
     /// <summary>
-    /// 表示 GameInputHResult.FeedbackNotSupported 對應的 GameInput 原生欄位或常數。
+    /// Represents the native GameInput field or constant corresponding to GameInputHResult.FeedbackNotSupported. 表示 GameInputHResult.FeedbackNotSupported 對應的 GameInput 原生欄位或常數。
     /// </summary>
     public const int FeedbackNotSupported = unchecked((int)0x838A0007);
 
     /// <summary>
-    /// 表示 GameInputHResult.ObjectNoLongerExists 對應的 GameInput 原生欄位或常數。
+    /// Represents the native GameInput field or constant corresponding to GameInputHResult.ObjectNoLongerExists. 表示 GameInputHResult.ObjectNoLongerExists 對應的 GameInput 原生欄位或常數。
     /// </summary>
     public const int ObjectNoLongerExists = unchecked((int)0x838A0008);
 
     /// <summary>
-    /// 表示 GameInputHResult.CallbackNotFound 對應的 GameInput 原生欄位或常數。
+    /// Represents the native GameInput field or constant corresponding to GameInputHResult.CallbackNotFound. 表示 GameInputHResult.CallbackNotFound 對應的 GameInput 原生欄位或常數。
     /// </summary>
     public const int CallbackNotFound = unchecked((int)0x838A0009);
 
     /// <summary>
-    /// 表示 GameInputHResult.HapticInfoNotFound 對應的 GameInput 原生欄位或常數。
+    /// Represents the native GameInput field or constant corresponding to GameInputHResult.HapticInfoNotFound. 表示 GameInputHResult.HapticInfoNotFound 對應的 GameInput 原生欄位或常數。
     /// </summary>
     public const int HapticInfoNotFound = unchecked((int)0x838A000A);
 
     /// <summary>
-    /// 表示 GameInputHResult.AggregateOperationNotSupported 對應的 GameInput 原生欄位或常數。
+    /// Represents the native GameInput field or constant corresponding to GameInputHResult.AggregateOperationNotSupported. 表示 GameInputHResult.AggregateOperationNotSupported 對應的 GameInput 原生欄位或常數。
     /// </summary>
     public const int AggregateOperationNotSupported = unchecked((int)0x838A000B);
 
     /// <summary>
-    /// 表示 GameInputHResult.InputKindNotPresent 對應的 GameInput 原生欄位或常數。
+    /// Represents the native GameInput field or constant corresponding to GameInputHResult.InputKindNotPresent. 表示 GameInputHResult.InputKindNotPresent 對應的 GameInput 原生欄位或常數。
     /// </summary>
     public const int InputKindNotPresent = unchecked((int)0x838A000C);
 }

@@ -112,7 +112,7 @@ internal sealed record GeneratorOptions(string HeaderPath, string OutputPath, st
                 case "--help":
                 case "-h":
                 case "/?":
-                    throw new ArgumentException("用法：--header <GameInput.h> --output <GameInputEnums.g.cs> --docs <gameinput-xml-docs.zh-TW.json> [--manifest <gameinput-abi-manifest.json>] [--interop-output-dir <Generated 目錄>] [--namespace <命名空間>]");
+                    throw new ArgumentException("用法：--header <GameInput.h> --output <GameInputEnums.g.cs> --docs <gameinput-xml-docs.json> [--manifest <gameinput-abi-manifest.json>] [--interop-output-dir <Generated 目錄>] [--namespace <命名空間>]");
                 default:
                     throw new ArgumentException($"未知參數：{current}");
             }
@@ -801,6 +801,7 @@ internal static partial class GameInputInteropWriter
         builder.AppendLine($"internal readonly unsafe struct {interfaceDefinition.Name}(IntPtr pointer) : IEquatable<{interfaceDefinition.Name}>");
         builder.AppendLine("{");
         builder.AppendLine("    /// <summary>");
+        builder.AppendLine("    /// The native COM pointer held by this wrapper.");
         builder.AppendLine("    /// 這個包裝所持有的原生 COM 指標。");
         builder.AppendLine("    /// </summary>");
         builder.AppendLine("    public IntPtr Pointer { get; } = pointer;");
@@ -808,28 +809,31 @@ internal static partial class GameInputInteropWriter
         builder.AppendLine($"    private {interfaceDefinition.Name}Vtbl* Vtbl => ({interfaceDefinition.Name}Vtbl*)(*(void**)Pointer);");
         builder.AppendLine();
         builder.AppendLine("    /// <summary>");
+        builder.AppendLine("    /// Calls AddRef on the native vtable to increment the reference count.");
         builder.AppendLine("    /// 呼叫原生 vtable 的 AddRef，增加參考計數。");
         builder.AppendLine("    /// </summary>");
-        builder.AppendLine("    /// <returns>呼叫後的參考計數。</returns>");
+        builder.AppendLine("    /// <returns>The reference count after the call. 呼叫後的參考計數。</returns>");
         builder.AppendLine("    public uint AddRef()");
         builder.AppendLine("    {");
         builder.AppendLine("        return Vtbl->AddRef(Pointer);");
         builder.AppendLine("    }");
         builder.AppendLine();
         builder.AppendLine("    /// <summary>");
+        builder.AppendLine("    /// Calls Release on the native vtable to decrement the reference count and release the native object when needed.");
         builder.AppendLine("    /// 呼叫原生 vtable 的 Release，減少參考計數並視需要釋放原生物件。");
         builder.AppendLine("    /// </summary>");
-        builder.AppendLine("    /// <returns>呼叫後的參考計數。</returns>");
+        builder.AppendLine("    /// <returns>The reference count after the call. 呼叫後的參考計數。</returns>");
         builder.AppendLine("    public uint Release()");
         builder.AppendLine("    {");
         builder.AppendLine("        return Vtbl->Release(Pointer);");
         builder.AppendLine("    }");
         builder.AppendLine();
         builder.AppendLine($"    /// <summary>");
+        builder.AppendLine($"    /// Determines whether two {interfaceDefinition.Name} values point to the same native object.");
         builder.AppendLine($"    /// 比較兩個 {interfaceDefinition.Name} 是否指向同一個原生物件。");
         builder.AppendLine($"    /// </summary>");
-        builder.AppendLine($"    /// <param name=\"other\">要比較的另一個 {interfaceDefinition.Name}。</param>");
-        builder.AppendLine($"    /// <returns>原生指標相同時傳回 true；否則傳回 false。</returns>");
+        builder.AppendLine($"    /// <param name=\"other\">The other {interfaceDefinition.Name} to compare. 要比較的另一個 {interfaceDefinition.Name}。</param>");
+        builder.AppendLine($"    /// <returns>Returns true when the native pointers are identical; otherwise returns false. 原生指標相同時傳回 true；否則傳回 false。</returns>");
         builder.AppendLine($"    public bool Equals({interfaceDefinition.Name} other)");
         builder.AppendLine("    {");
         builder.AppendLine("        return Pointer == other.Pointer;");

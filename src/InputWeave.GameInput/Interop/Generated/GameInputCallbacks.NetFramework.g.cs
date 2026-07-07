@@ -9,47 +9,47 @@ using System.Runtime.InteropServices;
 namespace InputWeave.GameInput.Interop;
 
 /// <summary>
-/// 表示 GameInputReadingCallback 對應的 GameInput 原生 callback delegate。
+/// Represents the native GameInput callback delegate corresponding to GameInputReadingCallback. 表示 GameInputReadingCallback 對應的 GameInput 原生 callback delegate。
 /// </summary>
-/// <param name="callbackToken">GameInput 指派的 callback token。</param>
-/// <param name="context">註冊 callback 時傳入的使用者內容指標。</param>
-/// <param name="reading">回呼提供的原生 GameInput reading。</param>
+/// <param name="callbackToken">The callback token assigned by GameInput. GameInput 指派的 callback token。</param>
+/// <param name="context">The user context pointer supplied when the callback was registered. 註冊 callback 時傳入的使用者內容指標。</param>
+/// <param name="reading">The native GameInput reading provided by the callback. 回呼提供的原生 GameInput reading。</param>
 [UnmanagedFunctionPointer(CallingConvention.Winapi)]
 public delegate void GameInputReadingCallback(ulong callbackToken, IntPtr context, IGameInputReading reading);
 
 /// <summary>
-/// 表示 GameInputDeviceCallback 對應的 GameInput 原生 callback delegate。
+/// Represents the native GameInput callback delegate corresponding to GameInputDeviceCallback. 表示 GameInputDeviceCallback 對應的 GameInput 原生 callback delegate。
 /// </summary>
-/// <param name="callbackToken">GameInput 指派的 callback token。</param>
-/// <param name="context">註冊 callback 時傳入的使用者內容指標。</param>
-/// <param name="device">目標或回呼提供的 GameInput device。</param>
-/// <param name="timestamp">GameInput 時間戳記。</param>
-/// <param name="currentStatus">目前裝置狀態。</param>
-/// <param name="previousStatus">先前裝置狀態。</param>
+/// <param name="callbackToken">The callback token assigned by GameInput. GameInput 指派的 callback token。</param>
+/// <param name="context">The user context pointer supplied when the callback was registered. 註冊 callback 時傳入的使用者內容指標。</param>
+/// <param name="device">The target GameInput device, or the device provided by the callback. 目標或回呼提供的 GameInput device。</param>
+/// <param name="timestamp">The GameInput timestamp. GameInput 時間戳記。</param>
+/// <param name="currentStatus">The current device status. 目前裝置狀態。</param>
+/// <param name="previousStatus">The previous device status. 先前裝置狀態。</param>
 [UnmanagedFunctionPointer(CallingConvention.Winapi)]
 public delegate void GameInputDeviceCallback(ulong callbackToken, IntPtr context, IGameInputDevice device, ulong timestamp, GameInputDeviceStatus currentStatus, GameInputDeviceStatus previousStatus);
 
 /// <summary>
-/// 表示 GameInputSystemButtonCallback 對應的 GameInput 原生 callback delegate。
+/// Represents the native GameInput callback delegate corresponding to GameInputSystemButtonCallback. 表示 GameInputSystemButtonCallback 對應的 GameInput 原生 callback delegate。
 /// </summary>
-/// <param name="callbackToken">GameInput 指派的 callback token。</param>
-/// <param name="context">註冊 callback 時傳入的使用者內容指標。</param>
-/// <param name="device">目標或回呼提供的 GameInput device。</param>
-/// <param name="timestamp">GameInput 時間戳記。</param>
-/// <param name="currentButtons">目前 system button 狀態。</param>
-/// <param name="previousButtons">先前 system button 狀態。</param>
+/// <param name="callbackToken">The callback token assigned by GameInput. GameInput 指派的 callback token。</param>
+/// <param name="context">The user context pointer supplied when the callback was registered. 註冊 callback 時傳入的使用者內容指標。</param>
+/// <param name="device">The target GameInput device, or the device provided by the callback. 目標或回呼提供的 GameInput device。</param>
+/// <param name="timestamp">The GameInput timestamp. GameInput 時間戳記。</param>
+/// <param name="currentButtons">The current system button state. 目前 system button 狀態。</param>
+/// <param name="previousButtons">The previous system button state. 先前 system button 狀態。</param>
 [UnmanagedFunctionPointer(CallingConvention.Winapi)]
 public delegate void GameInputSystemButtonCallback(ulong callbackToken, IntPtr context, IGameInputDevice device, ulong timestamp, GameInputSystemButtons currentButtons, GameInputSystemButtons previousButtons);
 
 /// <summary>
-/// 表示 GameInputKeyboardLayoutCallback 對應的 GameInput 原生 callback delegate。
+/// Represents the native GameInput callback delegate corresponding to GameInputKeyboardLayoutCallback. 表示 GameInputKeyboardLayoutCallback 對應的 GameInput 原生 callback delegate。
 /// </summary>
-/// <param name="callbackToken">GameInput 指派的 callback token。</param>
-/// <param name="context">註冊 callback 時傳入的使用者內容指標。</param>
-/// <param name="device">目標或回呼提供的 GameInput device。</param>
-/// <param name="timestamp">GameInput 時間戳記。</param>
-/// <param name="currentLayout">目前鍵盤配置識別碼。</param>
-/// <param name="previousLayout">先前鍵盤配置識別碼。</param>
+/// <param name="callbackToken">The callback token assigned by GameInput. GameInput 指派的 callback token。</param>
+/// <param name="context">The user context pointer supplied when the callback was registered. 註冊 callback 時傳入的使用者內容指標。</param>
+/// <param name="device">The target GameInput device, or the device provided by the callback. 目標或回呼提供的 GameInput device。</param>
+/// <param name="timestamp">The GameInput timestamp. GameInput 時間戳記。</param>
+/// <param name="currentLayout">The current keyboard layout identifier. 目前鍵盤配置識別碼。</param>
+/// <param name="previousLayout">The previous keyboard layout identifier. 先前鍵盤配置識別碼。</param>
 [UnmanagedFunctionPointer(CallingConvention.Winapi)]
 public delegate void GameInputKeyboardLayoutCallback(ulong callbackToken, IntPtr context, IGameInputDevice device, ulong timestamp, uint currentLayout, uint previousLayout);
 

@@ -20,7 +20,7 @@
 - 目前基準是 `Microsoft.GameInput` `3.4.218`，API 版本 `3`。
 - 修改互通層、版本基準或發佈包裝前，先使用對應 `.agents/skills/` 流程；不要把多步驟程序塞回本檔。
 - `src/InputWeave.GameInput/Interop/Generated/` 下的 `.g.cs` 與 `gameinput-abi-manifest.json` 必須由產生器產生；不要手改產生式互通層。
-- 產生式互通層的 XML 文件註解來源是 `eng/gameinput-xml-docs.zh-TW.json`；若缺文件，修改文件來源與產生器後重產。
+- 產生式互通層的 XML 文件註解來源是 `eng/gameinput-xml-docs.json`；若缺文件，修改文件來源與產生器後重產。
 - `docs/gameinput-api-coverage.md` 的 v0.0.1 覆蓋率必須維持缺口為 0，發佈前需跑 `eng/Verify-GameInputCoverage.ps1`。
 
 ## 程式碼規範
@@ -32,7 +32,7 @@
 - 不得新增 `#pragma warning disable` 來壓制 C# Analyzer 或 VS2026 Lint；若出現警告，應修正程式碼、產生器或 `.editorconfig` 規則來源。
 - P/Invoke 在 `net10.0-windows` 等現代 TFM 必須使用 `LibraryImport` 來源產生器；`DllImport` 只可存在於 `NETFRAMEWORK` 專用相容檔。
 - 本專案預設維持純受控包裝程式庫；GameInput 執行階段選擇與載入診斷由受控載入器實作，不導入原生 API 橋接 DLL，除非另有單檔發佈或原生診斷需求並先另行規劃。
-- Public API 名稱維持英文技術命名；公開 XML 文件註解使用正體中文（台灣）用語。
+- Public API 名稱維持英文技術命名；XML 文件註解採美式英文與正體中文（台灣）雙語並行，同一個標籤內先寫英文、再寫中文，兩種語言都必須傳達相同內容。
 - 所有 public/protected type、member、enum member、delegate、方法參數與非 void 回傳值都必須有 XML 文件註解；不得忽略 `CS1591`。
 - `InputWeave.GameInput.Interop` 保留原生 GameInput 識別字，方便對照 Microsoft `GameInput.h`。
 - 一般使用者應優先使用受控包裝 API、快照、管理器、建構器與 Safe Handle API；低階互通層僅作為進階逃生出口。

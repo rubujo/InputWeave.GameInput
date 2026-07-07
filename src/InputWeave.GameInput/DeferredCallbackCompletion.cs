@@ -1,6 +1,8 @@
 namespace InputWeave.GameInput;
 
 /// <summary>
+/// Centralizes the assignment and disposal ordering of one-shot native callback registrations and cancellation token
+/// registrations, avoiding races and resource leaks caused by the callback firing before the local variable assignment happens.
 /// 統一管理一次性原生回呼註冊與取消語彙註冊的指派/釋放順序，
 /// 避免「回呼先觸發、區域變數賦值後發生」造成的競爭與資源洩漏。
 /// </summary>
@@ -77,6 +79,8 @@ internal sealed class DeferredCallbackCompletion
     }
 
     /// <summary>
+    /// Disposes only the currently known cancellation token registration without affecting the completion state or the native
+    /// callback registration; safe to call repeatedly.
     /// 只釋放目前已知的取消語彙註冊，不影響完成狀態或原生回呼註冊；可安全重複呼叫。
     /// </summary>
     public void DisposeCancellationRegistrationForDispose()
