@@ -83,6 +83,44 @@ public sealed class GameInputRuntimeLoaderTests
     }
 
     [TestMethod]
+    public void RuntimeLoaderBuildsFallbackLoadOrderAfterPreferredCandidate()
+    {
+        IReadOnlyList<GameInputRuntimeCandidate> loadOrder = GameInputRuntimeLoader.BuildCandidateLoadOrder(
+        [
+            Candidate(GameInputRuntimeModuleKind.SystemGameInput, exists: true, new Version(3, 3, 0, 0)),
+            Candidate(GameInputRuntimeModuleKind.SystemGameInputRedist, exists: true, new Version(3, 4, 0, 0)),
+            Candidate(GameInputRuntimeModuleKind.RegistryGameInputRedist, exists: true, new Version(3, 5, 0, 0))
+        ]);
+
+        CollectionAssert.AreEqual(
+            new[]
+            {
+                GameInputRuntimeModuleKind.SystemGameInputRedist,
+                GameInputRuntimeModuleKind.RegistryGameInputRedist,
+                GameInputRuntimeModuleKind.SystemGameInput
+            },
+            loadOrder.Select(static candidate => candidate.ModuleKind).ToArray());
+    }
+
+    [TestMethod]
+    public void RuntimeLoaderFallbackLoadOrderStartsWithNewerInboxWhenPreferred()
+    {
+        IReadOnlyList<GameInputRuntimeCandidate> loadOrder = GameInputRuntimeLoader.BuildCandidateLoadOrder(
+        [
+            Candidate(GameInputRuntimeModuleKind.SystemGameInput, exists: true, new Version(3, 5, 0, 0)),
+            Candidate(GameInputRuntimeModuleKind.SystemGameInputRedist, exists: true, new Version(3, 4, 0, 0))
+        ]);
+
+        CollectionAssert.AreEqual(
+            new[]
+            {
+                GameInputRuntimeModuleKind.SystemGameInput,
+                GameInputRuntimeModuleKind.SystemGameInputRedist
+            },
+            loadOrder.Select(static candidate => candidate.ModuleKind).ToArray());
+    }
+
+    [TestMethod]
     public void RuntimeProbeReturnsStableDiagnostics()
     {
         bool available = GameInputRuntime.TryProbe(out GameInputRuntimeProbeInfo info);

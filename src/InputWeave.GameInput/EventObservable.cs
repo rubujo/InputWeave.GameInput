@@ -11,8 +11,10 @@ internal sealed class EventObservable<T>(Action? onFirstSubscribe = null, Action
     private readonly List<IObserver<T>> _observers = [];
 #if NET10_0_OR_GREATER
     private readonly System.Threading.Lock _lock = new();
+    private readonly System.Threading.Lock _lifecycleLock = new();
 #else
     private readonly object _lock = new();
+    private readonly object _lifecycleLock = new();
 #endif
     private bool _completed;
 
@@ -28,28 +30,38 @@ internal sealed class EventObservable<T>(Action? onFirstSubscribe = null, Action
 #endif
 
         bool alreadyCompleted;
-        lock (_lock)
+        bool startNeeded = false;
+        lock (_lifecycleLock)
         {
-            alreadyCompleted = _completed;
+            lock (_lock)
+            {
+                alreadyCompleted = _completed;
+                if (!alreadyCompleted)
+                {
+                    bool wasEmpty = _observers.Count == 0;
+                    _observers.Add(observer);
+                    startNeeded = wasEmpty;
+                }
+            }
+
             if (alreadyCompleted)
             {
                 InvokeOnCompleted(observer);
             }
-            else
+            else if (startNeeded)
             {
-                bool wasEmpty = _observers.Count == 0;
-                _observers.Add(observer);
-                if (wasEmpty)
+                try
                 {
-                    try
-                    {
-                        onFirstSubscribe?.Invoke();
-                    }
-                    catch
+                    onFirstSubscribe?.Invoke();
+                }
+                catch
+                {
+                    lock (_lock)
                     {
                         _observers.Remove(observer);
-                        throw;
                     }
+
+                    throw;
                 }
             }
         }
@@ -136,10 +148,19 @@ internal sealed class EventObservable<T>(Action? onFirstSubscribe = null, Action
 
     private void Unsubscribe(IObserver<T> observer)
     {
-        lock (_lock)
+        bool stopNeeded = false;
+        lock (_lifecycleLock)
         {
-            bool removed = _observers.Remove(observer);
-            if (removed && _observers.Count == 0)
+            lock (_lock)
+            {
+                bool removed = _observers.Remove(observer);
+                if (removed && _observers.Count == 0)
+                {
+                    stopNeeded = true;
+                }
+            }
+
+            if (stopNeeded)
             {
                 onLastUnsubscribe?.Invoke();
             }

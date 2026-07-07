@@ -427,7 +427,7 @@ public sealed class GameInputDevice : IDisposable
             Marshal.Copy(input, 0, inputPointer, input.Length);
             int hResult = Native.DirectInputEscape(command, inputPointer, (uint)input.Length, outputPointer, (uint)output.Length, out uint written);
             GameInputException.ThrowIfFailed(hResult);
-            int count = checked((int)written);
+            int count = EnsureNativeWrittenCount(written, output.Length, "DirectInput escape 輸出位元組數");
             Marshal.Copy(outputPointer, output, 0, count);
             return count;
         }
@@ -585,6 +585,16 @@ public sealed class GameInputDevice : IDisposable
                 ? throw new ObjectDisposedException(nameof(GameInputDevice))
                 : _native ?? throw new ObjectDisposedException(nameof(GameInputDevice));
         }
+    }
+
+    internal static int EnsureNativeWrittenCount(uint written, int capacity, string subject)
+    {
+        if (written > capacity)
+        {
+            throw new InvalidOperationException($"{subject}（{written}）超過呼叫端提供的緩衝區大小（{capacity}）。");
+        }
+
+        return checked((int)written);
     }
 
     internal static bool IsForceFeedbackEffectSupported(GameInputForceFeedbackMotorInfo motor, GameInputForceFeedbackEffectKind effectKind)

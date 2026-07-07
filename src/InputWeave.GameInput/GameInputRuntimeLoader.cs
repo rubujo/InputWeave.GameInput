@@ -118,18 +118,49 @@ internal static class GameInputRuntimeLoader
         loaded = null;
 
         List<GameInputRuntimeCandidate> candidates = DiscoverCandidates();
-        GameInputRuntimeCandidate? selected = SelectPreferredCandidate(candidates);
-        if (selected is null)
+        IReadOnlyList<GameInputRuntimeCandidate> loadOrder = BuildCandidateLoadOrder(candidates);
+        if (loadOrder.Count == 0)
         {
             return CreateProbeInfo(false, null, FileNotFoundHResult, (int)ErrorFileNotFound, candidates);
         }
 
-        bool available = TryLoadSelectedCandidate(selected.Value, keepLoaded, out loaded, out GameInputRuntimeCandidateInfo selectedInfo);
-        ReplaceCandidateInfo(candidates, selected.Value, selectedInfo);
-        int finalHResult = selectedInfo.LoadHResult != SucceededHResult
-            ? selectedInfo.LoadHResult
-            : selectedInfo.GetProcAddressHResult;
-        return CreateProbeInfo(available, selectedInfo, finalHResult, selectedInfo.Win32Error, candidates);
+        GameInputRuntimeCandidateInfo firstFailureInfo = default;
+        bool hasFailureInfo = false;
+        foreach (GameInputRuntimeCandidate candidate in loadOrder)
+        {
+            bool available = TryLoadSelectedCandidate(candidate, keepLoaded, out loaded, out GameInputRuntimeCandidateInfo candidateInfo);
+            ReplaceCandidateInfo(candidates, candidate, candidateInfo);
+            if (available)
+            {
+                return CreateProbeInfo(true, candidateInfo, SucceededHResult, candidateInfo.Win32Error, candidates);
+            }
+
+            if (!hasFailureInfo)
+            {
+                firstFailureInfo = candidateInfo;
+                hasFailureInfo = true;
+            }
+        }
+
+        int finalHResult = firstFailureInfo.LoadHResult != SucceededHResult
+            ? firstFailureInfo.LoadHResult
+            : firstFailureInfo.GetProcAddressHResult;
+        return CreateProbeInfo(false, firstFailureInfo, finalHResult, firstFailureInfo.Win32Error, candidates);
+    }
+
+    internal static IReadOnlyList<GameInputRuntimeCandidate> BuildCandidateLoadOrder(IReadOnlyList<GameInputRuntimeCandidate> candidates)
+    {
+        GameInputRuntimeCandidate? preferred = SelectPreferredCandidate(candidates);
+        if (preferred is null)
+        {
+            return [];
+        }
+
+        List<GameInputRuntimeCandidate> loadOrder = [preferred.Value];
+        AppendExistingCandidate(candidates, loadOrder, GameInputRuntimeModuleKind.SystemGameInputRedist);
+        AppendExistingCandidate(candidates, loadOrder, GameInputRuntimeModuleKind.RegistryGameInputRedist);
+        AppendExistingCandidate(candidates, loadOrder, GameInputRuntimeModuleKind.SystemGameInput);
+        return loadOrder;
     }
 
     private static List<GameInputRuntimeCandidate> DiscoverCandidates()
@@ -188,6 +219,24 @@ internal static class GameInputRuntimeLoader
 
         candidate = default;
         return false;
+    }
+
+    private static void AppendExistingCandidate(
+        IReadOnlyList<GameInputRuntimeCandidate> candidates,
+        List<GameInputRuntimeCandidate> loadOrder,
+        GameInputRuntimeModuleKind moduleKind)
+    {
+        if (!TryFindExistingCandidate(candidates, moduleKind, out GameInputRuntimeCandidate candidate))
+        {
+            return;
+        }
+
+        if (loadOrder.Any(item => item.ModuleKind == candidate.ModuleKind))
+        {
+            return;
+        }
+
+        loadOrder.Add(candidate);
     }
 
     private static int CompareCandidateVersions(GameInputRuntimeCandidate left, GameInputRuntimeCandidate right)

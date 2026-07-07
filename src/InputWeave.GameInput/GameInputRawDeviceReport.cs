@@ -114,7 +114,7 @@ public sealed class GameInputRawDeviceReport : IDisposable
         try
         {
             UIntPtr written = Native.GetRawData((UIntPtr)count, nativeBuffer);
-            int writtenCount = checked((int)written.ToUInt64());
+            int writtenCount = EnsureNativeWrittenCount(written.ToUInt64(), count, "raw device report 複製位元組數");
             Marshal.Copy(nativeBuffer, buffer, offset, writtenCount);
             return writtenCount;
         }
@@ -211,7 +211,7 @@ public sealed class GameInputRawDeviceReport : IDisposable
             fixed (byte* pointer = buffer)
             {
                 UIntPtr written = Native.GetRawData((UIntPtr)buffer.Length, (IntPtr)pointer);
-                return checked((int)written.ToUInt64());
+                return EnsureNativeWrittenCount(written.ToUInt64(), buffer.Length, "raw device report 複製位元組數");
             }
         }
 
@@ -274,5 +274,15 @@ public sealed class GameInputRawDeviceReport : IDisposable
                 ? throw new ObjectDisposedException(nameof(GameInputRawDeviceReport))
                 : _native ?? throw new ObjectDisposedException(nameof(GameInputRawDeviceReport));
         }
+    }
+
+    internal static int EnsureNativeWrittenCount(ulong written, int capacity, string subject)
+    {
+        if (written > (ulong)capacity)
+        {
+            throw new InvalidOperationException($"{subject}（{written}）超過呼叫端提供的緩衝區大小（{capacity}）。");
+        }
+
+        return checked((int)written);
     }
 }

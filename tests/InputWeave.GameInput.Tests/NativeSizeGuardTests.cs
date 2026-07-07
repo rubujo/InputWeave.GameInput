@@ -29,6 +29,20 @@ public sealed class NativeSizeGuardTests
     }
 
     [TestMethod]
+    public void RawDeviceReportEnsureNativeWrittenCountRejectsOversizedResult()
+    {
+        _ = Assert.ThrowsExactly<InvalidOperationException>(
+            () => GameInputRawDeviceReport.EnsureNativeWrittenCount(4, 3, "測試寫入數量"));
+    }
+
+    [TestMethod]
+    public void DirectInputEscapeEnsureNativeWrittenCountRejectsOversizedResult()
+    {
+        _ = Assert.ThrowsExactly<InvalidOperationException>(
+            () => GameInputDevice.EnsureNativeWrittenCount(4, 3, "測試寫入數量"));
+    }
+
+    [TestMethod]
     public void FromNullTerminatedReadsStringWithinLimit()
     {
         byte[] utf8 = [0x41, 0x42, 0x43, 0x00];

@@ -16,6 +16,17 @@ public sealed class EventObservableTests
     }
 
     [TestMethod]
+    public void SubscribeHookCanReenterObservableWithoutDeadlock()
+    {
+        EventObservable<int>? observable = null;
+        observable = new EventObservable<int>(() => observable!.OnNext(1), null);
+
+        using IDisposable subscription = observable.Subscribe(new RecordingObserver());
+
+        Assert.IsNotNull(subscription);
+    }
+
+    [TestMethod]
     public void UnsubscribeAllInvokesOnLastUnsubscribeExactlyOnce()
     {
         int stopCount = 0;
@@ -29,6 +40,16 @@ public sealed class EventObservableTests
 
         second.Dispose();
         Assert.AreEqual(1, stopCount);
+    }
+
+    [TestMethod]
+    public void UnsubscribeHookCanReenterObservableWithoutDeadlock()
+    {
+        EventObservable<int>? observable = null;
+        observable = new EventObservable<int>(null, () => observable!.OnNext(1));
+        IDisposable subscription = observable.Subscribe(new RecordingObserver());
+
+        subscription.Dispose();
     }
 
     [TestMethod]
