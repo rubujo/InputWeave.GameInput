@@ -96,6 +96,6 @@ internal sealed class DeferredCallbackCompletion
 
     private static void DisposeDeferred(GameInputCallbackRegistration registration)
     {
-        ThreadPool.QueueUserWorkItem(static state => ((GameInputCallbackRegistration)state!).Dispose(), registration);
+        _ = registration.DisposeSafely();
     }
 }
