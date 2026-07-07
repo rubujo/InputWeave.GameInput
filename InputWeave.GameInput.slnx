@@ -24,6 +24,7 @@
     <File Path="docs/gameinput-api-coverage.md" />
     <File Path="docs/gameinput-cookbook.md" />
     <File Path="docs/gameinput-redist.md" />
+    <File Path="docs/gameinput-troubleshooting.md" />
     <File Path="docs/gameinput-version-report.md" />
     <File Path="docs/release-checklist.md" />
   </Folder>

@@ -829,7 +829,7 @@ public sealed class GameInputDeviceManager : IDisposable
 /// <param name="timestamp">The GameInput timestamp. GameInput 時間戳記。</param>
 /// <param name="currentStatus">The current device status. 目前裝置狀態。</param>
 /// <param name="previousStatus">The previous device status. 先前裝置狀態。</param>
-/// <param name="device">An optional GameInput device filter. 選用的 GameInput 裝置篩選。</param>
+/// <param name="device">The device information snapshot associated with the event. 事件關聯的裝置資訊快照。</param>
 public sealed class GameInputDeviceManagerEvent(
     ulong timestamp,
     GameInputDeviceStatus currentStatus,

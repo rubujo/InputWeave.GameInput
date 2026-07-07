@@ -19,6 +19,24 @@
 - 授權中繼資料：`CC0-1.0`
 - API 覆蓋率：[docs/gameinput-api-coverage.md](docs/gameinput-api-coverage.md)
 
+## 套件使用者安裝導覽
+
+在應用程式專案中加入套件：
+
+```powershell
+dotnet add package InputWeave.GameInput --version 0.0.1
+```
+
+應用程式專案需以 Windows 目標框架建置；目前支援 `net48` 與 `net10.0-windows`。一般 .NET 10 Windows 應用程式可使用下列目標框架：
+
+```xml
+<TargetFramework>net10.0-windows</TargetFramework>
+```
+
+本套件只提供 C# wrapper、受控 runtime loader 與 GameInput interop 型別，不會把 Microsoft 的 `GameInputRedist.msi`、`GameInputRedist.dll` 或原生橋接 DLL 複製到你的應用程式輸出。發佈 Windows PC 應用程式時，安裝程式仍需安裝 Microsoft 支援的 GameInput 可轉散發套件；執行期載入與診斷細節請參考 [GameInput 可轉散發套件](docs/gameinput-redist.md) 與 [常見錯誤與排查](docs/gameinput-troubleshooting.md)。
+
+第一次整合建議先跑 [30 秒最小範例](#30-秒最小範例)，再依需求參考 [GameInput 常見情境指南](docs/gameinput-cookbook.md) 加入裝置事件、非同步等待、震動、Force Feedback、Raw report 或依賴注入。
+
 ## 支援範圍
 
 本套件支援一般 .NET Framework 與 .NET Windows 應用程式。`net48` 維持傳統 `[ComImport]` COM interop 路徑；`net10.0-windows` 改用不依賴 CLR 內建 COM 封送的裸 vtable 投影（`delegate* unmanaged` 函式指標 + 手動 `AddRef`/`Release`），巢狀 COM 物件也能確定性釋放。
@@ -26,6 +44,36 @@
 `net10.0-windows` 路徑已實際跑過 `dotnet publish -p:PublishAot=true` 端對端驗證：用一個獨立探測專案引用本函式庫，實測裝置列舉、非同步 API、Snapshot 相等性／雜湊、事件、依賴注入解析等主要路徑，`ilc` 原生程式碼產生與連結皆順利完成，產生的原生執行檔在真實 GameInput 執行階段（含實體 Xbox 控制器）下行為正常，過程中發現並修正了 3 處 trim/AOT 分析錯誤（泛型 `Marshal.PtrToStructure<T>`／`Marshal.SizeOf(Type)` 呼叫缺少必要標注，詳見 `GameInputDeviceInfoSnapshot.cs`／`GameInputMapper.cs`）。本套件不包含原生橋接 DLL；發佈前仍建議在目標環境自行跑一輪驗證，尤其是還沒被涵蓋到的低階 Interop 逃生口路徑。
 
 ## 基本使用
+
+### 30 秒最小範例
+
+這個範例只做三件事：建立 manager、找第一個 Gamepad、讀取目前按鈕狀態。沒有裝置或暫時沒有 reading 時會直接結束，不需要碰低階 COM 介面。
+
+```csharp
+using System;
+using InputWeave.GameInput;
+using InputWeave.GameInput.Interop;
+
+using GameInputDeviceManager manager = GameInputDeviceManager.Create();
+manager.RefreshDevices();
+
+if (!manager.TryGetFirstGamepad(out GameInputDevice? device, out _))
+{
+    Console.WriteLine("目前沒有 Gamepad 裝置。");
+    return;
+}
+
+GamepadReadingSnapshot? gamepad = manager.GetCurrentGamepad(device);
+if (gamepad is null)
+{
+    Console.WriteLine("目前沒有可用的 Gamepad reading。");
+    return;
+}
+
+Console.WriteLine($"Buttons: {gamepad.Value.State.Buttons}");
+```
+
+### 裝置資訊與快照
 
 ```csharp
 using InputWeave.GameInput;
@@ -46,7 +94,7 @@ if (manager.TryGetFirstGamepad(out GameInputDevice? gamepadDevice, out GameInput
 _ = gamepadInfo?.DisplayName;
 ```
 
-裝置管理、各輸入種類快照、分派器、Safe Wait Handle、Rumble scope、Force Feedback、原始報告、非同步 API、事件／`IObservable<T>` 與依賴注入註冊，請參考 [GameInput 常見情境指南](docs/gameinput-cookbook.md)。
+裝置管理、各輸入種類快照、分派器、Safe Wait Handle、Rumble scope、Force Feedback、原始報告、非同步 API、事件／`IObservable<T>` 與依賴注入註冊，請參考 [GameInput 常見情境指南](docs/gameinput-cookbook.md)。遇到 runtime、redist、callback 或硬體測試問題時，請先看 [常見錯誤與排查](docs/gameinput-troubleshooting.md)。
 
 ## 何時該使用低階 `InputWeave.GameInput.Interop`
 
