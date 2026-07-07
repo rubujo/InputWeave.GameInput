@@ -1,3 +1,5 @@
+// 本檔案的原生 vtable 測試替身使用 delegate* 函式指標與 UnmanagedCallersOnly，僅適用 net10.0-windows。
+#if NET10_0_OR_GREATER
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using InputWeave.GameInput.Interop;
@@ -275,3 +277,4 @@ public sealed class GameInputReadingTests
         }
     }
 }
+#endif

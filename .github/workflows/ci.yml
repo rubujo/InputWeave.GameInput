@@ -1,0 +1,60 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    shell: pwsh
+
+env:
+  DOTNET_NOLOGO: true
+
+jobs:
+  build-test-validate:
+    name: Build, Test, Validate
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v5
+        with:
+          global-json-file: global.json
+
+      - name: Restore
+        run: dotnet restore InputWeave.GameInput.slnx
+
+      - name: Build
+        run: dotnet build InputWeave.GameInput.slnx -c Release --no-restore -warnaserror
+
+      - name: Test
+        run: dotnet test InputWeave.GameInput.slnx -c Release --no-build
+
+      - name: Verify formatting
+        run: dotnet format InputWeave.GameInput.slnx --verify-no-changes
+
+      - name: Validate text encoding
+        run: pwsh ./eng/Validate-TextEncoding.ps1
+
+      - name: Validate agent docs
+        run: pwsh ./eng/Validate-AgentDocs.ps1
+
+      - name: Verify GameInput bindings
+        run: pwsh ./eng/Verify-GameInputBindings.ps1
+
+      - name: Verify GameInput coverage
+        run: pwsh ./eng/Verify-GameInputCoverage.ps1

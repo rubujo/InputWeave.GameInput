@@ -12,10 +12,10 @@ public sealed class GameInputInteropTests
     public void GeneratedEnumsIncludeGameInputV3Members()
     {
         object? apiVersion = typeof(GameInputConstants).GetField(nameof(GameInputConstants.ApiVersion))?.GetRawConstantValue();
-        GameInputKind gamepad = Enum.Parse<GameInputKind>("GameInputKindGamepad");
-        GameInputKind controller = Enum.Parse<GameInputKind>("GameInputKindController");
-        GameInputRawDeviceReportKind rawOutput = Enum.Parse<GameInputRawDeviceReportKind>("GameInputRawOutputReport");
-        GameInputDeviceStatus anyStatus = Enum.Parse<GameInputDeviceStatus>("GameInputDeviceAnyStatus");
+        GameInputKind gamepad = (GameInputKind)Enum.Parse(typeof(GameInputKind), "GameInputKindGamepad");
+        GameInputKind controller = (GameInputKind)Enum.Parse(typeof(GameInputKind), "GameInputKindController");
+        GameInputRawDeviceReportKind rawOutput = (GameInputRawDeviceReportKind)Enum.Parse(typeof(GameInputRawDeviceReportKind), "GameInputRawOutputReport");
+        GameInputDeviceStatus anyStatus = (GameInputDeviceStatus)Enum.Parse(typeof(GameInputDeviceStatus), "GameInputDeviceAnyStatus");
 
         Assert.AreEqual(3, apiVersion);
         Assert.AreEqual(GameInputKind.GameInputKindUnknown, gamepad & controller);
@@ -108,6 +108,7 @@ public sealed class GameInputInteropTests
         }
     }
 
+#if NET10_0_OR_GREATER
     [TestMethod]
     public void GeneratedComCallbackParametersUseRawFunctionPointers()
     {
@@ -168,6 +169,7 @@ public sealed class GameInputInteropTests
             Assert.AreEqual("Release", vtableFields[2].Name);
         }
     }
+#endif
 
     [TestMethod]
     public void NativeDllImportsConstrainSearchPaths()
@@ -237,7 +239,7 @@ public sealed class GameInputInteropTests
 
             Assert.AreNotEqual(-1, declarationEnd, $"{relativePath} 的 native import 宣告應以分號結尾。");
 
-            string declaration = source[importIndex..declarationEnd];
+            string declaration = source.Substring(importIndex, declarationEnd - importIndex);
 
             Assert.Contains("DefaultDllImportSearchPaths(DllImportSearchPath.System32)", declaration);
 

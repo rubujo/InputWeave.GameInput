@@ -141,7 +141,7 @@ public sealed class XmlDocumentationTests
     private static bool IsCompilerGenerated(MemberInfo member)
     {
         return member.IsDefined(typeof(CompilerGeneratedAttribute), inherit: false)
-            || member.Name.Contains('<', StringComparison.Ordinal);
+            || member.Name.IndexOf('<') >= 0;
     }
 
     private static bool IsPublicOrProtected(MethodBase method)

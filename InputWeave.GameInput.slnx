@@ -17,6 +17,7 @@
     <File Path=".agents/skills/package-release-validation/SKILL.md" />
   </Folder>
   <Folder Name="/方案項目/.github/workflows/">
+    <File Path=".github/workflows/ci.yml" />
     <File Path=".github/workflows/release-nupkg.yml" />
   </Folder>
   <Folder Name="/方案項目/docs/">
@@ -40,13 +41,16 @@
     <File Path="eng/Verify-GameInputBindings.ps1" />
     <File Path="eng/Verify-GameInputCoverage.ps1" />
     <File Path="eng/gameinput-baseline.json" />
-    <File Path="eng/gameinput-xml-docs.zh-TW.json" />
+    <File Path="eng/gameinput-xml-docs.json" />
   </Folder>
   <Folder Name="/src/">
     <Project Path="src/InputWeave.GameInput/InputWeave.GameInput.csproj" />
   </Folder>
   <Folder Name="/samples/">
     <Project Path="samples/InputWeave.GameInput.Samples/InputWeave.GameInput.Samples.csproj" />
+  </Folder>
+  <Folder Name="/benchmarks/">
+    <Project Path="benchmarks/InputWeave.GameInput.Benchmarks/InputWeave.GameInput.Benchmarks.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/InputWeave.GameInput.Tests/InputWeave.GameInput.Tests.csproj" />

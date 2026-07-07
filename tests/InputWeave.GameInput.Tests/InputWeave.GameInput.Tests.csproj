@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>net10.0-windows</TargetFramework>
+    <TargetFrameworks>net48;net10.0-windows</TargetFrameworks>
     <AssemblyName>InputWeave.GameInput.Tests</AssemblyName>
     <RootNamespace>InputWeave.GameInput.Tests</RootNamespace>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
