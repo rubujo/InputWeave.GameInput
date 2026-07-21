@@ -11,6 +11,7 @@ Import-Module (Join-Path $PSScriptRoot 'Common.psm1') -Force
 $repoRoot = Get-RepoRoot
 $manifestPath = Join-Path $repoRoot 'src\InputWeave.GameInput\Interop\Generated\gameinput-abi-manifest.json'
 $reportPath = Join-Path $repoRoot 'docs\gameinput-api-coverage.md'
+$baselinePath = Join-Path $repoRoot 'eng\gameinput-baseline.json'
 $sourceRoot = Join-Path $repoRoot 'src\InputWeave.GameInput'
 $failures = [System.Collections.Generic.List[string]]::new()
 
@@ -57,7 +58,13 @@ if (-not (Test-Path -LiteralPath $reportPath -PathType Leaf))
     throw '找不到 GameInput API coverage report。'
 }
 
+if (-not (Test-Path -LiteralPath $baselinePath -PathType Leaf))
+{
+    throw '找不到 GameInput 版本基準。'
+}
+
 $manifest = Get-Content -LiteralPath $manifestPath -Raw -Encoding utf8 | ConvertFrom-Json
+$baseline = Get-Content -LiteralPath $baselinePath -Raw -Encoding utf8 | ConvertFrom-Json
 $allSource = (Get-ChildItem -LiteralPath $sourceRoot -Recurse -File -Filter '*.cs' | ForEach-Object {
     Get-Content -LiteralPath $_.FullName -Raw -Encoding utf8
 }) -join "`n"
@@ -116,7 +123,7 @@ foreach ($surface in $requiredWrapperSurface)
 
 Assert-TextContent -Text $report -Expected '缺口：0' -FailureMessage 'coverage report 未標示缺口為 0。'
 Assert-TextContent -Text $report -Expected 'InputWeave.GameInput v0.0.1' -FailureMessage 'coverage report 未標示 v0.0.1。'
-Assert-TextContent -Text $report -Expected 'Microsoft.GameInput 3.4.218' -FailureMessage 'coverage report 未標示 GameInput baseline。'
+Assert-TextContent -Text $report -Expected "Microsoft.GameInput $($baseline.packageVersion)" -FailureMessage 'coverage report 未標示 GameInput baseline。'
 
 if ($failures.Count -gt 0)
 {

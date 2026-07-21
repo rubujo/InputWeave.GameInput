@@ -12,6 +12,7 @@ Set-StrictMode -Version Latest
 Import-Module (Join-Path $PSScriptRoot 'Common.psm1') -Force
 
 $repoRoot = Get-RepoRoot
+$baselinePath = Join-Path $repoRoot 'eng\gameinput-baseline.json'
 if ([string]::IsNullOrWhiteSpace($Version))
 {
     $Version = Get-LatestGameInputVersion
@@ -83,26 +84,62 @@ $baseline = @"
   "source": "https://www.nuget.org/packages/Microsoft.GameInput/$Version"
 }
 "@
-Write-Utf8NoBomFile -Path (Join-Path $repoRoot 'eng\gameinput-baseline.json') -Content $baseline
+Write-Utf8NoBomFile -Path $baselinePath -Content ($baseline + [Environment]::NewLine)
+
+$versionReferencePaths = @(
+    'AGENTS.md',
+    'README.md',
+    'docs\gameinput-api-coverage.md',
+    'samples\InputWeave.GameInput.Samples\Program.cs',
+    'tests\InputWeave.GameInput.Tests\GameInputCoverageTests.cs'
+)
+
+foreach ($relativePath in $versionReferencePaths)
+{
+    $referencePath = Join-Path $repoRoot $relativePath
+    $referenceContent = Get-Content -LiteralPath $referencePath -Raw -Encoding utf8
+    $updatedReferenceContent = [regex]::Replace(
+        $referenceContent,
+        '(Microsoft\.GameInput`?\s+`?)\d+\.\d+\.\d+(`?)',
+        {
+            param($match)
+
+            return "$($match.Groups[1].Value)$Version$($match.Groups[2].Value)"
+        })
+
+    if ($relativePath -eq 'docs\gameinput-api-coverage.md')
+    {
+        $updatedReferenceContent = [regex]::Replace(
+            $updatedReferenceContent,
+            '(最後核對日期：)\d{4}-\d{2}-\d{2}',
+            "`${1}$(Get-Date -Format 'yyyy-MM-dd')")
+    }
+
+    Write-Utf8NoBomFile -Path $referencePath -Content $updatedReferenceContent
+}
 
 $report = @"
 # GameInput 版本報告
 
 目前基準版本：``Microsoft.GameInput`` ``$Version``
 
-- API version：``3``
+目前包裝程式庫版本：``InputWeave.GameInput v0.0.1``，NuGet / MSBuild 版本為 ``0.0.1``。
+
+- API 版本：``3``
 - NuGet 套件 SHA256：``$nupkgHash``
 - ``native/include/GameInput.h`` SHA256：``$headerHash``
 - ``redist/GameInputRedist.msi`` SHA256：``$redistHash``
+
+低階互通層來源：``src/InputWeave.GameInput/Interop/Generated/`` 下的列舉、常數、HRESULT、IID、回呼委派、結構配置、COM 介面與 ``gameinput-abi-manifest.json`` 均由目前基準的 ``GameInput.h`` 產生。
 
 ## 追版流程
 
 1. 執行 ``pwsh ./eng/Check-GameInputVersion.ps1 -FailOnOutdated`` 確認 NuGet 是否有新版。
 2. 若有新版，執行 ``pwsh ./eng/Update-GameInputVersion.ps1``。
 3. 檢查 ``Directory.Packages.props``、``eng/gameinput-baseline.json``、``src/InputWeave.GameInput/Interop/Generated/`` 下的 ``.g.cs``、``gameinput-abi-manifest.json`` 與本報告。
-4. 執行 ``dotnet build``、``dotnet test``、``pwsh ./eng/Verify-GameInputBindings.ps1``。
-5. 若 GameInput.h 公開 API 有新增或異動，先更新 generator 映射，再更新 coverage 與版本文件。
+4. 執行 ``dotnet build``、``dotnet test``、``pwsh ./eng/Verify-GameInputBindings.ps1``、``pwsh ./eng/Verify-GameInputCoverage.ps1``。
+5. 若 GameInput.h 公開 API 有新增或異動，先更新產生器映射，再更新覆蓋率與版本文件。
 "@
-Write-Utf8NoBomFile -Path (Join-Path $repoRoot 'docs\gameinput-version-report.md') -Content $report
+Write-Utf8NoBomFile -Path (Join-Path $repoRoot 'docs\gameinput-version-report.md') -Content ($report + [Environment]::NewLine)
 
 Write-Information "已更新 Microsoft.GameInput 基準至 $Version。" -InformationAction Continue

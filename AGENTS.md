@@ -17,7 +17,7 @@
 
 ## GameInput 維護邊界
 
-- 目前基準是 `Microsoft.GameInput` `3.4.218`，API 版本 `3`。
+- 目前基準是 `Microsoft.GameInput` `3.4.259`，API 版本 `3`。
 - 修改互通層、版本基準或發佈包裝前，先使用對應 `.agents/skills/` 流程；不要把多步驟程序塞回本檔。
 - `src/InputWeave.GameInput/Interop/Generated/` 下的 `.g.cs` 與 `gameinput-abi-manifest.json` 必須由產生器產生；不要手改產生式互通層。
 - 產生式互通層的 XML 文件註解來源是 `eng/gameinput-xml-docs.json`；若缺文件，修改文件來源與產生器後重產。

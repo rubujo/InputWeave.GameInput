@@ -96,7 +96,7 @@ catch (DllNotFoundException ex)
 }
 catch (EntryPointNotFoundException ex)
 {
-    Console.WriteLine("目前載入的 GameInput.dll 不含必要進入點。請確認 GameInput runtime 版本符合 Microsoft.GameInput 3.4.218。");
+    Console.WriteLine("目前載入的 GameInput.dll 不含必要進入點。請確認 GameInput runtime 版本符合 Microsoft.GameInput 3.4.259。");
     Console.WriteLine(ex.Message);
 }
 catch (GameInputException ex) when (ex.IsNotFound)
