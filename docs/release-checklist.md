@@ -29,6 +29,7 @@ dotnet pack src/InputWeave.GameInput/InputWeave.GameInput.csproj -c Release -o .
 - 常見情境指南的 NativeAOT 敘述必須與 README 一致（已實測驗證），且不得暗示支援 single-file。
 - 可轉散發套件文件必須說明受控載入器與 Microsoft C++ 載入器的行為對齊、DLL 劫持防護邊界與 `GameInputRuntime.TryProbe` 診斷方式。
 - 可轉散發套件文件不得暗示包裝套件會散佈 `GameInputRedist.msi`、`GameInputRedist.dll` 或原生橋接 DLL。
+- `docs/gameinput-version-report.md` 必須包含目前 Microsoft.GameInput minor 系列的官方版本異動摘要與來源連結。
 - `docs/gameinput-api-coverage.md` 必須標示缺口為 0。
 - `InputWeave.GameInput.xml` 必須包含 public/protected API 的 `summary`、`param` 與 `returns`；`dotnet test` 會驗證 XML 文件完整性。
 

@@ -18,6 +18,29 @@ if ([string]::IsNullOrWhiteSpace($Version))
     $Version = Get-LatestGameInputVersion
 }
 
+$parsedVersion = [System.Version]::Parse($Version)
+$versionSeries = "$($parsedVersion.Major).$($parsedVersion.Minor)"
+$versionNotesPath = Join-Path $repoRoot 'eng\gameinput-version-notes.json'
+if (-not (Test-Path -LiteralPath $versionNotesPath -PathType Leaf))
+{
+    throw '找不到 eng/gameinput-version-notes.json。'
+}
+
+$versionNotesDocument = Get-Content -LiteralPath $versionNotesPath -Raw -Encoding utf8 | ConvertFrom-Json
+$versionNotesProperty = $versionNotesDocument.PSObject.Properties[$versionSeries]
+if ($null -eq $versionNotesProperty)
+{
+    throw "缺少 Microsoft.GameInput $versionSeries 系列的正體中文版本異動摘要。請先依 NuGet 套件 README 更新 eng/gameinput-version-notes.json。"
+}
+
+$versionNoteItems = @($versionNotesProperty.Value)
+if ($versionNoteItems.Count -eq 0 -or @($versionNoteItems | Where-Object { -not [string]::IsNullOrWhiteSpace($_) }).Count -ne $versionNoteItems.Count)
+{
+    throw "Microsoft.GameInput $versionSeries 系列的版本異動摘要不可為空。"
+}
+
+$formattedVersionNotes = ($versionNoteItems | ForEach-Object { "- $_" }) -join [Environment]::NewLine
+
 $workRoot = Join-Path $repoRoot ".tmp\gameinput-update\$Version"
 $nupkgPath = Join-Path $workRoot "Microsoft.GameInput.$Version.nupkg"
 $extractPath = Join-Path $workRoot 'package'
@@ -132,11 +155,19 @@ $report = @"
 
 低階互通層來源：``src/InputWeave.GameInput/Interop/Generated/`` 下的列舉、常數、HRESULT、IID、回呼委派、結構配置、COM 介面與 ``gameinput-abi-manifest.json`` 均由目前基準的 ``GameInput.h`` 產生。
 
+## Microsoft 官方 $versionSeries 版本異動摘要
+
+Microsoft 的套件 README 以 ``$versionSeries`` 系列彙整版本說明，未提供 ``$Version`` 的逐 build Changelog。以下為本專案依官方內容整理的正體中文摘要：
+
+$formattedVersionNotes
+
+來源：[Microsoft.GameInput $Version](https://www.nuget.org/packages/Microsoft.GameInput/$Version)
+
 ## 追版流程
 
 1. 執行 ``pwsh ./eng/Check-GameInputVersion.ps1 -FailOnOutdated`` 確認 NuGet 是否有新版。
 2. 若有新版，執行 ``pwsh ./eng/Update-GameInputVersion.ps1``。
-3. 檢查 ``Directory.Packages.props``、``eng/gameinput-baseline.json``、``src/InputWeave.GameInput/Interop/Generated/`` 下的 ``.g.cs``、``gameinput-abi-manifest.json`` 與本報告。
+3. 檢查 ``Directory.Packages.props``、``eng/gameinput-baseline.json``、``eng/gameinput-version-notes.json``、``src/InputWeave.GameInput/Interop/Generated/`` 下的 ``.g.cs``、``gameinput-abi-manifest.json`` 與本報告。
 4. 執行 ``dotnet build``、``dotnet test``、``pwsh ./eng/Verify-GameInputBindings.ps1``、``pwsh ./eng/Verify-GameInputCoverage.ps1``。
 5. 若 GameInput.h 公開 API 有新增或異動，先更新產生器映射，再更新覆蓋率與版本文件。
 "@

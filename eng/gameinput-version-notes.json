@@ -1,0 +1,12 @@
+{
+  "3.5": [
+    "新增 Agility SDK 樣式的並存部署支援。",
+    "新增 XInput 與背景 GIP 原始裝置報告支援。",
+    "新增 PlayStation 5 DualSense 功能的 companion header；上游文件指向 Microsoft GameInput GitHub 儲存庫。",
+    "公開標頭與靜態程式庫改採 MIT 授權。",
+    "修正 Xbox 從暫停狀態恢復後遺失輸入的問題。",
+    "修正 Xbox 輸入裝置缺少顯示名稱的問題。",
+    "修正部分 Windows.Gaming.Input 遊戲收到重複 DualSense Edge 輸入的問題。",
+    "包含其他穩定性與效能改善。"
+  ]
+}
