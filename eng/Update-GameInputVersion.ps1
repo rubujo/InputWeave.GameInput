@@ -129,6 +129,10 @@ foreach ($relativePath in $versionReferencePaths)
 
             return "$($match.Groups[1].Value)$Version$($match.Groups[2].Value)"
         })
+    $updatedReferenceContent = [regex]::Replace(
+        $updatedReferenceContent,
+        'https://www\.nuget\.org/packages/Microsoft\.GameInput/\d+\.\d+\.\d+',
+        "https://www.nuget.org/packages/Microsoft.GameInput/$Version")
 
     if ($relativePath -eq 'docs\gameinput-api-coverage.md')
     {
