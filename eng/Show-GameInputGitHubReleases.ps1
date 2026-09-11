@@ -15,7 +15,7 @@ Set-StrictMode -Version Latest
 
 Import-Module (Join-Path $PSScriptRoot 'Common.psm1') -Force
 
-$releases = Get-LatestGameInputGitHubReleases -Count $Count
+$releases = Get-LatestGameInputGitHubRelease -Count $Count
 if ($releases.Count -eq 0)
 {
     throw '找不到 microsoftconnect/GameInput 的 GitHub Release。'

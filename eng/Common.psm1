@@ -164,7 +164,7 @@ function Get-GameInputGitHubReleaseTracking
     return (Get-Content -LiteralPath $trackingPath -Raw -Encoding utf8 | ConvertFrom-Json)
 }
 
-function Get-LatestGameInputGitHubReleases
+function Get-LatestGameInputGitHubRelease
 {
     param(
         [int]$Count = 5
@@ -185,4 +185,4 @@ function Get-LatestGameInputGitHubReleases
     return @(Invoke-RestMethod -Uri $uri -Headers $headers)
 }
 
-Export-ModuleMember -Function Get-RepoRoot, Get-GameInputPackageVersion, Get-GameInputPackageRoot, Get-Sha256, Write-Utf8NoBomFile, Test-HasUtf8Bom, Write-Utf8PreservingBomFile, Get-LatestGameInputVersion, Get-GameInputGitHubReleaseTrackingPath, Get-GameInputGitHubReleaseTracking, Get-LatestGameInputGitHubReleases
+Export-ModuleMember -Function Get-RepoRoot, Get-GameInputPackageVersion, Get-GameInputPackageRoot, Get-Sha256, Write-Utf8NoBomFile, Test-HasUtf8Bom, Write-Utf8PreservingBomFile, Get-LatestGameInputVersion, Get-GameInputGitHubReleaseTrackingPath, Get-GameInputGitHubReleaseTracking, Get-LatestGameInputGitHubRelease
