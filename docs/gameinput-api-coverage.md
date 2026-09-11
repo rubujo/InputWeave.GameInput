@@ -1,8 +1,8 @@
 # InputWeave.GameInput v0.0.1 API 覆蓋率
 
-本報告定義 `InputWeave.GameInput v0.0.1` 的 100% 完整度標準。範圍鎖定 `Microsoft.GameInput 3.5.268`、GameInput API 版本 `3`，並以 `native/include/GameInput.h` 的公開介面範圍為準。
+本報告定義 `InputWeave.GameInput v0.0.1` 的 100% 完整度標準。範圍鎖定 `Microsoft.GameInput 3.5.270`、GameInput API 版本 `3`，並以 `native/include/GameInput.h` 的公開介面範圍為準。
 
-最後核對日期：2026-08-10
+最後核對日期：2026-09-11
 
 ## 覆蓋率摘要
 
@@ -58,6 +58,7 @@ dotnet build InputWeave.GameInput.slnx -c Release
 dotnet test InputWeave.GameInput.slnx -c Release
 dotnet format InputWeave.GameInput.slnx --verify-no-changes
 pwsh ./eng/Check-GameInputVersion.ps1 -FailOnOutdated
+pwsh ./eng/Show-GameInputGitHubReleases.ps1 -FailOnUnreviewed
 pwsh ./eng/Verify-GameInputBindings.ps1
 pwsh ./eng/Verify-GameInputCoverage.ps1
 pwsh ./eng/Validate-TextEncoding.ps1

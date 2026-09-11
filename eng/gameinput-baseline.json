@@ -1,14 +1,14 @@
 {
   "packageId": "Microsoft.GameInput",
-  "packageVersion": "3.5.268",
+  "packageVersion": "3.5.270",
   "apiVersion": 3,
-  "nupkgSha256": "40C9AD60DA737570C76A909A1238297380F3700CCBF9199AA3DF95E3B88E012B",
+  "nupkgSha256": "9AC55064E7DDEFD553A302D021308ABBEFF44E6481EE27569D80F48AD984DE01",
   "headerPath": "native/include/GameInput.h",
   "headerSha256": "FBB769BEF01B133DBB62E3622A7137482CB52B642EA21DE080CB98279EF9610F",
   "redistPath": "redist/GameInputRedist.msi",
-  "redistSha256": "49EE9B1A3F8F588075EB596A0288D2ED6D64BF8DD894124E5617B88CAEEC434C",
+  "redistSha256": "081557994B51947D0759FB1991760C4CD9A8DE349F9CF0FC72881ACC98B2C64A",
   "generatedEnumsPath": "src/InputWeave.GameInput/Interop/Generated/GameInputEnums.g.cs",
   "generatedAbiManifestPath": "src/InputWeave.GameInput/Interop/Generated/gameinput-abi-manifest.json",
   "generatedInteropOutputDir": "src/InputWeave.GameInput/Interop/Generated",
-  "source": "https://www.nuget.org/packages/Microsoft.GameInput/3.5.268"
+  "source": "https://www.nuget.org/packages/Microsoft.GameInput/3.5.270"
 }

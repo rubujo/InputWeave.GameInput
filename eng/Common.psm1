@@ -147,4 +147,42 @@ function Get-LatestGameInputVersion
     return ($stableVersions | Sort-Object { [System.Version]$_ } | Select-Object -Last 1)
 }
 
-Export-ModuleMember -Function Get-RepoRoot, Get-GameInputPackageVersion, Get-GameInputPackageRoot, Get-Sha256, Write-Utf8NoBomFile, Test-HasUtf8Bom, Write-Utf8PreservingBomFile, Get-LatestGameInputVersion
+function Get-GameInputGitHubReleaseTrackingPath
+{
+    $repoRoot = Get-RepoRoot
+    return (Join-Path $repoRoot 'eng/gameinput-github-release-tracking.json')
+}
+
+function Get-GameInputGitHubReleaseTracking
+{
+    $trackingPath = Get-GameInputGitHubReleaseTrackingPath
+    if (-not (Test-Path -LiteralPath $trackingPath -PathType Leaf))
+    {
+        return $null
+    }
+
+    return (Get-Content -LiteralPath $trackingPath -Raw -Encoding utf8 | ConvertFrom-Json)
+}
+
+function Get-LatestGameInputGitHubReleases
+{
+    param(
+        [int]$Count = 5
+    )
+
+    $uri = "https://api.github.com/repos/microsoftconnect/GameInput/releases?per_page=$Count"
+    $headers = @{
+        'User-Agent' = 'InputWeave.GameInput-eng-script'
+        'Accept'     = 'application/vnd.github+json'
+    }
+
+    $token = if (-not [string]::IsNullOrWhiteSpace($env:GH_TOKEN)) { $env:GH_TOKEN } else { $env:GITHUB_TOKEN }
+    if (-not [string]::IsNullOrWhiteSpace($token))
+    {
+        $headers['Authorization'] = "Bearer $token"
+    }
+
+    return @(Invoke-RestMethod -Uri $uri -Headers $headers)
+}
+
+Export-ModuleMember -Function Get-RepoRoot, Get-GameInputPackageVersion, Get-GameInputPackageRoot, Get-Sha256, Write-Utf8NoBomFile, Test-HasUtf8Bom, Write-Utf8PreservingBomFile, Get-LatestGameInputVersion, Get-GameInputGitHubReleaseTrackingPath, Get-GameInputGitHubReleaseTracking, Get-LatestGameInputGitHubReleases

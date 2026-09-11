@@ -1,0 +1,6 @@
+{
+  "repository": "microsoftconnect/GameInput",
+  "lastReviewedTag": "v3.3.195.0",
+  "lastReviewedAt": "2026-09-11",
+  "note": "GitHub Release tag 版號（例如 v3.3.195.0）與 NuGet 套件版號（例如 3.5.270）採不同編號機制，不能直接比對版本字串；每次追版時應人工核對 Release Notes 內容是否已反映在 eng/gameinput-version-notes.json，確認後執行 Show-GameInputGitHubReleases.ps1 -MarkReviewed 更新這份紀錄。"
+}

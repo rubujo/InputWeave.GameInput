@@ -129,6 +129,9 @@ jobs:
       - name: Verify GameInput version
         run: pwsh ./eng/Check-GameInputVersion.ps1 -FailOnOutdated
 
+      - name: Verify GameInput GitHub release review
+        run: pwsh ./eng/Show-GameInputGitHubReleases.ps1 -FailOnUnreviewed
+
       - name: Verify GameInput bindings
         run: pwsh ./eng/Verify-GameInputBindings.ps1
 
