@@ -65,10 +65,7 @@ public sealed class GameInputDevice : IDisposable
     /// <returns>The native device information structure. 原生裝置資訊結構。</returns>
     public GameInputDeviceInfo GetDeviceInfo()
     {
-        using ComLease<IGameInputDevice> call = EnterNative();
-        int hResult = call.Native.GetDeviceInfo(out IntPtr info);
-        GameInputException.ThrowIfFailed(hResult);
-        return Marshal.PtrToStructure<GameInputDeviceInfo>(info);
+        return ReadDeviceInfo(static info => info);
     }
 
     /// <summary>
@@ -79,8 +76,7 @@ public sealed class GameInputDevice : IDisposable
     /// <exception cref="InvalidOperationException">The string length reported by the native side exceeds the internal limit, which is treated as an anomalous device or driver report. 原生回報的字串長度超過內部上限，視為裝置或驅動程式回報異常。</exception>
     public string? GetDisplayName()
     {
-        GameInputDeviceInfo info = GetDeviceInfo();
-        return NativeUtf8String.FromNullTerminated(info.DisplayName);
+        return ReadDeviceInfo(static info => NativeUtf8String.FromNullTerminated(info.DisplayName));
     }
 
     /// <summary>
@@ -91,8 +87,7 @@ public sealed class GameInputDevice : IDisposable
     /// <exception cref="InvalidOperationException">The string length reported by the native side exceeds the internal limit, which is treated as an anomalous device or driver report. 原生回報的字串長度超過內部上限，視為裝置或驅動程式回報異常。</exception>
     public string? GetPnpPath()
     {
-        GameInputDeviceInfo info = GetDeviceInfo();
-        return NativeUtf8String.FromNullTerminated(info.PnpPath);
+        return ReadDeviceInfo(static info => NativeUtf8String.FromNullTerminated(info.PnpPath));
     }
 
     /// <summary>
@@ -115,7 +110,7 @@ public sealed class GameInputDevice : IDisposable
 
         lock (_cacheSyncRoot)
         {
-            return _cachedInfoSnapshot ??= GameInputDeviceInfoSnapshot.FromNative(GetDeviceInfo());
+            return _cachedInfoSnapshot ??= ReadDeviceInfo(GameInputDeviceInfoSnapshot.FromNative);
         }
     }
 
@@ -124,25 +119,20 @@ public sealed class GameInputDevice : IDisposable
     /// 嘗試取得觸覺資訊。
     /// </summary>
     /// <returns>The haptic information, or null when the device provides none. 觸覺資訊；裝置未提供時為 null。</returns>
-    public GameInputHapticInfo? GetHapticInfo()
+    public unsafe GameInputHapticInfo? GetHapticInfo()
     {
-        IntPtr pointer = Marshal.AllocHGlobal(Marshal.SizeOf<GameInputHapticInfo>());
-        try
+        // 固定大小的封送目標，使用堆疊緩衝區即可，不需要每次配置原生堆積。
+        byte* buffer = stackalloc byte[Marshal.SizeOf<GameInputHapticInfo>()];
+        IntPtr pointer = (IntPtr)buffer;
+        using ComLease<IGameInputDevice> call = EnterNative();
+        int hResult = call.Native.GetHapticInfo(pointer);
+        if (hResult == GameInputHResult.HapticInfoNotFound)
         {
-            using ComLease<IGameInputDevice> call = EnterNative();
-            int hResult = call.Native.GetHapticInfo(pointer);
-            if (hResult == GameInputHResult.HapticInfoNotFound)
-            {
-                return null;
-            }
+            return null;
+        }
 
-            GameInputException.ThrowIfFailed(hResult);
-            return Marshal.PtrToStructure<GameInputHapticInfo>(pointer);
-        }
-        finally
-        {
-            Marshal.FreeHGlobal(pointer);
-        }
+        GameInputException.ThrowIfFailed(hResult);
+        return Marshal.PtrToStructure<GameInputHapticInfo>(pointer);
     }
 
     /// <summary>
@@ -175,23 +165,18 @@ public sealed class GameInputDevice : IDisposable
     /// <param name="motorIndex">The force feedback motor index. force feedback motor 索引。</param>
     /// <param name="parameters">The native GameInput parameters. GameInput 原生參數。</param>
     /// <returns>The newly created force feedback effect. 新建立的 force feedback effect。</returns>
-    public GameInputForceFeedbackEffect CreateForceFeedbackEffect(uint motorIndex, in GameInputForceFeedbackParams parameters)
+    public unsafe GameInputForceFeedbackEffect CreateForceFeedbackEffect(uint motorIndex, in GameInputForceFeedbackParams parameters)
     {
-        IntPtr pointer = Marshal.AllocHGlobal(Marshal.SizeOf<GameInputForceFeedbackParams>());
-        try
-        {
-            Marshal.StructureToPtr(parameters, pointer, fDeleteOld: false);
-            using ComLease<IGameInputDevice> call = EnterNative();
-            int hResult = call.Native.CreateForceFeedbackEffect(motorIndex, pointer, out IGameInputForceFeedbackEffect? effect);
-            GameInputException.ThrowIfFailed(hResult);
-            return effect is { } effectValue
-                ? new GameInputForceFeedbackEffect(effectValue)
-                : throw new GameInputException(GameInputHResult.FeedbackNotSupported);
-        }
-        finally
-        {
-            Marshal.FreeHGlobal(pointer);
-        }
+        // 固定大小、不含參考型別欄位的封送來源，使用堆疊緩衝區即可，不需要每次配置原生堆積。
+        byte* buffer = stackalloc byte[Marshal.SizeOf<GameInputForceFeedbackParams>()];
+        IntPtr pointer = (IntPtr)buffer;
+        Marshal.StructureToPtr(parameters, pointer, fDeleteOld: false);
+        using ComLease<IGameInputDevice> call = EnterNative();
+        int hResult = call.Native.CreateForceFeedbackEffect(motorIndex, pointer, out IGameInputForceFeedbackEffect? effect);
+        GameInputException.ThrowIfFailed(hResult);
+        return effect is { } effectValue
+            ? new GameInputForceFeedbackEffect(effectValue)
+            : throw new GameInputException(GameInputHResult.FeedbackNotSupported);
     }
 
     /// <summary>
@@ -568,6 +553,25 @@ public sealed class GameInputDevice : IDisposable
         GC.SuppressFinalize(this);
     }
 
+    /// <summary>
+    /// Reads the native device information and runs <paramref name="read"/> while the lease is still held, because the pointers
+    /// inside <see cref="GameInputDeviceInfo"/> are only valid while the underlying COM object is alive.
+    /// 讀取原生裝置資訊，並在租約仍持有期間執行 <paramref name="read"/>；<see cref="GameInputDeviceInfo"/> 內的指標
+    /// 只在底層 COM 物件存活期間有效。
+    /// </summary>
+    private T ReadDeviceInfo<T>(Func<GameInputDeviceInfo, T> read)
+    {
+        using ComLease<IGameInputDevice> call = EnterNative();
+        int hResult = call.Native.GetDeviceInfo(out IntPtr info);
+        GameInputException.ThrowIfFailed(hResult);
+        if (info == IntPtr.Zero)
+        {
+            // 原生端回報成功卻沒有提供資訊指標時，以 E_POINTER 表示，而不是讓封送拋出非預期的 ArgumentNullException。
+            throw new GameInputException(unchecked((int)0x80004003));
+        }
+
+        return read(Marshal.PtrToStructure<GameInputDeviceInfo>(info));
+    }
     internal ComLease<IGameInputDevice> EnterNative()
     {
         return _handle.Acquire<IGameInputDevice>(nameof(GameInputDevice));

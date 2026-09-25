@@ -7,6 +7,7 @@ namespace InputWeave.GameInput;
 public sealed class GameInputRumbleScope : IDisposable
 {
     private Action? _clearRumbleState;
+    private int _disposed;
 
     internal GameInputRumbleScope(Action clearRumbleState)
     {
@@ -17,7 +18,13 @@ public sealed class GameInputRumbleScope : IDisposable
     /// Whether this scope has been disposed.
     /// 此 scope 是否已釋放。
     /// </summary>
-    public bool IsDisposed { get; private set; }
+    public bool IsDisposed
+    {
+        get
+        {
+            return Volatile.Read(ref _disposed) != 0;
+        }
+    }
 
     /// <summary>
     /// Clears the rumble state and ends this scope.
@@ -32,15 +39,13 @@ public sealed class GameInputRumbleScope : IDisposable
     /// </remarks>
     public void Dispose()
     {
-        if (IsDisposed)
+        // 以原子操作取得釋放權，並行 Dispose 時只會清除一次震動狀態。
+        if (Interlocked.CompareExchange(ref _disposed, 1, 0) != 0)
         {
             return;
         }
 
-        IsDisposed = true;
-
-        Action? clear = _clearRumbleState;
-        _clearRumbleState = null;
+        Action? clear = Interlocked.Exchange(ref _clearRumbleState, null);
         if (clear is null)
         {
             return;

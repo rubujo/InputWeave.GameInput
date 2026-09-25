@@ -1,7 +1,7 @@
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using System.Text;
 using InputWeave.GameInput.Interop;
-
 using static InputWeave.GameInput.Tests.TestSupport;
 
 namespace InputWeave.GameInput.Tests;
@@ -298,6 +298,108 @@ public sealed class GameInputFakeComLifetimeTests
             "背景解除註冊完成後應歸還擁有者租約。");
     }
     [TestMethod]
+    public void DeviceInfoPointersAreReadWhileTheDeviceIsStillAlive()
+    {
+        // 原生呼叫期間 Dispose 裝置，並在參考歸零時把顯示名稱記憶體改寫，模擬原生物件已被回收。
+        // 若讀取指標發生在租約結束之後，會讀到改寫後的內容。
+        using FakeComObject fake = FakeComObject.CreateDevice("Fake Pad");
+        GameInputDevice device = new(new IGameInputDevice(fake.Pointer));
+        FakeComObject.OnNativeCall = device.Dispose;
+        FakeComObject.OnFinalRelease = fake.PoisonDisplayName;
+
+        GameInputDeviceInfoSnapshot snapshot;
+        try
+        {
+            snapshot = device.GetDeviceInfoSnapshot();
+        }
+        finally
+        {
+            FakeComObject.OnNativeCall = null;
+            FakeComObject.OnFinalRelease = null;
+        }
+
+        Assert.AreEqual("Fake Pad", snapshot.DisplayName, "裝置資訊內的原生指標必須在同一個租約內讀取。");
+        Assert.AreEqual(0, fake.RefCount);
+    }
+
+    [TestMethod]
+    public void NullDeviceInfoPointerThrowsGameInputException()
+    {
+        using FakeComObject fake = FakeComObject.CreateDevice("Fake Pad");
+        using GameInputDevice device = new(new IGameInputDevice(fake.Pointer));
+        FakeComObject.ReturnNullDeviceInfo = true;
+
+        try
+        {
+            GameInputException exception = Assert.ThrowsExactly<GameInputException>(() => device.GetDeviceInfoSnapshot());
+            Assert.AreEqual(unchecked((int)0x80004003), exception.HResult);
+        }
+        finally
+        {
+            FakeComObject.ReturnNullDeviceInfo = false;
+        }
+    }
+
+    [TestMethod]
+    public void RawDataCopyAndSetUseTheRequestedArraySegment()
+    {
+        using FakeComObject fake = FakeComObject.CreateRawReport();
+        using GameInputRawDeviceReport report = new(new IGameInputRawDeviceReport(fake.Pointer));
+
+        byte[] buffer = new byte[6];
+        Assert.AreEqual(3, report.CopyRawData(buffer, 2, 3));
+        CollectionAssert.AreEqual(new byte[] { 0, 0, 1, 2, 3, 0 }, buffer, "原生端應直接寫入指定的陣列區段。");
+        Assert.AreEqual(0, report.CopyRawData([]), "空緩衝區也應傳入有效指標並正常返回。");
+
+        Assert.IsTrue(report.SetRawData([9, 8, 7, 6], 1, 2));
+        CollectionAssert.AreEqual(new byte[] { 8, 7 }, FakeComObject.LastSetRawData, "原生端應讀到指定的陣列區段。");
+        Assert.IsTrue(report.SetRawData([]));
+        CollectionAssert.AreEqual(Array.Empty<byte>(), FakeComObject.LastSetRawData);
+    }
+
+    [TestMethod]
+    public void MapperReadsMappingThroughStackBuffer()
+    {
+        using FakeComObject fake = FakeComObject.CreateMapper();
+        using GameInputMapper mapper = new(new IGameInputMapper(fake.Pointer));
+
+        Assert.IsTrue(mapper.TryGetGamepadAxisMappingInfo((GameInputGamepadAxes)1, out GameInputAxisMapping mapping));
+
+        Assert.AreEqual((GameInputElementKind)2, mapping.ControllerElementKind);
+        Assert.AreEqual(7u, mapping.ControllerIndex);
+        Assert.IsTrue(mapping.IsInverted);
+        Assert.IsFalse(mapping.FromTwoButtons);
+        Assert.AreEqual(3u, mapping.ButtonMinIndexValue);
+        Assert.AreEqual(GameInputSwitchPosition.GameInputSwitchUp, mapping.ReferenceDirection);
+    }
+
+    [TestMethod]
+    public void CreateForceFeedbackEffectPassesParametersThroughStackBuffer()
+    {
+        using FakeComObject fake = FakeComObject.CreateDevice();
+        using GameInputDevice device = new(new IGameInputDevice(fake.Pointer));
+        GameInputForceFeedbackParams parameters = new() { Kind = (GameInputForceFeedbackEffectKind)3 };
+
+        _ = Assert.ThrowsExactly<GameInputException>(() => device.CreateForceFeedbackEffect(0, in parameters));
+
+        Assert.AreEqual((GameInputForceFeedbackEffectKind)3, FakeComObject.LastEffectKind);
+    }
+
+    [TestMethod]
+    public void ConcurrentRumbleScopeDisposeClearsOnce()
+    {
+        for (int iteration = 0; iteration < 50; iteration++)
+        {
+            int clears = 0;
+            GameInputRumbleScope scope = new(() => Interlocked.Increment(ref clears));
+
+            RunConcurrently(8, scope.Dispose);
+
+            Assert.AreEqual(1, clears, "並行 Dispose 只能清除一次震動狀態。");
+            Assert.IsTrue(scope.IsDisposed);
+        }
+    }
+    [TestMethod]
     public void RegistrationFreesContextOnlyAfterSuccessfulUnregister()
     {
         (GameInputCallbackRegistration registration, WeakReference context, Func<bool> deactivated) = CreateRegistration(unregister: _ => true);
@@ -385,21 +487,45 @@ public sealed class GameInputFakeComLifetimeTests
         private static readonly DeviceStatusFunction s_deviceStatus = GetDeviceStatus;
         private static readonly GetCurrentReadingFunction s_getCurrentReading = GetCurrentReading;
         private static readonly RegisterDeviceCallbackFunction s_registerDeviceCallback = RegisterDeviceCallback;
+        private static readonly GetDeviceInfoFunction s_getDeviceInfo = GetDeviceInfo;
+        private static readonly CreateForceFeedbackEffectFunction s_createForceFeedbackEffect = CreateForceFeedbackEffect;
+        private static readonly GetRawDataFunction s_getRawData = GetRawData;
+        private static readonly SetRawDataFunction s_setRawData = SetRawData;
+        private static readonly GetAxisMappingFunction s_getAxisMapping = GetGamepadAxisMappingInfo;
 
         private readonly IntPtr _vtbl;
+        private IntPtr _deviceInfo;
+        private IntPtr _displayName;
+        private int _displayNameLength;
         private bool _disposed;
 
         private FakeComObject(IntPtr vtbl)
         {
             _vtbl = vtbl;
-            Pointer = Marshal.AllocHGlobal(IntPtr.Size + (2 * sizeof(int)));
+            Pointer = Marshal.AllocHGlobal((2 * IntPtr.Size) + (2 * sizeof(int)));
             *(IntPtr*)Pointer = vtbl;
             *RefCountSlot(Pointer) = 1;
             *CallCountSlot(Pointer) = 0;
+            *DeviceInfoSlot(Pointer) = IntPtr.Zero;
         }
 
         [UnmanagedFunctionPointer(CallingConvention.StdCall)]
         private delegate uint RefCountFunction(IntPtr self);
+
+        [UnmanagedFunctionPointer(CallingConvention.StdCall)]
+        private delegate int GetDeviceInfoFunction(IntPtr self, IntPtr info);
+
+        [UnmanagedFunctionPointer(CallingConvention.StdCall)]
+        private delegate int CreateForceFeedbackEffectFunction(IntPtr self, uint motorIndex, IntPtr parameters, IntPtr effect);
+
+        [UnmanagedFunctionPointer(CallingConvention.StdCall)]
+        private delegate UIntPtr GetRawDataFunction(IntPtr self, UIntPtr bufferSize, IntPtr buffer);
+
+        [UnmanagedFunctionPointer(CallingConvention.StdCall)]
+        private delegate byte SetRawDataFunction(IntPtr self, UIntPtr bufferSize, IntPtr buffer);
+
+        [UnmanagedFunctionPointer(CallingConvention.StdCall)]
+        private delegate byte GetAxisMappingFunction(IntPtr self, GameInputGamepadAxes axisElement, IntPtr mapping);
 
         [UnmanagedFunctionPointer(CallingConvention.StdCall)]
         private delegate ulong TimestampFunction(IntPtr self);
@@ -414,6 +540,20 @@ public sealed class GameInputFakeComLifetimeTests
         private delegate int RegisterDeviceCallbackFunction(IntPtr self, IntPtr device, GameInputKind inputKind, GameInputDeviceStatus statusFilter, GameInputEnumerationKind enumerationKind, IntPtr context, IntPtr callbackFunc, IntPtr callbackToken);
 
         public static Action? OnNativeCall { get; set; }
+
+        /// <summary>
+        /// 參考計數歸零時觸發，用來模擬原生物件釋放後記憶體被回收。
+        /// </summary>
+        public static Action? OnFinalRelease { get; set; }
+
+        /// <summary>
+        /// 為 true 時，GetDeviceInfo 回報成功但不提供資訊指標。
+        /// </summary>
+        public static bool ReturnNullDeviceInfo { get; set; }
+
+        public static byte[]? LastSetRawData { get; set; }
+
+        public static GameInputForceFeedbackEffectKind? LastEffectKind { get; set; }
 
         /// <summary>
         /// RegisterDeviceCallback 在回報失敗前，先以此裝置同步觸發一次回呼；為 IntPtr.Zero 時不觸發。
@@ -438,14 +578,57 @@ public sealed class GameInputFakeComLifetimeTests
             }
         }
 
-        public static FakeComObject CreateDevice()
+        public static FakeComObject CreateDevice(string? displayName = null)
         {
             IntPtr vtbl = AllocateVtbl(sizeof(IGameInputDeviceVtbl));
             IGameInputDeviceVtbl* table = (IGameInputDeviceVtbl*)vtbl;
             table->AddRef = (delegate* unmanaged[Stdcall]<IntPtr, uint>)Marshal.GetFunctionPointerForDelegate(s_addRef);
             table->Release = (delegate* unmanaged[Stdcall]<IntPtr, uint>)Marshal.GetFunctionPointerForDelegate(s_release);
             table->GetDeviceStatus = (delegate* unmanaged[Stdcall]<IntPtr, GameInputDeviceStatus>)Marshal.GetFunctionPointerForDelegate(s_deviceStatus);
+            table->GetDeviceInfo = (delegate* unmanaged[Stdcall]<IntPtr, IntPtr*, int>)Marshal.GetFunctionPointerForDelegate(s_getDeviceInfo);
+            table->CreateForceFeedbackEffect = (delegate* unmanaged[Stdcall]<IntPtr, uint, IntPtr, void**, int>)Marshal.GetFunctionPointerForDelegate(s_createForceFeedbackEffect);
+            FakeComObject fake = new(vtbl);
+            if (displayName is not null)
+            {
+                byte[] utf8 = Encoding.UTF8.GetBytes(displayName + '\0');
+                fake._displayName = Marshal.AllocHGlobal(utf8.Length);
+                fake._displayNameLength = utf8.Length - 1;
+                Marshal.Copy(utf8, 0, fake._displayName, utf8.Length);
+                fake._deviceInfo = Marshal.AllocHGlobal(Marshal.SizeOf<GameInputDeviceInfo>());
+                Marshal.StructureToPtr(new GameInputDeviceInfo { DisplayName = fake._displayName }, fake._deviceInfo, fDeleteOld: false);
+                *DeviceInfoSlot(fake.Pointer) = fake._deviceInfo;
+            }
+
+            return fake;
+        }
+
+        public static FakeComObject CreateRawReport()
+        {
+            IntPtr vtbl = AllocateVtbl(sizeof(IGameInputRawDeviceReportVtbl));
+            IGameInputRawDeviceReportVtbl* table = (IGameInputRawDeviceReportVtbl*)vtbl;
+            table->AddRef = (delegate* unmanaged[Stdcall]<IntPtr, uint>)Marshal.GetFunctionPointerForDelegate(s_addRef);
+            table->Release = (delegate* unmanaged[Stdcall]<IntPtr, uint>)Marshal.GetFunctionPointerForDelegate(s_release);
+            table->GetRawData = (delegate* unmanaged[Stdcall]<IntPtr, UIntPtr, IntPtr, UIntPtr>)Marshal.GetFunctionPointerForDelegate(s_getRawData);
+            table->SetRawData = (delegate* unmanaged[Stdcall]<IntPtr, UIntPtr, IntPtr, byte>)Marshal.GetFunctionPointerForDelegate(s_setRawData);
             return new FakeComObject(vtbl);
+        }
+
+        public static FakeComObject CreateMapper()
+        {
+            IntPtr vtbl = AllocateVtbl(sizeof(IGameInputMapperVtbl));
+            IGameInputMapperVtbl* table = (IGameInputMapperVtbl*)vtbl;
+            table->AddRef = (delegate* unmanaged[Stdcall]<IntPtr, uint>)Marshal.GetFunctionPointerForDelegate(s_addRef);
+            table->Release = (delegate* unmanaged[Stdcall]<IntPtr, uint>)Marshal.GetFunctionPointerForDelegate(s_release);
+            table->GetGamepadAxisMappingInfo = (delegate* unmanaged[Stdcall]<IntPtr, GameInputGamepadAxes, IntPtr, byte>)Marshal.GetFunctionPointerForDelegate(s_getAxisMapping);
+            return new FakeComObject(vtbl);
+        }
+
+        public void PoisonDisplayName()
+        {
+            for (int index = 0; index < _displayNameLength; index++)
+            {
+                Marshal.WriteByte(_displayName, index, (byte)'X');
+            }
         }
 
         public static FakeComObject CreateReading()
@@ -480,6 +663,11 @@ public sealed class GameInputFakeComLifetimeTests
             _disposed = true;
             Marshal.FreeHGlobal(Pointer);
             Marshal.FreeHGlobal(_vtbl);
+            if (_deviceInfo != IntPtr.Zero)
+            {
+                Marshal.FreeHGlobal(_deviceInfo);
+                Marshal.FreeHGlobal(_displayName);
+            }
         }
 
         private static IntPtr AllocateVtbl(int size)
@@ -499,6 +687,11 @@ public sealed class GameInputFakeComLifetimeTests
             return (int*)((byte*)self + IntPtr.Size);
         }
 
+        private static IntPtr* DeviceInfoSlot(IntPtr self)
+        {
+            return (IntPtr*)((byte*)self + IntPtr.Size + (2 * sizeof(int)));
+        }
+
         private static int* CallCountSlot(IntPtr self)
         {
             return (int*)((byte*)self + IntPtr.Size + sizeof(int));
@@ -511,7 +704,13 @@ public sealed class GameInputFakeComLifetimeTests
 
         private static uint Release(IntPtr self)
         {
-            return (uint)Interlocked.Decrement(ref *RefCountSlot(self));
+            int count = Interlocked.Decrement(ref *RefCountSlot(self));
+            if (count == 0)
+            {
+                OnFinalRelease?.Invoke();
+            }
+
+            return (uint)count;
         }
 
         private static ulong GetTimestamp(IntPtr self)
@@ -545,6 +744,57 @@ public sealed class GameInputFakeComLifetimeTests
 
             *(ulong*)callbackToken = 0;
             return unchecked((int)0x80004005);
+        }
+
+        private static int GetDeviceInfo(IntPtr self, IntPtr info)
+        {
+            Interlocked.Increment(ref *CallCountSlot(self));
+            OnNativeCall?.Invoke();
+            *(IntPtr*)info = ReturnNullDeviceInfo ? IntPtr.Zero : *DeviceInfoSlot(self);
+            return 0;
+        }
+
+        private static int CreateForceFeedbackEffect(IntPtr self, uint motorIndex, IntPtr parameters, IntPtr effect)
+        {
+            LastEffectKind = Marshal.PtrToStructure<GameInputForceFeedbackParams>(parameters).Kind;
+            *(IntPtr*)effect = IntPtr.Zero;
+            return GameInputHResult.FeedbackNotSupported;
+        }
+
+        private static UIntPtr GetRawData(IntPtr self, UIntPtr bufferSize, IntPtr buffer)
+        {
+            byte* destination = (byte*)buffer;
+            for (ulong index = 0; index < bufferSize.ToUInt64(); index++)
+            {
+                destination[index] = (byte)(index + 1);
+            }
+
+            return bufferSize;
+        }
+
+        private static byte SetRawData(IntPtr self, UIntPtr bufferSize, IntPtr buffer)
+        {
+            byte[] data = new byte[(int)bufferSize.ToUInt64()];
+            Marshal.Copy(buffer, data, 0, data.Length);
+            LastSetRawData = data;
+            return 1;
+        }
+
+        private static byte GetGamepadAxisMappingInfo(IntPtr self, GameInputGamepadAxes axisElement, IntPtr mapping)
+        {
+            Marshal.StructureToPtr(
+                new GameInputAxisMapping
+                {
+                    ControllerElementKind = (GameInputElementKind)2,
+                    ControllerIndex = 7,
+                    IsInverted = true,
+                    FromTwoButtons = false,
+                    ButtonMinIndexValue = 3,
+                    ReferenceDirection = GameInputSwitchPosition.GameInputSwitchUp
+                },
+                mapping,
+                fDeleteOld: false);
+            return 1;
         }
 
         private static GameInputDeviceStatus GetDeviceStatus(IntPtr self)

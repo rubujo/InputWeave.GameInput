@@ -97,7 +97,7 @@ public sealed class GameInputRawDeviceReport : IDisposable
     /// <param name="offset">The starting offset within the data buffer. 資料緩衝區起始位移。</param>
     /// <param name="count">The number of bytes to read or write. 要讀寫的位元組數。</param>
     /// <returns>The number of bytes actually copied. 實際複製的位元組數。</returns>
-    public int CopyRawData(byte[] buffer, int offset, int count)
+    public unsafe int CopyRawData(byte[] buffer, int offset, int count)
     {
 #if NET10_0_OR_GREATER
         ArgumentNullException.ThrowIfNull(buffer);
@@ -113,18 +113,15 @@ public sealed class GameInputRawDeviceReport : IDisposable
             throw new ArgumentOutOfRangeException(nameof(offset), "指定的 raw data 緩衝區區段超出陣列範圍。");
         }
 
-        IntPtr nativeBuffer = Marshal.AllocHGlobal(count);
-        try
+        // 直接釘選呼叫端陣列的指定區段交給原生端寫入，不經暫存原生緩衝區與額外複製。
+        // 空陣列經 fixed 會得到空指標；count 為 0 時改傳有效的堆疊位址，維持原本「永遠傳入有效指標」的行為。
+        byte placeholder = 0;
+        fixed (byte* start = buffer)
         {
+            byte* destination = count == 0 ? &placeholder : start + offset;
             using ComLease<IGameInputRawDeviceReport> call = EnterNative();
-            UIntPtr written = call.Native.GetRawData((UIntPtr)count, nativeBuffer);
-            int writtenCount = EnsureNativeWrittenCount(written.ToUInt64(), count, "raw device report 複製位元組數");
-            Marshal.Copy(nativeBuffer, buffer, offset, writtenCount);
-            return writtenCount;
-        }
-        finally
-        {
-            Marshal.FreeHGlobal(nativeBuffer);
+            UIntPtr written = call.Native.GetRawData((UIntPtr)count, (IntPtr)destination);
+            return EnsureNativeWrittenCount(written.ToUInt64(), count, "raw device report 複製位元組數");
         }
     }
 
@@ -175,7 +172,7 @@ public sealed class GameInputRawDeviceReport : IDisposable
     /// <param name="offset">The starting offset within the data buffer. 資料緩衝區起始位移。</param>
     /// <param name="count">The number of bytes to read or write. 要讀寫的位元組數。</param>
     /// <returns>Returns true when the raw data was applied; otherwise returns false. Raw data 設定成功時傳回 true；否則傳回 false。</returns>
-    public bool SetRawData(byte[] data, int offset, int count)
+    public unsafe bool SetRawData(byte[] data, int offset, int count)
     {
 #if NET10_0_OR_GREATER
         ArgumentNullException.ThrowIfNull(data);
@@ -191,16 +188,12 @@ public sealed class GameInputRawDeviceReport : IDisposable
             throw new ArgumentOutOfRangeException(nameof(offset), "指定的 raw data 區段超出陣列範圍。");
         }
 
-        IntPtr nativeBuffer = Marshal.AllocHGlobal(count);
-        try
+        byte placeholder = 0;
+        fixed (byte* start = data)
         {
-            Marshal.Copy(data, offset, nativeBuffer, count);
+            byte* source = count == 0 ? &placeholder : start + offset;
             using ComLease<IGameInputRawDeviceReport> call = EnterNative();
-            return call.Native.SetRawData((UIntPtr)count, nativeBuffer);
-        }
-        finally
-        {
-            Marshal.FreeHGlobal(nativeBuffer);
+            return call.Native.SetRawData((UIntPtr)count, (IntPtr)source);
         }
     }
 
@@ -213,8 +206,11 @@ public sealed class GameInputRawDeviceReport : IDisposable
         /// <returns>The number of bytes actually copied. 實際複製的位元組數。</returns>
         public unsafe int CopyRawData(Span<byte> buffer)
         {
-            fixed (byte* pointer = buffer)
+            // 與陣列多載一致：空的 span 經 fixed 會得到空指標，改傳有效的堆疊位址。
+            byte placeholder = 0;
+            fixed (byte* start = buffer)
             {
+                byte* pointer = buffer.IsEmpty ? &placeholder : start;
                 using ComLease<IGameInputRawDeviceReport> call = EnterNative();
                 UIntPtr written = call.Native.GetRawData((UIntPtr)buffer.Length, (IntPtr)pointer);
                 return EnsureNativeWrittenCount(written.ToUInt64(), buffer.Length, "raw device report 複製位元組數");
@@ -229,8 +225,10 @@ public sealed class GameInputRawDeviceReport : IDisposable
         /// <returns>Returns true when the raw data was applied; otherwise returns false. Raw data 設定成功時傳回 true；否則傳回 false。</returns>
         public unsafe bool SetRawData(ReadOnlySpan<byte> data)
         {
-            fixed (byte* pointer = data)
+            byte placeholder = 0;
+            fixed (byte* start = data)
             {
+                byte* pointer = data.IsEmpty ? &placeholder : start;
                 using ComLease<IGameInputRawDeviceReport> call = EnterNative();
                 return call.Native.SetRawData((UIntPtr)data.Length, (IntPtr)pointer);
             }

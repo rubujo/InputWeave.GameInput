@@ -8,7 +8,8 @@ namespace InputWeave.GameInput;
 /// <typeparam name="T">The pushed data type. 推送資料型別。</typeparam>
 internal sealed class EventObservable<T>(Action? onFirstSubscribe = null, Action? onLastUnsubscribe = null) : IObservable<T>
 {
-    private readonly List<IObserver<T>> _observers = [];
+    // 以訂閱物件（而非 observer）為單位記錄，同一個 observer 訂閱多次時，取消其中一筆不會誤刪其他筆。
+    private readonly List<Subscription> _subscriptions = [];
 #if NET10_0_OR_GREATER
     private readonly System.Threading.Lock _lock = new();
     private readonly System.Threading.Lock _lifecycleLock = new();
@@ -31,6 +32,7 @@ internal sealed class EventObservable<T>(Action? onFirstSubscribe = null, Action
 
         bool alreadyCompleted;
         bool startNeeded = false;
+        Subscription subscription = new(this, observer);
         lock (_lifecycleLock)
         {
             lock (_lock)
@@ -38,8 +40,8 @@ internal sealed class EventObservable<T>(Action? onFirstSubscribe = null, Action
                 alreadyCompleted = _completed;
                 if (!alreadyCompleted)
                 {
-                    bool wasEmpty = _observers.Count == 0;
-                    _observers.Add(observer);
+                    bool wasEmpty = _subscriptions.Count == 0;
+                    _subscriptions.Add(subscription);
                     startNeeded = wasEmpty;
                 }
             }
@@ -58,7 +60,7 @@ internal sealed class EventObservable<T>(Action? onFirstSubscribe = null, Action
                 {
                     lock (_lock)
                     {
-                        _observers.Remove(observer);
+                        _subscriptions.Remove(subscription);
                     }
 
                     throw;
@@ -66,7 +68,7 @@ internal sealed class EventObservable<T>(Action? onFirstSubscribe = null, Action
             }
         }
 
-        return alreadyCompleted ? NoOpSubscription.Instance : new Subscription(this, observer);
+        return alreadyCompleted ? NoOpSubscription.Instance : subscription;
     }
 
     /// <summary>
@@ -87,12 +89,12 @@ internal sealed class EventObservable<T>(Action? onFirstSubscribe = null, Action
         IObserver<T>[] snapshot;
         lock (_lock)
         {
-            if (_completed || _observers.Count == 0)
+            if (_completed || _subscriptions.Count == 0)
             {
                 return;
             }
 
-            snapshot = [.. _observers];
+            snapshot = [.. _subscriptions.Select(static subscription => subscription.Observer)];
         }
 
         foreach (IObserver<T> observer in snapshot)
@@ -112,8 +114,8 @@ internal sealed class EventObservable<T>(Action? onFirstSubscribe = null, Action
             }
 
             _completed = true;
-            snapshot = [.. _observers];
-            _observers.Clear();
+            snapshot = [.. _subscriptions.Select(static subscription => subscription.Observer)];
+            _subscriptions.Clear();
         }
 
         foreach (IObserver<T> observer in snapshot)
@@ -146,15 +148,15 @@ internal sealed class EventObservable<T>(Action? onFirstSubscribe = null, Action
         }
     }
 
-    private void Unsubscribe(IObserver<T> observer)
+    private void Unsubscribe(Subscription subscription)
     {
         bool stopNeeded = false;
         lock (_lifecycleLock)
         {
             lock (_lock)
             {
-                bool removed = _observers.Remove(observer);
-                if (removed && _observers.Count == 0)
+                bool removed = _subscriptions.Remove(subscription);
+                if (removed && _subscriptions.Count == 0)
                 {
                     stopNeeded = true;
                 }
@@ -169,17 +171,19 @@ internal sealed class EventObservable<T>(Action? onFirstSubscribe = null, Action
 
     private sealed class Subscription(EventObservable<T> owner, IObserver<T> observer) : IDisposable
     {
-        private bool _disposed;
+        private int _disposed;
+
+        public IObserver<T> Observer { get; } = observer;
 
         public void Dispose()
         {
-            if (_disposed)
+            // 原子取得釋放權，並行 Dispose 只會取消這一筆訂閱一次。
+            if (Interlocked.CompareExchange(ref _disposed, 1, 0) != 0)
             {
                 return;
             }
 
-            _disposed = true;
-            owner.Unsubscribe(observer);
+            owner.Unsubscribe(this);
         }
     }
 

@@ -163,6 +163,26 @@ public sealed class EventObservableTests
         Assert.IsEmpty(observer.Values);
     }
 
+    [TestMethod]
+    public void DisposingOneSubscriptionOfRepeatedObserverKeepsTheOtherSubscription()
+    {
+        for (int iteration = 0; iteration < 200; iteration++)
+        {
+            int lastUnsubscribeCount = 0;
+            EventObservable<int> observable = new(null, () => Interlocked.Increment(ref lastUnsubscribeCount));
+            RecordingObserver observer = new();
+            IDisposable first = observable.Subscribe(observer);
+            using IDisposable second = observable.Subscribe(observer);
+
+            // 同一筆訂閱被並行、重複釋放，只能取消它自己，不能連帶移除同一個 observer 的另一筆訂閱。
+            TestSupport.RunConcurrently(8, first.Dispose);
+            first.Dispose();
+            observable.OnNext(iteration);
+
+            CollectionAssert.AreEqual(new[] { iteration }, observer.Values, "另一筆訂閱應繼續收到事件。");
+            Assert.AreEqual(0, lastUnsubscribeCount, "仍有訂閱時不得觸發最後取消訂閱的回呼。");
+        }
+    }
     private sealed class RecordingObserver : IObserver<int>
     {
         public List<int> Values { get; } = [];

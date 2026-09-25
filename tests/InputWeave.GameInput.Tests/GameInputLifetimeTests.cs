@@ -28,7 +28,7 @@ public sealed class GameInputLifetimeTests
                 }
             }
 
-            Assert.AreEqual(before, GetReferenceCount(observer.NativeInterface), $"列舉回呼包裝的裝置釋放後，原生參考計數應回到原值（before={before}）。");
+            AssertReferenceCountSettles(observer.NativeInterface, before, $"列舉回呼包裝的裝置釋放後，原生參考計數應回到原值（before={before}）。");
         });
     }
 
@@ -49,7 +49,7 @@ public sealed class GameInputLifetimeTests
             }
 
             Assert.IsGreaterThan(0, callbackCount, "阻塞式列舉應同步觸發至少一次裝置回呼。");
-            Assert.AreEqual(before, GetReferenceCount(observer.NativeInterface), $"裝置回呼結束後，原生參考計數應回到原值（before={before}）。");
+            AssertReferenceCountSettles(observer.NativeInterface, before, $"裝置回呼結束後，原生參考計數應回到原值（before={before}）。");
         });
     }
 
@@ -68,7 +68,7 @@ public sealed class GameInputLifetimeTests
             uint before = GetReferenceCount(observer.NativeInterface);
             RunConcurrently(8, target.Dispose);
 
-            Assert.AreEqual(before - 1, GetReferenceCount(observer.NativeInterface), "並行 Dispose 只能釋放一次原生參考。");
+            AssertReferenceCountSettles(observer.NativeInterface, before - 1, "並行 Dispose 只能釋放一次原生參考。");
         });
     }
 
@@ -85,7 +85,7 @@ public sealed class GameInputLifetimeTests
             GC.WaitForPendingFinalizers();
             GC.Collect();
 
-            Assert.AreEqual(before, GetReferenceCount(observer.NativeInterface), "未呼叫 Dispose 的包裝被 GC 回收後，應由 SafeHandle 終結器釋放原生參考。");
+            AssertReferenceCountSettles(observer.NativeInterface, before, "未呼叫 Dispose 的包裝被 GC 回收後，應由 SafeHandle 終結器釋放原生參考。");
         });
     }
 
@@ -102,6 +102,15 @@ public sealed class GameInputLifetimeTests
         }
     }
 
+    /// <summary>
+    /// 等待原生參考計數穩定到預期值。實機的計數是整個處理序共用的，其他測試在背景延後解除註冊時，
+    /// 最後一次回呼可能短暫包裝同一個裝置；確定性的驗證由 GameInputFakeComLifetimeTests 負責。
+    /// </summary>
+    private static void AssertReferenceCountSettles(IGameInputDevice native, uint expected, string message)
+    {
+        bool settled = SpinWait.SpinUntil(() => GetReferenceCount(native) == expected, TimeSpan.FromSeconds(2));
+        Assert.IsTrue(settled, $"{message}（預期 {expected}，實際 {GetReferenceCount(native)}）");
+    }
     private static uint GetReferenceCount(IGameInputDevice native)
     {
         uint count = native.AddRef();
