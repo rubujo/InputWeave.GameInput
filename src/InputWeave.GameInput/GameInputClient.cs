@@ -425,13 +425,16 @@ public sealed class GameInputClient : IDisposable
         }
         finally
         {
+            context.Deactivate();
+            bool unregistered = true;
             if (token != 0)
             {
                 call.Native.StopCallback(token);
-                call.Native.UnregisterCallback(token);
+                unregistered = call.Native.UnregisterCallback(token);
             }
 
-            if (contextHandle.IsAllocated)
+            // 與 GameInputCallbackRegistration 相同：UnregisterCallback 成功返回前不得釋放回呼資源。
+            if (unregistered && contextHandle.IsAllocated)
             {
                 contextHandle.Free();
             }

@@ -171,6 +171,67 @@ public sealed class GameInputFakeComLifetimeTests
         Assert.AreEqual(0, fake.RefCount, "未呼叫 Dispose 的用戶端被 GC 回收後，應由 SafeHandle 終結器釋放根物件參考。");
     }
 
+    [TestMethod]
+    public void RegistrationFreesContextOnlyAfterSuccessfulUnregister()
+    {
+        (GameInputCallbackRegistration registration, WeakReference context, Func<bool> deactivated) = CreateRegistration(unregister: _ => true);
+
+        registration.Dispose();
+        CollectGarbage();
+
+        Assert.IsTrue(deactivated(), "釋放註冊時應先停用 context。");
+        Assert.IsFalse(context.IsAlive, "UnregisterCallback 成功後應釋放 context 的 GCHandle。");
+    }
+
+    [TestMethod]
+    public void RegistrationKeepsContextWhenUnregisterFails()
+    {
+        (GameInputCallbackRegistration registration, WeakReference context, Func<bool> deactivated) = CreateRegistration(unregister: _ => false);
+
+        registration.Dispose();
+        CollectGarbage();
+
+        Assert.IsTrue(deactivated(), "即使解除註冊失敗，也應停用 context，讓仍在進行的回呼不再執行處理常式。");
+        Assert.IsTrue(context.IsAlive, "UnregisterCallback 失敗時不得釋放 GCHandle，避免原生端仍在進行的回呼存取已釋放的 handle。");
+    }
+
+    [TestMethod]
+    public void RegistrationKeepsContextWhenUnregisterThrows()
+    {
+        (GameInputCallbackRegistration registration, WeakReference context, Func<bool> deactivated) =
+            CreateRegistration(unregister: _ => throw new ObjectDisposedException(nameof(GameInputClient)));
+
+        _ = Assert.ThrowsExactly<ObjectDisposedException>(registration.Dispose);
+        CollectGarbage();
+
+        Assert.IsTrue(registration.IsDisposed);
+        Assert.IsTrue(deactivated());
+        Assert.IsTrue(context.IsAlive, "UnregisterCallback 拋出例外時不得釋放 GCHandle。");
+    }
+
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private static (GameInputCallbackRegistration Registration, WeakReference Context, Func<bool> Deactivated) CreateRegistration(Func<ulong, bool> unregister)
+    {
+        // 在獨立的非內嵌方法中建立 context，確保只有 GCHandle 讓它保持存活。
+        object context = new();
+        bool deactivated = false;
+        GameInputCallbackRegistration registration = new(
+            token: 1,
+            GCHandle.Alloc(context),
+            deactivateContext: () => deactivated = true,
+            stopCallback: static _ => { },
+            unregisterCallback: unregister,
+            removeRegistration: static _ => { });
+        return (registration, new WeakReference(context), () => deactivated);
+    }
+
+    private static void CollectGarbage()
+    {
+        GC.Collect();
+        GC.WaitForPendingFinalizers();
+        GC.Collect();
+    }
+
     [MethodImpl(MethodImplOptions.NoInlining)]
     private static void CreateAndDropDevice(IntPtr pointer)
     {

@@ -74,17 +74,20 @@ public sealed class GameInputCallbackRegistration : IDisposable
 
         _deactivateContext();
 
+        bool unregistered = Token == 0;
         try
         {
             if (Token != 0)
             {
                 _stopCallback(Token);
-                _unregisterCallback(Token);
+                unregistered = _unregisterCallback(Token);
             }
         }
         finally
         {
-            if (_contextHandle.IsAllocated)
+            // 官方文件：UnregisterCallback 成功返回前，釋放回呼相關資源並不安全。解除註冊失敗或拋出例外時，
+            // 保留已停用的 context（只洩漏一個小物件），避免原生端仍在進行的回呼存取已釋放的 GCHandle。
+            if (unregistered && _contextHandle.IsAllocated)
             {
                 _contextHandle.Free();
             }
