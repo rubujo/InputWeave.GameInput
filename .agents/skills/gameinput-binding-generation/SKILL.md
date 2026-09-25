@@ -13,7 +13,7 @@ description: 當需要從 Microsoft GameInput.h 重產 C# 互通層繫結，或�
 6. 不要手改產生式互通層；若產生結果不正確，修改 `tools/InputWeave.GameInput.BindingsGenerator` 後重產。
 7. 產生檔必須使用 File-scoped Namespace，不得輸出 `#pragma warning disable`。
 8. 產生檔必須包含完整 XML 文件註解；若缺少 `summary`、`param` 或 `returns`，修改 `eng/gameinput-xml-docs.json` 與產生器後重產。
-9. 執行 `pwsh ./eng/Verify-GameInputBindings.ps1`、`dotnet test InputWeave.GameInput.slnx -c Release --no-build` 與 `pwsh ./eng/Validate-TextEncoding.ps1`；vtable slot 順序或簽章寫錯不會編譯失敗，而是靜默呼叫錯方法或記憶體毀損，因此務必用真實 GameInput.dll 跑過 `dotnet test`（本機若已安裝 GameInput runtime，測試不會走 `Inconclusive` 分支），不能只看編譯結果。
+9. 執行 `pwsh ./eng/Verify-GameInputBindings.ps1`、`dotnet test InputWeave.GameInput.slnx -c Release --no-build` 與 `pwsh ./eng/Validate-TextEncoding.ps1`；vtable slot 順序或簽章寫錯不會編譯失敗，而是靜默呼叫錯方法或記憶體毀損，因此務必用真實 GameInput.dll 跑過 `dotnet test`（本機若已安裝 GameInput runtime，測試不會走 `Inconclusive` 分支），不能只看編譯結果。CI 沒有 GameInput 執行階段與實體裝置，需要硬體的測試在 CI 只會是 Inconclusive；參考計數、Dispose 與租約的回歸由 `GameInputFakeComLifetimeTests`（以記憶體中的假 COM 物件驗證，兩個 TFM 都會執行）把關，修改包裝生命週期時必須維持它們通過。
 
 ## 裸 vtable 投影（兩個 TFM 共用，已採用）
 

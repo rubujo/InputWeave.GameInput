@@ -64,7 +64,7 @@ public sealed class GameInputClient : IDisposable
     private readonly GameInputComHandle _handle;
     private int _disposeState;
 
-    private GameInputClient(GameInputComHandle handle)
+    internal GameInputClient(GameInputComHandle handle)
     {
         _handle = handle;
     }
@@ -1141,7 +1141,7 @@ public sealed class GameInputClient : IDisposable
     /// COM 回呼參數由呼叫端擁有，不會替被呼叫端 AddRef（見「Rules for Managing Reference Counts」），
     /// 因此必須在此 AddRef 以平衡 <see cref="GameInputDevice.Dispose"/> 的 Release；否則裝置會被過度釋放並破壞原生堆積。
     /// </remarks>
-    private static GameInputDevice WrapBorrowedDevice(IGameInputDevice device)
+    internal static GameInputDevice WrapBorrowedDevice(IGameInputDevice device)
     {
         device.AddRef();
         return new GameInputDevice(device);
@@ -1155,7 +1155,7 @@ public sealed class GameInputClient : IDisposable
     /// See <see cref="WrapBorrowedDevice"/> for the reference-counting rationale.
     /// 參考計數的理由請見 <see cref="WrapBorrowedDevice"/>。
     /// </remarks>
-    private static GameInputReading WrapBorrowedReading(IGameInputReading reading)
+    internal static GameInputReading WrapBorrowedReading(IGameInputReading reading)
     {
         reading.AddRef();
         return new GameInputReading(reading);
