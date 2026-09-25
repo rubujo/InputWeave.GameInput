@@ -22,19 +22,21 @@ public sealed class GameInputRawDeviceReport : IDisposable
     /// </remarks>
     public const int MaxRawDataSize = 64 * 1024;
 
-    private IGameInputRawDeviceReport? _native;
+    private readonly GameInputComHandle _handle;
     private int _disposed;
 
     internal GameInputRawDeviceReport(IGameInputRawDeviceReport native)
     {
-        _native = native;
+        _handle = new GameInputComHandle(native.Pointer);
     }
 
     internal IGameInputRawDeviceReport NativeInterface
     {
         get
         {
-            return Native;
+            return Volatile.Read(ref _disposed) != 0
+                ? throw new ObjectDisposedException(nameof(GameInputRawDeviceReport))
+                : new IGameInputRawDeviceReport(_handle.DangerousGetHandle());
         }
     }
 
@@ -45,7 +47,8 @@ public sealed class GameInputRawDeviceReport : IDisposable
     /// <returns>The raw device report information. Raw device report 資訊。</returns>
     public GameInputRawDeviceReportInfo GetReportInfo()
     {
-        Native.GetReportInfo(out GameInputRawDeviceReportInfo info);
+        using ComLease<IGameInputRawDeviceReport> call = EnterNative();
+        call.Native.GetReportInfo(out GameInputRawDeviceReportInfo info);
         return info;
     }
 
@@ -63,7 +66,8 @@ public sealed class GameInputRawDeviceReport : IDisposable
     /// <exception cref="InvalidOperationException">The size reported by the native side exceeds <see cref="MaxRawDataSize"/>. 原生回報的大小超過 <see cref="MaxRawDataSize"/>。</exception>
     public int GetRawDataSize()
     {
-        return NativeSizeGuard.EnsureCount(Native.GetRawDataSize().ToUInt64(), MaxRawDataSize, "raw device report 大小（位元組）");
+        using ComLease<IGameInputRawDeviceReport> call = EnterNative();
+        return NativeSizeGuard.EnsureCount(call.Native.GetRawDataSize().ToUInt64(), MaxRawDataSize, "raw device report 大小（位元組）");
     }
 
     /// <summary>
@@ -113,7 +117,8 @@ public sealed class GameInputRawDeviceReport : IDisposable
         IntPtr nativeBuffer = Marshal.AllocHGlobal(count);
         try
         {
-            UIntPtr written = Native.GetRawData((UIntPtr)count, nativeBuffer);
+            using ComLease<IGameInputRawDeviceReport> call = EnterNative();
+            UIntPtr written = call.Native.GetRawData((UIntPtr)count, nativeBuffer);
             int writtenCount = EnsureNativeWrittenCount(written.ToUInt64(), count, "raw device report 複製位元組數");
             Marshal.Copy(nativeBuffer, buffer, offset, writtenCount);
             return writtenCount;
@@ -191,7 +196,8 @@ public sealed class GameInputRawDeviceReport : IDisposable
         try
         {
             Marshal.Copy(data, offset, nativeBuffer, count);
-            return Native.SetRawData((UIntPtr)count, nativeBuffer);
+            using ComLease<IGameInputRawDeviceReport> call = EnterNative();
+            return call.Native.SetRawData((UIntPtr)count, nativeBuffer);
         }
         finally
         {
@@ -210,7 +216,8 @@ public sealed class GameInputRawDeviceReport : IDisposable
         {
             fixed (byte* pointer = buffer)
             {
-                UIntPtr written = Native.GetRawData((UIntPtr)buffer.Length, (IntPtr)pointer);
+                using ComLease<IGameInputRawDeviceReport> call = EnterNative();
+                UIntPtr written = call.Native.GetRawData((UIntPtr)buffer.Length, (IntPtr)pointer);
                 return EnsureNativeWrittenCount(written.ToUInt64(), buffer.Length, "raw device report 複製位元組數");
             }
         }
@@ -225,7 +232,8 @@ public sealed class GameInputRawDeviceReport : IDisposable
         {
             fixed (byte* pointer = data)
             {
-                return Native.SetRawData((UIntPtr)data.Length, (IntPtr)pointer);
+                using ComLease<IGameInputRawDeviceReport> call = EnterNative();
+                return call.Native.SetRawData((UIntPtr)data.Length, (IntPtr)pointer);
             }
         }
 #endif
@@ -237,7 +245,8 @@ public sealed class GameInputRawDeviceReport : IDisposable
     /// <returns>The owning device wrapper, or null when unavailable. 所屬裝置包裝；無法取得時為 null。</returns>
     public GameInputDevice? GetDevice()
     {
-        Native.GetDevice(out IGameInputDevice? device);
+        using ComLease<IGameInputRawDeviceReport> call = EnterNative();
+        call.Native.GetDevice(out IGameInputDevice? device);
         return device is { } deviceValue ? new GameInputDevice(deviceValue) : null;
     }
 
@@ -252,23 +261,16 @@ public sealed class GameInputRawDeviceReport : IDisposable
             return;
         }
 
-        if (_native is not null)
-        {
-            _native.Value.Release();
-            _native = null;
-        }
+        _handle.Dispose();
 
         GC.SuppressFinalize(this);
     }
 
-    private IGameInputRawDeviceReport Native
+    private ComLease<IGameInputRawDeviceReport> EnterNative()
     {
-        get
-        {
-            return Volatile.Read(ref _disposed) != 0
-                ? throw new ObjectDisposedException(nameof(GameInputRawDeviceReport))
-                : _native ?? throw new ObjectDisposedException(nameof(GameInputRawDeviceReport));
-        }
+        return Volatile.Read(ref _disposed) != 0
+            ? throw new ObjectDisposedException(nameof(GameInputRawDeviceReport))
+            : _handle.Acquire(static pointer => new IGameInputRawDeviceReport(pointer), nameof(GameInputRawDeviceReport));
     }
 
     internal static int EnsureNativeWrittenCount(ulong written, int capacity, string subject)

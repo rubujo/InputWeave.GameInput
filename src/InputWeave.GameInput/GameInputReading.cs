@@ -9,7 +9,7 @@ namespace InputWeave.GameInput;
 /// </summary>
 public sealed class GameInputReading : IDisposable
 {
-    private IGameInputReading? _native;
+    private readonly GameInputComHandle _handle;
     private int _disposed;
     private GameInputKind? _cachedInputKind;
     private ulong? _cachedTimestamp;
@@ -22,14 +22,16 @@ public sealed class GameInputReading : IDisposable
 
     internal GameInputReading(IGameInputReading native)
     {
-        _native = native;
+        _handle = new GameInputComHandle(native.Pointer);
     }
 
     internal IGameInputReading NativeInterface
     {
         get
         {
-            return Native;
+            return Volatile.Read(ref _disposed) != 0
+                ? throw new ObjectDisposedException(nameof(GameInputReading))
+                : new IGameInputReading(_handle.DangerousGetHandle());
         }
     }
 
@@ -54,7 +56,8 @@ public sealed class GameInputReading : IDisposable
 
             lock (_cacheSyncRoot)
             {
-                return _cachedInputKind ??= Native.GetInputKind();
+                using ComLease<IGameInputReading> call = EnterNative();
+                return _cachedInputKind ??= call.Native.GetInputKind();
             }
         }
     }
@@ -80,7 +83,8 @@ public sealed class GameInputReading : IDisposable
 
             lock (_cacheSyncRoot)
             {
-                return _cachedTimestamp ??= Native.GetTimestamp();
+                using ComLease<IGameInputReading> call = EnterNative();
+                return _cachedTimestamp ??= call.Native.GetTimestamp();
             }
         }
     }
@@ -92,7 +96,8 @@ public sealed class GameInputReading : IDisposable
     /// <returns>The owning device wrapper, or null when unavailable. 所屬裝置包裝；無法取得時為 null。</returns>
     public GameInputDevice? GetDevice()
     {
-        Native.GetDevice(out IGameInputDevice? device);
+        using ComLease<IGameInputReading> call = EnterNative();
+        call.Native.GetDevice(out IGameInputDevice? device);
         return device is { } deviceValue ? new GameInputDevice(deviceValue) : null;
     }
 
@@ -104,7 +109,8 @@ public sealed class GameInputReading : IDisposable
     /// <exception cref="InvalidOperationException">The element count reported by the native side exceeds the internal limit, which is treated as an anomalous device or driver report. 原生回報的元素數量超過內部上限，視為裝置或驅動程式回報異常。</exception>
     public float[] GetControllerAxisState()
     {
-        uint count = Native.GetControllerAxisCount();
+        using ComLease<IGameInputReading> call = EnterNative();
+        uint count = call.Native.GetControllerAxisCount();
         if (count == 0)
         {
             return [];
@@ -116,7 +122,7 @@ public sealed class GameInputReading : IDisposable
         {
             fixed (float* pointer = state)
             {
-                written = Native.GetControllerAxisState((uint)state.Length, (IntPtr)pointer);
+                written = call.Native.GetControllerAxisState((uint)state.Length, (IntPtr)pointer);
             }
         }
         written = Math.Min(written, count);
@@ -149,7 +155,8 @@ public sealed class GameInputReading : IDisposable
         {
             fixed (float* pointer = stateArray)
             {
-                return Native.GetControllerAxisState((uint)stateArray.Length, (IntPtr)pointer);
+                using ComLease<IGameInputReading> call = EnterNative();
+                return call.Native.GetControllerAxisState((uint)stateArray.Length, (IntPtr)pointer);
             }
         }
     }
@@ -162,7 +169,8 @@ public sealed class GameInputReading : IDisposable
     /// <exception cref="InvalidOperationException">The element count reported by the native side exceeds the internal limit, which is treated as an anomalous device or driver report. 原生回報的元素數量超過內部上限，視為裝置或驅動程式回報異常。</exception>
     public bool[] GetControllerButtonState()
     {
-        uint count = Native.GetControllerButtonCount();
+        using ComLease<IGameInputReading> call = EnterNative();
+        uint count = call.Native.GetControllerButtonCount();
         if (count == 0)
         {
             return [];
@@ -174,7 +182,7 @@ public sealed class GameInputReading : IDisposable
         {
             fixed (byte* pointer = nativeState)
             {
-                written = Native.GetControllerButtonState((uint)nativeState.Length, (IntPtr)pointer);
+                written = call.Native.GetControllerButtonState((uint)nativeState.Length, (IntPtr)pointer);
             }
         }
         written = Math.Min(written, count);
@@ -207,7 +215,8 @@ public sealed class GameInputReading : IDisposable
         {
             fixed (byte* pointer = stateArray)
             {
-                return Native.GetControllerButtonState((uint)stateArray.Length, (IntPtr)pointer);
+                using ComLease<IGameInputReading> call = EnterNative();
+                return call.Native.GetControllerButtonState((uint)stateArray.Length, (IntPtr)pointer);
             }
         }
     }
@@ -220,7 +229,8 @@ public sealed class GameInputReading : IDisposable
     /// <exception cref="InvalidOperationException">The element count reported by the native side exceeds the internal limit, which is treated as an anomalous device or driver report. 原生回報的元素數量超過內部上限，視為裝置或驅動程式回報異常。</exception>
     public GameInputSwitchPosition[] GetControllerSwitchState()
     {
-        uint count = Native.GetControllerSwitchCount();
+        using ComLease<IGameInputReading> call = EnterNative();
+        uint count = call.Native.GetControllerSwitchCount();
         if (count == 0)
         {
             return [];
@@ -232,7 +242,7 @@ public sealed class GameInputReading : IDisposable
         {
             fixed (GameInputSwitchPosition* pointer = state)
             {
-                written = Native.GetControllerSwitchState((uint)state.Length, (IntPtr)pointer);
+                written = call.Native.GetControllerSwitchState((uint)state.Length, (IntPtr)pointer);
             }
         }
         written = Math.Min(written, count);
@@ -265,7 +275,8 @@ public sealed class GameInputReading : IDisposable
         {
             fixed (GameInputSwitchPosition* pointer = stateArray)
             {
-                return Native.GetControllerSwitchState((uint)stateArray.Length, (IntPtr)pointer);
+                using ComLease<IGameInputReading> call = EnterNative();
+                return call.Native.GetControllerSwitchState((uint)stateArray.Length, (IntPtr)pointer);
             }
         }
     }
@@ -278,7 +289,8 @@ public sealed class GameInputReading : IDisposable
     /// <exception cref="InvalidOperationException">The element count reported by the native side exceeds the internal limit, which is treated as an anomalous device or driver report. 原生回報的元素數量超過內部上限，視為裝置或驅動程式回報異常。</exception>
     public GameInputKeyState[] GetKeyState()
     {
-        uint count = Native.GetKeyCount();
+        using ComLease<IGameInputReading> call = EnterNative();
+        uint count = call.Native.GetKeyCount();
         if (count == 0)
         {
             return [];
@@ -290,7 +302,7 @@ public sealed class GameInputReading : IDisposable
         {
             fixed (GameInputKeyState* pointer = state)
             {
-                written = Native.GetKeyState((uint)state.Length, (IntPtr)pointer);
+                written = call.Native.GetKeyState((uint)state.Length, (IntPtr)pointer);
             }
         }
         written = Math.Min(written, count);
@@ -323,7 +335,8 @@ public sealed class GameInputReading : IDisposable
         {
             fixed (GameInputKeyState* pointer = stateArray)
             {
-                return Native.GetKeyState((uint)stateArray.Length, (IntPtr)pointer);
+                using ComLease<IGameInputReading> call = EnterNative();
+                return call.Native.GetKeyState((uint)stateArray.Length, (IntPtr)pointer);
             }
         }
     }
@@ -336,7 +349,8 @@ public sealed class GameInputReading : IDisposable
     /// <returns>Returns true when the reading contains gamepad state; otherwise returns false. 若 reading 包含 gamepad 狀態，傳回 true；否則傳回 false。</returns>
     public bool TryGetGamepadState(out GameInputGamepadState state)
     {
-        return Native.GetGamepadState(out state);
+        using ComLease<IGameInputReading> call = EnterNative();
+        return call.Native.GetGamepadState(out state);
     }
 
     /// <summary>
@@ -365,7 +379,8 @@ public sealed class GameInputReading : IDisposable
     /// <returns>Returns true when the reading contains mouse state; otherwise returns false. 若 reading 包含滑鼠狀態，傳回 true；否則傳回 false。</returns>
     public bool TryGetMouseState(out GameInputMouseState state)
     {
-        return Native.GetMouseState(out state);
+        using ComLease<IGameInputReading> call = EnterNative();
+        return call.Native.GetMouseState(out state);
     }
 
     /// <summary>
@@ -394,7 +409,8 @@ public sealed class GameInputReading : IDisposable
     /// <returns>Returns true when the reading contains sensors state; otherwise returns false. 若 reading 包含感測器狀態，傳回 true；否則傳回 false。</returns>
     public bool TryGetSensorsState(out GameInputSensorsState state)
     {
-        return Native.GetSensorsState(out state);
+        using ComLease<IGameInputReading> call = EnterNative();
+        return call.Native.GetSensorsState(out state);
     }
 
     /// <summary>
@@ -423,7 +439,8 @@ public sealed class GameInputReading : IDisposable
     /// <returns>Returns true when the reading contains arcade stick state; otherwise returns false. 若 reading 包含 arcade stick 狀態，傳回 true；否則傳回 false。</returns>
     public bool TryGetArcadeStickState(out GameInputArcadeStickState state)
     {
-        return Native.GetArcadeStickState(out state);
+        using ComLease<IGameInputReading> call = EnterNative();
+        return call.Native.GetArcadeStickState(out state);
     }
 
     /// <summary>
@@ -452,7 +469,8 @@ public sealed class GameInputReading : IDisposable
     /// <returns>Returns true when the reading contains flight stick state; otherwise returns false. 若 reading 包含 flight stick 狀態，傳回 true；否則傳回 false。</returns>
     public bool TryGetFlightStickState(out GameInputFlightStickState state)
     {
-        return Native.GetFlightStickState(out state);
+        using ComLease<IGameInputReading> call = EnterNative();
+        return call.Native.GetFlightStickState(out state);
     }
 
     /// <summary>
@@ -481,7 +499,8 @@ public sealed class GameInputReading : IDisposable
     /// <returns>Returns true when the reading contains racing wheel state; otherwise returns false. 若 reading 包含 racing wheel 狀態，傳回 true；否則傳回 false。</returns>
     public bool TryGetRacingWheelState(out GameInputRacingWheelState state)
     {
-        return Native.GetRacingWheelState(out state);
+        using ComLease<IGameInputReading> call = EnterNative();
+        return call.Native.GetRacingWheelState(out state);
     }
 
     /// <summary>
@@ -510,7 +529,8 @@ public sealed class GameInputReading : IDisposable
     /// <returns>Returns true when the reading contains a raw report; otherwise returns false. 若 reading 包含 raw report，傳回 true；否則傳回 false。</returns>
     public bool TryGetRawReport(out GameInputRawDeviceReport? report)
     {
-        if (Native.GetRawReport(out IGameInputRawDeviceReport? nativeReport) && nativeReport is { } nativeReportValue)
+        using ComLease<IGameInputReading> call = EnterNative();
+        if (call.Native.GetRawReport(out IGameInputRawDeviceReport? nativeReport) && nativeReport is { } nativeReportValue)
         {
             report = new GameInputRawDeviceReport(nativeReportValue);
             return true;
@@ -626,23 +646,16 @@ public sealed class GameInputReading : IDisposable
             return;
         }
 
-        if (_native is not null)
-        {
-            _native.Value.Release();
-            _native = null;
-        }
+        _handle.Dispose();
 
         GC.SuppressFinalize(this);
     }
 
-    private IGameInputReading Native
+    private ComLease<IGameInputReading> EnterNative()
     {
-        get
-        {
-            return Volatile.Read(ref _disposed) != 0
-                ? throw new ObjectDisposedException(nameof(GameInputReading))
-                : _native ?? throw new ObjectDisposedException(nameof(GameInputReading));
-        }
+        return Volatile.Read(ref _disposed) != 0
+            ? throw new ObjectDisposedException(nameof(GameInputReading))
+            : _handle.Acquire(static pointer => new IGameInputReading(pointer), nameof(GameInputReading));
     }
 
     private bool HasAnyInputKind(GameInputKind inputKind)

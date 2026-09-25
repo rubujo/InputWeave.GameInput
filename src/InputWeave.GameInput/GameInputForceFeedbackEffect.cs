@@ -9,12 +9,12 @@ namespace InputWeave.GameInput;
 /// </summary>
 public sealed class GameInputForceFeedbackEffect : IDisposable
 {
-    private IGameInputForceFeedbackEffect? _native;
+    private readonly GameInputComHandle _handle;
     private int _disposed;
 
     internal GameInputForceFeedbackEffect(IGameInputForceFeedbackEffect native)
     {
-        _native = native;
+        _handle = new GameInputComHandle(native.Pointer);
     }
 
     /// <summary>
@@ -25,7 +25,8 @@ public sealed class GameInputForceFeedbackEffect : IDisposable
     {
         get
         {
-            return Native.GetMotorIndex();
+            using ComLease<IGameInputForceFeedbackEffect> call = EnterNative();
+            return call.Native.GetMotorIndex();
         }
     }
 
@@ -36,12 +37,14 @@ public sealed class GameInputForceFeedbackEffect : IDisposable
     {
         get
         {
-            return Native.GetGain();
+            using ComLease<IGameInputForceFeedbackEffect> call = EnterNative();
+            return call.Native.GetGain();
         }
 
         set
         {
-            Native.SetGain(value);
+            using ComLease<IGameInputForceFeedbackEffect> call = EnterNative();
+            call.Native.SetGain(value);
         }
     }
 
@@ -53,12 +56,14 @@ public sealed class GameInputForceFeedbackEffect : IDisposable
     {
         get
         {
-            return Native.GetState();
+            using ComLease<IGameInputForceFeedbackEffect> call = EnterNative();
+            return call.Native.GetState();
         }
 
         set
         {
-            Native.SetState(value);
+            using ComLease<IGameInputForceFeedbackEffect> call = EnterNative();
+            call.Native.SetState(value);
         }
     }
 
@@ -72,7 +77,8 @@ public sealed class GameInputForceFeedbackEffect : IDisposable
         IntPtr pointer = Marshal.AllocHGlobal(Marshal.SizeOf<GameInputForceFeedbackParams>());
         try
         {
-            Native.GetParams(pointer);
+            using ComLease<IGameInputForceFeedbackEffect> call = EnterNative();
+            call.Native.GetParams(pointer);
             return Marshal.PtrToStructure<GameInputForceFeedbackParams>(pointer);
         }
         finally
@@ -93,7 +99,8 @@ public sealed class GameInputForceFeedbackEffect : IDisposable
         try
         {
             Marshal.StructureToPtr(parameters, pointer, fDeleteOld: false);
-            return Native.SetParams(pointer);
+            using ComLease<IGameInputForceFeedbackEffect> call = EnterNative();
+            return call.Native.SetParams(pointer);
         }
         finally
         {
@@ -108,7 +115,8 @@ public sealed class GameInputForceFeedbackEffect : IDisposable
     /// <returns>The owning device wrapper, or null when unavailable. 所屬裝置包裝；無法取得時為 null。</returns>
     public GameInputDevice? GetDevice()
     {
-        Native.GetDevice(out IGameInputDevice? device);
+        using ComLease<IGameInputForceFeedbackEffect> call = EnterNative();
+        call.Native.GetDevice(out IGameInputDevice? device);
         return device is { } deviceValue ? new GameInputDevice(deviceValue) : null;
     }
 
@@ -123,22 +131,15 @@ public sealed class GameInputForceFeedbackEffect : IDisposable
             return;
         }
 
-        if (_native is not null)
-        {
-            _native.Value.Release();
-            _native = null;
-        }
+        _handle.Dispose();
 
         GC.SuppressFinalize(this);
     }
 
-    private IGameInputForceFeedbackEffect Native
+    private ComLease<IGameInputForceFeedbackEffect> EnterNative()
     {
-        get
-        {
-            return Volatile.Read(ref _disposed) != 0
-                ? throw new ObjectDisposedException(nameof(GameInputForceFeedbackEffect))
-                : _native ?? throw new ObjectDisposedException(nameof(GameInputForceFeedbackEffect));
-        }
+        return Volatile.Read(ref _disposed) != 0
+            ? throw new ObjectDisposedException(nameof(GameInputForceFeedbackEffect))
+            : _handle.Acquire(static pointer => new IGameInputForceFeedbackEffect(pointer), nameof(GameInputForceFeedbackEffect));
     }
 }

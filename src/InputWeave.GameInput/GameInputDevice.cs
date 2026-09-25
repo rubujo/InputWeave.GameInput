@@ -9,7 +9,7 @@ namespace InputWeave.GameInput;
 /// </summary>
 public sealed class GameInputDevice : IDisposable
 {
-    private IGameInputDevice? _native;
+    private readonly GameInputComHandle _handle;
     private int _disposed;
     private GameInputDeviceInfoSnapshot? _cachedInfoSnapshot;
 
@@ -21,14 +21,16 @@ public sealed class GameInputDevice : IDisposable
 
     internal GameInputDevice(IGameInputDevice native)
     {
-        _native = native;
+        _handle = new GameInputComHandle(native.Pointer);
     }
 
     internal IGameInputDevice NativeInterface
     {
         get
         {
-            return Native;
+            return Volatile.Read(ref _disposed) != 0
+                ? throw new ObjectDisposedException(nameof(GameInputDevice))
+                : new IGameInputDevice(_handle.DangerousGetHandle());
         }
     }
 
@@ -40,7 +42,8 @@ public sealed class GameInputDevice : IDisposable
     {
         get
         {
-            return Native.GetDeviceStatus();
+            using ComLease<IGameInputDevice> call = EnterNative();
+            return call.Native.GetDeviceStatus();
         }
     }
 
@@ -63,7 +66,8 @@ public sealed class GameInputDevice : IDisposable
     /// <returns>The native device information structure. 原生裝置資訊結構。</returns>
     public GameInputDeviceInfo GetDeviceInfo()
     {
-        int hResult = Native.GetDeviceInfo(out IntPtr info);
+        using ComLease<IGameInputDevice> call = EnterNative();
+        int hResult = call.Native.GetDeviceInfo(out IntPtr info);
         GameInputException.ThrowIfFailed(hResult);
         return Marshal.PtrToStructure<GameInputDeviceInfo>(info);
     }
@@ -126,7 +130,8 @@ public sealed class GameInputDevice : IDisposable
         IntPtr pointer = Marshal.AllocHGlobal(Marshal.SizeOf<GameInputHapticInfo>());
         try
         {
-            int hResult = Native.GetHapticInfo(pointer);
+            using ComLease<IGameInputDevice> call = EnterNative();
+            int hResult = call.Native.GetHapticInfo(pointer);
             if (hResult == GameInputHResult.HapticInfoNotFound)
             {
                 return null;
@@ -177,7 +182,8 @@ public sealed class GameInputDevice : IDisposable
         try
         {
             Marshal.StructureToPtr(parameters, pointer, fDeleteOld: false);
-            int hResult = Native.CreateForceFeedbackEffect(motorIndex, pointer, out IGameInputForceFeedbackEffect? effect);
+            using ComLease<IGameInputDevice> call = EnterNative();
+            int hResult = call.Native.CreateForceFeedbackEffect(motorIndex, pointer, out IGameInputForceFeedbackEffect? effect);
             GameInputException.ThrowIfFailed(hResult);
             return effect is { } effectValue
                 ? new GameInputForceFeedbackEffect(effectValue)
@@ -260,7 +266,8 @@ public sealed class GameInputDevice : IDisposable
     /// <returns>Returns true when the motor is powered on; otherwise returns false. 馬達已供電時傳回 true；否則傳回 false。</returns>
     public bool IsForceFeedbackMotorPoweredOn(uint motorIndex)
     {
-        return Native.IsForceFeedbackMotorPoweredOn(motorIndex);
+        using ComLease<IGameInputDevice> call = EnterNative();
+        return call.Native.IsForceFeedbackMotorPoweredOn(motorIndex);
     }
 
     /// <summary>
@@ -271,7 +278,8 @@ public sealed class GameInputDevice : IDisposable
     /// <param name="masterGain">The master gain to apply. 要套用的 master gain。</param>
     public void SetForceFeedbackMotorGain(uint motorIndex, float masterGain)
     {
-        Native.SetForceFeedbackMotorGain(motorIndex, masterGain);
+        using ComLease<IGameInputDevice> call = EnterNative();
+        call.Native.SetForceFeedbackMotorGain(motorIndex, masterGain);
     }
 
     /// <summary>
@@ -285,7 +293,8 @@ public sealed class GameInputDevice : IDisposable
         try
         {
             Marshal.StructureToPtr(parameters, pointer, fDeleteOld: false);
-            Native.SetRumbleState(pointer);
+            using ComLease<IGameInputDevice> call = EnterNative();
+            call.Native.SetRumbleState(pointer);
         }
         finally
         {
@@ -423,7 +432,8 @@ public sealed class GameInputDevice : IDisposable
         try
         {
             Marshal.Copy(input, 0, inputPointer, input.Length);
-            int hResult = Native.DirectInputEscape(command, inputPointer, (uint)input.Length, outputPointer, (uint)output.Length, out uint written);
+            using ComLease<IGameInputDevice> call = EnterNative();
+            int hResult = call.Native.DirectInputEscape(command, inputPointer, (uint)input.Length, outputPointer, (uint)output.Length, out uint written);
             GameInputException.ThrowIfFailed(hResult);
             int count = EnsureNativeWrittenCount(written, output.Length, "DirectInput escape 輸出位元組數");
             Marshal.Copy(outputPointer, output, 0, count);
@@ -443,7 +453,8 @@ public sealed class GameInputDevice : IDisposable
     /// <returns>The newly created input mapper. 新建立的 input mapper。</returns>
     public GameInputMapper CreateInputMapper()
     {
-        int hResult = Native.CreateInputMapper(out IGameInputMapper? mapper);
+        using ComLease<IGameInputDevice> call = EnterNative();
+        int hResult = call.Native.CreateInputMapper(out IGameInputMapper? mapper);
         GameInputException.ThrowIfFailed(hResult);
         return mapper is { } mapperValue
             ? new GameInputMapper(mapperValue)
@@ -459,7 +470,8 @@ public sealed class GameInputDevice : IDisposable
     /// <exception cref="InvalidOperationException">The index count reported by the native side exceeds the internal limit, which is treated as an anomalous device or driver report. 原生回報的索引數量超過內部上限，視為裝置或驅動程式回報異常。</exception>
     public byte[] GetExtraAxisIndexes(GameInputKind inputKind)
     {
-        int hResult = Native.GetExtraAxisCount(inputKind, out uint count);
+        using ComLease<IGameInputDevice> call = EnterNative();
+        int hResult = call.Native.GetExtraAxisCount(inputKind, out uint count);
         GameInputException.ThrowIfFailed(hResult);
         byte[] indexes = new byte[NativeSizeGuard.EnsureCount(count, NativeSizeGuard.MaxElementCount, "額外軸索引數量")];
         if (count == 0)
@@ -471,7 +483,7 @@ public sealed class GameInputDevice : IDisposable
         {
             fixed (byte* pointer = indexes)
             {
-                hResult = Native.GetExtraAxisIndexes(inputKind, count, (IntPtr)pointer);
+                hResult = call.Native.GetExtraAxisIndexes(inputKind, count, (IntPtr)pointer);
             }
         }
         GameInputException.ThrowIfFailed(hResult);
@@ -487,7 +499,8 @@ public sealed class GameInputDevice : IDisposable
     /// <exception cref="InvalidOperationException">The index count reported by the native side exceeds the internal limit, which is treated as an anomalous device or driver report. 原生回報的索引數量超過內部上限，視為裝置或驅動程式回報異常。</exception>
     public byte[] GetExtraButtonIndexes(GameInputKind inputKind)
     {
-        int hResult = Native.GetExtraButtonCount(inputKind, out uint count);
+        using ComLease<IGameInputDevice> call = EnterNative();
+        int hResult = call.Native.GetExtraButtonCount(inputKind, out uint count);
         GameInputException.ThrowIfFailed(hResult);
         byte[] indexes = new byte[NativeSizeGuard.EnsureCount(count, NativeSizeGuard.MaxElementCount, "額外按鈕索引數量")];
         if (count == 0)
@@ -499,7 +512,7 @@ public sealed class GameInputDevice : IDisposable
         {
             fixed (byte* pointer = indexes)
             {
-                hResult = Native.GetExtraButtonIndexes(inputKind, count, (IntPtr)pointer);
+                hResult = call.Native.GetExtraButtonIndexes(inputKind, count, (IntPtr)pointer);
             }
         }
         GameInputException.ThrowIfFailed(hResult);
@@ -515,7 +528,8 @@ public sealed class GameInputDevice : IDisposable
     /// <returns>The newly created raw device report. 新建立的 raw device report。</returns>
     public GameInputRawDeviceReport CreateRawDeviceReport(uint reportId, GameInputRawDeviceReportKind reportKind)
     {
-        int hResult = Native.CreateRawDeviceReport(reportId, reportKind, out IGameInputRawDeviceReport? report);
+        using ComLease<IGameInputDevice> call = EnterNative();
+        int hResult = call.Native.CreateRawDeviceReport(reportId, reportKind, out IGameInputRawDeviceReport? report);
         GameInputException.ThrowIfFailed(hResult);
         return report is { } reportValue
             ? new GameInputRawDeviceReport(reportValue)
@@ -538,7 +552,9 @@ public sealed class GameInputDevice : IDisposable
         }
 #endif
 
-        int hResult = Native.SendRawDeviceOutput(report.NativeInterface);
+        using ComLease<IGameInputDevice> call = EnterNative();
+        int hResult = call.Native.SendRawDeviceOutput(report.NativeInterface);
+        GC.KeepAlive(report);
         GameInputException.ThrowIfFailed(hResult);
     }
 
@@ -553,23 +569,16 @@ public sealed class GameInputDevice : IDisposable
             return;
         }
 
-        if (_native is not null)
-        {
-            _native.Value.Release();
-            _native = null;
-        }
+        _handle.Dispose();
 
         GC.SuppressFinalize(this);
     }
 
-    private IGameInputDevice Native
+    private ComLease<IGameInputDevice> EnterNative()
     {
-        get
-        {
-            return Volatile.Read(ref _disposed) != 0
-                ? throw new ObjectDisposedException(nameof(GameInputDevice))
-                : _native ?? throw new ObjectDisposedException(nameof(GameInputDevice));
-        }
+        return Volatile.Read(ref _disposed) != 0
+            ? throw new ObjectDisposedException(nameof(GameInputDevice))
+            : _handle.Acquire(static pointer => new IGameInputDevice(pointer), nameof(GameInputDevice));
     }
 
     internal static int EnsureNativeWrittenCount(uint written, int capacity, string subject)

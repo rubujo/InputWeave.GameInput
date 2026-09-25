@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using InputWeave.GameInput.Interop;
 
 namespace InputWeave.GameInput.Tests;
@@ -67,6 +68,36 @@ public sealed class GameInputLifetimeTests
 
             Assert.AreEqual(before - 1, GetReferenceCount(observer.NativeInterface), "並行 Dispose 只能釋放一次原生參考。");
         });
+    }
+
+    [TestMethod]
+    public void UndisposedDeviceReleasesNativeReferenceWhenFinalized()
+    {
+        RunWithFirstDevice((client, observer) =>
+        {
+            uint before = GetReferenceCount(observer.NativeInterface);
+            CreateUndisposedWrappers(client, observer.NativeInterface.Pointer);
+            Assert.IsGreaterThan(before, GetReferenceCount(observer.NativeInterface), "未釋放的包裝應持有原生參考。");
+
+            GC.Collect();
+            GC.WaitForPendingFinalizers();
+            GC.Collect();
+
+            Assert.AreEqual(before, GetReferenceCount(observer.NativeInterface), "未呼叫 Dispose 的包裝被 GC 回收後，應由 SafeHandle 終結器釋放原生參考。");
+        });
+    }
+
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private static void CreateUndisposedWrappers(GameInputClient client, IntPtr observedPointer)
+    {
+        // 在獨立的非內嵌方法中建立並丟棄包裝，確保呼叫端沒有殘留的區域參考讓物件保持存活。
+        foreach (GameInputDevice device in client.EnumerateDevices(AnyCommonKind))
+        {
+            if (device.NativeInterface.Pointer != observedPointer)
+            {
+                device.Dispose();
+            }
+        }
     }
 
     private static uint GetReferenceCount(IGameInputDevice native)

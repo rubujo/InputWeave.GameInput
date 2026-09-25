@@ -10,12 +10,12 @@ namespace InputWeave.GameInput;
 /// </summary>
 public sealed class GameInputMapper : IDisposable
 {
-    private IGameInputMapper? _native;
+    private readonly GameInputComHandle _handle;
     private int _disposed;
 
     internal GameInputMapper(IGameInputMapper native)
     {
-        _native = native;
+        _handle = new GameInputComHandle(native.Pointer);
     }
 
     /// <summary>
@@ -31,7 +31,8 @@ public sealed class GameInputMapper : IDisposable
 
         bool NativeMapping(IntPtr pointer)
         {
-            return Native.GetGamepadAxisMappingInfo(axisElement, pointer);
+            using ComLease<IGameInputMapper> call = EnterNative();
+            return call.Native.GetGamepadAxisMappingInfo(axisElement, pointer);
         }
     }
 
@@ -48,7 +49,8 @@ public sealed class GameInputMapper : IDisposable
 
         bool NativeMapping(IntPtr pointer)
         {
-            return Native.GetGamepadButtonMappingInfo(buttonElement, pointer);
+            using ComLease<IGameInputMapper> call = EnterNative();
+            return call.Native.GetGamepadButtonMappingInfo(buttonElement, pointer);
         }
     }
 
@@ -65,7 +67,8 @@ public sealed class GameInputMapper : IDisposable
 
         bool NativeMapping(IntPtr pointer)
         {
-            return Native.GetFlightStickAxisMappingInfo(axisElement, pointer);
+            using ComLease<IGameInputMapper> call = EnterNative();
+            return call.Native.GetFlightStickAxisMappingInfo(axisElement, pointer);
         }
     }
 
@@ -82,7 +85,8 @@ public sealed class GameInputMapper : IDisposable
 
         bool NativeMapping(IntPtr pointer)
         {
-            return Native.GetFlightStickButtonMappingInfo(buttonElement, pointer);
+            using ComLease<IGameInputMapper> call = EnterNative();
+            return call.Native.GetFlightStickButtonMappingInfo(buttonElement, pointer);
         }
     }
 
@@ -99,7 +103,8 @@ public sealed class GameInputMapper : IDisposable
 
         bool NativeMapping(IntPtr pointer)
         {
-            return Native.GetRacingWheelAxisMappingInfo(axisElement, pointer);
+            using ComLease<IGameInputMapper> call = EnterNative();
+            return call.Native.GetRacingWheelAxisMappingInfo(axisElement, pointer);
         }
     }
 
@@ -116,7 +121,8 @@ public sealed class GameInputMapper : IDisposable
 
         bool NativeMapping(IntPtr pointer)
         {
-            return Native.GetRacingWheelButtonMappingInfo(buttonElement, pointer);
+            using ComLease<IGameInputMapper> call = EnterNative();
+            return call.Native.GetRacingWheelButtonMappingInfo(buttonElement, pointer);
         }
     }
 
@@ -133,7 +139,8 @@ public sealed class GameInputMapper : IDisposable
 
         bool NativeMapping(IntPtr pointer)
         {
-            return Native.GetArcadeStickButtonMappingInfo(buttonElement, pointer);
+            using ComLease<IGameInputMapper> call = EnterNative();
+            return call.Native.GetArcadeStickButtonMappingInfo(buttonElement, pointer);
         }
     }
 
@@ -148,11 +155,7 @@ public sealed class GameInputMapper : IDisposable
             return;
         }
 
-        if (_native is not null)
-        {
-            _native.Value.Release();
-            _native = null;
-        }
+        _handle.Dispose();
 
         GC.SuppressFinalize(this);
     }
@@ -183,13 +186,10 @@ public sealed class GameInputMapper : IDisposable
         }
     }
 
-    private IGameInputMapper Native
+    private ComLease<IGameInputMapper> EnterNative()
     {
-        get
-        {
-            return Volatile.Read(ref _disposed) != 0
-                ? throw new ObjectDisposedException(nameof(GameInputMapper))
-                : _native ?? throw new ObjectDisposedException(nameof(GameInputMapper));
-        }
+        return Volatile.Read(ref _disposed) != 0
+            ? throw new ObjectDisposedException(nameof(GameInputMapper))
+            : _handle.Acquire(static pointer => new IGameInputMapper(pointer), nameof(GameInputMapper));
     }
 }

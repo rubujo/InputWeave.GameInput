@@ -9,12 +9,12 @@ namespace InputWeave.GameInput;
 /// </summary>
 public sealed class GameInputDispatcher : IDisposable
 {
-    private IGameInputDispatcher? _native;
+    private readonly GameInputComHandle _handle;
     private int _disposed;
 
     internal GameInputDispatcher(IGameInputDispatcher native)
     {
-        _native = native;
+        _handle = new GameInputComHandle(native.Pointer);
     }
 
     /// <summary>
@@ -25,7 +25,8 @@ public sealed class GameInputDispatcher : IDisposable
     /// <returns>Returns true when more callback work remains after the quota is consumed; otherwise returns false. 配額用完後仍有回呼工作待處理時傳回 true；否則傳回 false。</returns>
     public bool Dispatch(ulong quotaInMicroseconds)
     {
-        return Native.Dispatch(quotaInMicroseconds);
+        using ComLease<IGameInputDispatcher> call = EnterNative();
+        return call.Native.Dispatch(quotaInMicroseconds);
     }
 
     /// <summary>
@@ -43,7 +44,8 @@ public sealed class GameInputDispatcher : IDisposable
     /// <returns>The native wait handle; the caller is responsible for closing it. 原生 wait handle；由呼叫端負責關閉。</returns>
     public IntPtr OpenWaitHandle()
     {
-        int hResult = Native.OpenWaitHandle(out IntPtr waitHandle);
+        using ComLease<IGameInputDispatcher> call = EnterNative();
+        int hResult = call.Native.OpenWaitHandle(out IntPtr waitHandle);
         GameInputException.ThrowIfFailed(hResult);
         return waitHandle;
     }
@@ -70,22 +72,15 @@ public sealed class GameInputDispatcher : IDisposable
             return;
         }
 
-        if (_native is not null)
-        {
-            _native.Value.Release();
-            _native = null;
-        }
+        _handle.Dispose();
 
         GC.SuppressFinalize(this);
     }
 
-    private IGameInputDispatcher Native
+    private ComLease<IGameInputDispatcher> EnterNative()
     {
-        get
-        {
-            return Volatile.Read(ref _disposed) != 0
-                ? throw new ObjectDisposedException(nameof(GameInputDispatcher))
-                : _native ?? throw new ObjectDisposedException(nameof(GameInputDispatcher));
-        }
+        return Volatile.Read(ref _disposed) != 0
+            ? throw new ObjectDisposedException(nameof(GameInputDispatcher))
+            : _handle.Acquire(static pointer => new IGameInputDispatcher(pointer), nameof(GameInputDispatcher));
     }
 }
