@@ -11,7 +11,7 @@ namespace InputWeave.GameInput;
 public sealed class GameInputMapper : IDisposable
 {
     private IGameInputMapper? _native;
-    private bool _disposed;
+    private int _disposed;
 
     internal GameInputMapper(IGameInputMapper native)
     {
@@ -143,7 +143,7 @@ public sealed class GameInputMapper : IDisposable
     /// </summary>
     public void Dispose()
     {
-        if (_disposed)
+        if (Interlocked.CompareExchange(ref _disposed, 1, 0) != 0)
         {
             return;
         }
@@ -158,7 +158,6 @@ public sealed class GameInputMapper : IDisposable
             _native = null;
         }
 
-        _disposed = true;
         GC.SuppressFinalize(this);
     }
 
@@ -192,7 +191,7 @@ public sealed class GameInputMapper : IDisposable
     {
         get
         {
-            return _disposed
+            return Volatile.Read(ref _disposed) != 0
                 ? throw new ObjectDisposedException(nameof(GameInputMapper))
                 : _native ?? throw new ObjectDisposedException(nameof(GameInputMapper));
         }

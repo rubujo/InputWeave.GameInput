@@ -10,7 +10,7 @@ namespace InputWeave.GameInput;
 public sealed class GameInputDevice : IDisposable
 {
     private IGameInputDevice? _native;
-    private bool _disposed;
+    private int _disposed;
     private GameInputDeviceInfoSnapshot? _cachedInfoSnapshot;
 
 #if NET10_0_OR_GREATER
@@ -558,7 +558,7 @@ public sealed class GameInputDevice : IDisposable
     /// </summary>
     public void Dispose()
     {
-        if (_disposed)
+        if (Interlocked.CompareExchange(ref _disposed, 1, 0) != 0)
         {
             return;
         }
@@ -573,7 +573,6 @@ public sealed class GameInputDevice : IDisposable
             _native = null;
         }
 
-        _disposed = true;
         GC.SuppressFinalize(this);
     }
 
@@ -581,7 +580,7 @@ public sealed class GameInputDevice : IDisposable
     {
         get
         {
-            return _disposed
+            return Volatile.Read(ref _disposed) != 0
                 ? throw new ObjectDisposedException(nameof(GameInputDevice))
                 : _native ?? throw new ObjectDisposedException(nameof(GameInputDevice));
         }

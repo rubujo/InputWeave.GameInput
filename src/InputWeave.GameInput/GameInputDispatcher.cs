@@ -10,7 +10,7 @@ namespace InputWeave.GameInput;
 public sealed class GameInputDispatcher : IDisposable
 {
     private IGameInputDispatcher? _native;
-    private bool _disposed;
+    private int _disposed;
 
     internal GameInputDispatcher(IGameInputDispatcher native)
     {
@@ -65,7 +65,7 @@ public sealed class GameInputDispatcher : IDisposable
     /// </summary>
     public void Dispose()
     {
-        if (_disposed)
+        if (Interlocked.CompareExchange(ref _disposed, 1, 0) != 0)
         {
             return;
         }
@@ -80,7 +80,6 @@ public sealed class GameInputDispatcher : IDisposable
             _native = null;
         }
 
-        _disposed = true;
         GC.SuppressFinalize(this);
     }
 
@@ -88,7 +87,7 @@ public sealed class GameInputDispatcher : IDisposable
     {
         get
         {
-            return _disposed
+            return Volatile.Read(ref _disposed) != 0
                 ? throw new ObjectDisposedException(nameof(GameInputDispatcher))
                 : _native ?? throw new ObjectDisposedException(nameof(GameInputDispatcher));
         }

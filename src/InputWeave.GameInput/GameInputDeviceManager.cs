@@ -38,7 +38,7 @@ public sealed class GameInputDeviceManager : IDisposable
     private EventHandler<GameInputDeviceManagerEvent>? _deviceChangedHandlers;
     private int _pushSubscriberCount;
     private bool _manualDeviceEventsActive;
-    private bool _disposed;
+    private int _disposed;
 
     private GameInputDeviceManager(GameInputClient client)
     {
@@ -143,12 +143,31 @@ public sealed class GameInputDeviceManager : IDisposable
     {
         ThrowIfDisposed();
 
-        IReadOnlyList<GameInputDevice> devices = _client.EnumerateDevices(inputKind, statusFilter);
-        List<GameInputDeviceInfoSnapshot> snapshots = new(devices.Count);
-        foreach (GameInputDevice device in devices)
+        // GameInput 的根物件釋放後，所有子裝置物件都會失效；列舉與讀取裝置資訊必須在同一個原生租約內完成，
+        // 避免並行的 Dispose 在兩者之間釋放根物件。
+        (IReadOnlyList<GameInputDevice> devices, List<GameInputDeviceInfoSnapshot> snapshots) = _client.WithNativeLease(() =>
         {
-            snapshots.Add(device.GetDeviceInfoSnapshot());
-        }
+            IReadOnlyList<GameInputDevice> enumerated = _client.EnumerateDevices(inputKind, statusFilter);
+            try
+            {
+                List<GameInputDeviceInfoSnapshot> infoSnapshots = new(enumerated.Count);
+                foreach (GameInputDevice device in enumerated)
+                {
+                    infoSnapshots.Add(device.GetDeviceInfoSnapshot());
+                }
+
+                return (enumerated, infoSnapshots);
+            }
+            catch
+            {
+                foreach (GameInputDevice device in enumerated)
+                {
+                    device.Dispose();
+                }
+
+                throw;
+            }
+        });
 
         foreach (GameInputDevice previousDevice in ReplaceDevices(devices, snapshots))
         {
@@ -606,7 +625,7 @@ public sealed class GameInputDeviceManager : IDisposable
     /// </exception>
     public void Dispose()
     {
-        if (_disposed)
+        if (Interlocked.CompareExchange(ref _disposed, 1, 0) != 0)
         {
             return;
         }
@@ -628,7 +647,6 @@ public sealed class GameInputDeviceManager : IDisposable
 
         _deviceChanges.Complete();
         _client.Dispose();
-        _disposed = true;
         GC.SuppressFinalize(this);
 
         if (stopDeviceEventsFailure is not null)
@@ -755,6 +773,12 @@ public sealed class GameInputDeviceManager : IDisposable
     {
         lock (_cacheLock)
         {
+            // Dispose 已清空快取後才完成的重新整理，不得把新裝置寫回快取，改交給呼叫端釋放，避免 COM 參考外洩。
+            if (IsDisposed && devices.Count > 0)
+            {
+                return [.. devices];
+            }
+
             List<GameInputDevice> previousDevices = [.. _devices];
 
             _devices.Clear();
@@ -809,12 +833,20 @@ public sealed class GameInputDeviceManager : IDisposable
         return -1;
     }
 
+    private bool IsDisposed
+    {
+        get
+        {
+            return Volatile.Read(ref _disposed) != 0;
+        }
+    }
+
     private void ThrowIfDisposed()
     {
 #if NET10_0_OR_GREATER
-        ObjectDisposedException.ThrowIf(_disposed, this);
+        ObjectDisposedException.ThrowIf(IsDisposed, this);
 #else
-        if (_disposed)
+        if (IsDisposed)
         {
             throw new ObjectDisposedException(nameof(GameInputDeviceManager));
         }

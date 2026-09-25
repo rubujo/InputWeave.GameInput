@@ -42,12 +42,12 @@ public sealed class GameInputClient : IDisposable
 #endif
     private readonly List<GameInputCallbackRegistration> _registrations = [];
     private readonly List<Action> _pendingWaitCancellations = [];
-    private IGameInput? _native;
-    private bool _disposed;
+    private readonly GameInputHandle _handle;
+    private int _disposeState;
 
-    private GameInputClient(IGameInput native)
+    private GameInputClient(GameInputHandle handle)
     {
-        _native = native;
+        _handle = handle;
     }
 
     /// <summary>
@@ -62,22 +62,16 @@ public sealed class GameInputClient : IDisposable
         int hResult = GameInputNativeMethods.GameInputInitialize(ref iid, out IntPtr nativePointer);
         GameInputException.ThrowIfFailed(hResult);
 
+        // GameInputInitialize 的輸出指標依 COM 慣例已 AddRef，擁有權直接轉交給 SafeHandle。
+        GameInputHandle handle = new(nativePointer);
         try
         {
-#if NET10_0_OR_GREATER
-            IGameInput native = new(nativePointer);
-            native.AddRef();
-#else
-            IGameInput native = (IGameInput)Marshal.GetObjectForIUnknown(nativePointer);
-#endif
-            return new GameInputClient(native);
+            return new GameInputClient(handle);
         }
-        finally
+        catch
         {
-            if (nativePointer != IntPtr.Zero)
-            {
-                Marshal.Release(nativePointer);
-            }
+            handle.Dispose();
+            throw;
         }
     }
 
@@ -88,7 +82,8 @@ public sealed class GameInputClient : IDisposable
     /// <returns>The current GameInput timestamp. 目前的 GameInput 時間戳記。</returns>
     public ulong GetCurrentTimestamp()
     {
-        return Native.GetCurrentTimestamp();
+        using NativeCall call = EnterNative();
+        return call.Native.GetCurrentTimestamp();
     }
 
     /// <summary>
@@ -98,7 +93,8 @@ public sealed class GameInputClient : IDisposable
     /// <param name="policy">The focus policy to apply. 要套用的焦點政策。</param>
     public void SetFocusPolicy(GameInputFocusPolicy policy)
     {
-        Native.SetFocusPolicy(policy);
+        using NativeCall call = EnterNative();
+        call.Native.SetFocusPolicy(policy);
     }
 
     /// <summary>
@@ -236,7 +232,8 @@ public sealed class GameInputClient : IDisposable
     /// <returns>The current low-level reading of the specified kind, or null when none is available. 目前指定種類的低階讀取資料；沒有可用資料時為 null。</returns>
     public GameInputReading? GetCurrentReading(GameInputKind inputKind, GameInputDevice? device = null)
     {
-        int hResult = Native.GetCurrentReading(inputKind, device?.NativeInterface, out IGameInputReading? nativeReading);
+        using NativeCall call = EnterNative();
+        int hResult = call.Native.GetCurrentReading(inputKind, device?.NativeInterface, out IGameInputReading? nativeReading);
         if (hResult == GameInputHResult.ReadingNotFound || hResult == GameInputHResult.InputKindNotPresent)
         {
             return null;
@@ -265,7 +262,8 @@ public sealed class GameInputClient : IDisposable
         }
 #endif
 
-        int hResult = Native.GetNextReading(referenceReading.NativeInterface, inputKind, device?.NativeInterface, out IGameInputReading? nativeReading);
+        using NativeCall call = EnterNative();
+        int hResult = call.Native.GetNextReading(referenceReading.NativeInterface, inputKind, device?.NativeInterface, out IGameInputReading? nativeReading);
         if (hResult == GameInputHResult.ReadingNotFound || hResult == GameInputHResult.InputKindNotPresent)
         {
             return null;
@@ -294,7 +292,8 @@ public sealed class GameInputClient : IDisposable
         }
 #endif
 
-        int hResult = Native.GetPreviousReading(referenceReading.NativeInterface, inputKind, device?.NativeInterface, out IGameInputReading? nativeReading);
+        using NativeCall call = EnterNative();
+        int hResult = call.Native.GetPreviousReading(referenceReading.NativeInterface, inputKind, device?.NativeInterface, out IGameInputReading? nativeReading);
         if (hResult == GameInputHResult.ReadingNotFound || hResult == GameInputHResult.InputKindNotPresent)
         {
             return null;
@@ -311,7 +310,8 @@ public sealed class GameInputClient : IDisposable
     /// <returns>The newly created GameInput dispatcher. 新建立的 GameInput dispatcher。</returns>
     public GameInputDispatcher CreateDispatcher()
     {
-        int hResult = Native.CreateDispatcher(out IGameInputDispatcher? dispatcher);
+        using NativeCall call = EnterNative();
+        int hResult = call.Native.CreateDispatcher(out IGameInputDispatcher? dispatcher);
         GameInputException.ThrowIfFailed(hResult);
         return dispatcher is { } dispatcherValue
             ? new GameInputDispatcher(dispatcherValue)
@@ -345,7 +345,8 @@ public sealed class GameInputClient : IDisposable
         // 原生 API 的參數是唯讀（const APP_LOCAL_DEVICE_ID*），高階簽章用 in 符合 C# 慣用法；
         // 產生式互通層簽章為 ref，複製到區域變數轉交。
         AppLocalDeviceId local = deviceId;
-        int hResult = Native.FindDeviceFromId(ref local, out IGameInputDevice? device);
+        using NativeCall call = EnterNative();
+        int hResult = call.Native.FindDeviceFromId(ref local, out IGameInputDevice? device);
         GameInputException.ThrowIfFailed(hResult);
         return device is { } deviceValue
             ? new GameInputDevice(deviceValue)
@@ -371,7 +372,8 @@ public sealed class GameInputClient : IDisposable
             throw new ArgumentException($"平台字串長度（{value.Length}）超過上限（{MaxPlatformStringLength}）。", nameof(value));
         }
 
-        int hResult = Native.FindDeviceFromPlatformString(value, out IGameInputDevice? device);
+        using NativeCall call = EnterNative();
+        int hResult = call.Native.FindDeviceFromPlatformString(value, out IGameInputDevice? device);
         GameInputException.ThrowIfFailed(hResult);
         return device is { } deviceValue
             ? new GameInputDevice(deviceValue)
@@ -387,6 +389,8 @@ public sealed class GameInputClient : IDisposable
     /// <returns>The list of devices matching the requested input kind and status filter. 符合指定輸入種類與狀態篩選的裝置清單。</returns>
     public IReadOnlyList<GameInputDevice> EnumerateDevices(GameInputKind inputKind, GameInputDeviceStatus statusFilter = GameInputDeviceStatus.GameInputDeviceConnected)
     {
+        // 租約涵蓋註冊到 finally 的停止與解除註冊，避免 Dispose 在列舉期間釋放原生物件。
+        using NativeCall call = EnterNative();
         DeviceEnumerationContext context = new();
         GCHandle contextHandle = GCHandle.Alloc(context);
         ulong token = 0;
@@ -396,7 +400,7 @@ public sealed class GameInputClient : IDisposable
             int hResult;
             unsafe
             {
-                hResult = Native.RegisterDeviceCallback(
+                hResult = call.Native.RegisterDeviceCallback(
                     device: null,
                     inputKind,
                     statusFilter,
@@ -406,7 +410,7 @@ public sealed class GameInputClient : IDisposable
                     out token);
             }
 #else
-            int hResult = Native.RegisterDeviceCallback(
+            int hResult = call.Native.RegisterDeviceCallback(
                 device: null,
                 inputKind,
                 statusFilter,
@@ -423,8 +427,8 @@ public sealed class GameInputClient : IDisposable
         {
             if (token != 0)
             {
-                Native.StopCallback(token);
-                Native.UnregisterCallback(token);
+                call.Native.StopCallback(token);
+                call.Native.UnregisterCallback(token);
             }
 
             if (contextHandle.IsAllocated)
@@ -471,7 +475,8 @@ public sealed class GameInputClient : IDisposable
     /// <returns>The device identifier of the aggregate device. 聚合裝置的裝置識別值。</returns>
     public AppLocalDeviceId CreateAggregateDevice(GameInputKind inputKind)
     {
-        int hResult = Native.CreateAggregateDevice(inputKind, out AppLocalDeviceId deviceId);
+        using NativeCall call = EnterNative();
+        int hResult = call.Native.CreateAggregateDevice(inputKind, out AppLocalDeviceId deviceId);
         GameInputException.ThrowIfFailed(hResult);
         return deviceId;
     }
@@ -486,7 +491,8 @@ public sealed class GameInputClient : IDisposable
         // 原生 API 的參數是唯讀（const APP_LOCAL_DEVICE_ID*），高階簽章用 in 符合 C# 慣用法；
         // 產生式互通層簽章為 ref，複製到區域變數轉交。
         AppLocalDeviceId local = deviceId;
-        int hResult = Native.DisableAggregateDevice(ref local);
+        using NativeCall call = EnterNative();
+        int hResult = call.Native.DisableAggregateDevice(ref local);
         GameInputException.ThrowIfFailed(hResult);
     }
 
@@ -518,7 +524,8 @@ public sealed class GameInputClient : IDisposable
             int hResult;
             unsafe
             {
-                hResult = Native.RegisterReadingCallback(
+                using NativeCall call = EnterNative();
+                hResult = call.Native.RegisterReadingCallback(
                     device?.NativeInterface,
                     inputKind,
                     GCHandle.ToIntPtr(handle),
@@ -526,7 +533,8 @@ public sealed class GameInputClient : IDisposable
                     out token);
             }
 #else
-            int hResult = Native.RegisterReadingCallback(device?.NativeInterface, inputKind, GCHandle.ToIntPtr(handle), s_readingCallback, out token);
+            using NativeCall call = EnterNative();
+            int hResult = call.Native.RegisterReadingCallback(device?.NativeInterface, inputKind, GCHandle.ToIntPtr(handle), s_readingCallback, out token);
 #endif
             GameInputException.ThrowIfFailed(hResult);
             return AddRegistration(token, handle, context.Deactivate);
@@ -696,7 +704,8 @@ public sealed class GameInputClient : IDisposable
             int hResult;
             unsafe
             {
-                hResult = Native.RegisterDeviceCallback(
+                using NativeCall call = EnterNative();
+                hResult = call.Native.RegisterDeviceCallback(
                     device?.NativeInterface,
                     inputKind,
                     statusFilter,
@@ -706,7 +715,8 @@ public sealed class GameInputClient : IDisposable
                     out token);
             }
 #else
-            int hResult = Native.RegisterDeviceCallback(device?.NativeInterface, inputKind, statusFilter, enumerationKind, GCHandle.ToIntPtr(handle), s_deviceCallback, out token);
+            using NativeCall call = EnterNative();
+            int hResult = call.Native.RegisterDeviceCallback(device?.NativeInterface, inputKind, statusFilter, enumerationKind, GCHandle.ToIntPtr(handle), s_deviceCallback, out token);
 #endif
             GameInputException.ThrowIfFailed(hResult);
             return AddRegistration(token, handle, context.Deactivate);
@@ -750,7 +760,8 @@ public sealed class GameInputClient : IDisposable
             int hResult;
             unsafe
             {
-                hResult = Native.RegisterSystemButtonCallback(
+                using NativeCall call = EnterNative();
+                hResult = call.Native.RegisterSystemButtonCallback(
                     device?.NativeInterface,
                     buttonFilter,
                     GCHandle.ToIntPtr(handle),
@@ -758,7 +769,8 @@ public sealed class GameInputClient : IDisposable
                     out token);
             }
 #else
-            int hResult = Native.RegisterSystemButtonCallback(device?.NativeInterface, buttonFilter, GCHandle.ToIntPtr(handle), s_systemButtonCallback, out token);
+            using NativeCall call = EnterNative();
+            int hResult = call.Native.RegisterSystemButtonCallback(device?.NativeInterface, buttonFilter, GCHandle.ToIntPtr(handle), s_systemButtonCallback, out token);
 #endif
             GameInputException.ThrowIfFailed(hResult);
             return AddRegistration(token, handle, context.Deactivate);
@@ -801,14 +813,16 @@ public sealed class GameInputClient : IDisposable
             int hResult;
             unsafe
             {
-                hResult = Native.RegisterKeyboardLayoutCallback(
+                using NativeCall call = EnterNative();
+                hResult = call.Native.RegisterKeyboardLayoutCallback(
                     device?.NativeInterface,
                     GCHandle.ToIntPtr(handle),
                     (IntPtr)(delegate* unmanaged[Stdcall]<ulong, IntPtr, IGameInputDevice, ulong, uint, uint, void>)&OnKeyboardLayoutCallback,
                     out token);
             }
 #else
-            int hResult = Native.RegisterKeyboardLayoutCallback(device?.NativeInterface, GCHandle.ToIntPtr(handle), s_keyboardLayoutCallback, out token);
+            using NativeCall call = EnterNative();
+            int hResult = call.Native.RegisterKeyboardLayoutCallback(device?.NativeInterface, GCHandle.ToIntPtr(handle), s_keyboardLayoutCallback, out token);
 #endif
             GameInputException.ThrowIfFailed(hResult);
             return AddRegistration(token, handle, context.Deactivate);
@@ -831,9 +845,18 @@ public sealed class GameInputClient : IDisposable
     /// <exception cref="InvalidOperationException">
     /// 有一個或多個回呼註冊因為在自身的原生回呼執行緒中被同步釋放而無法取消註冊；此時其餘資源仍會完成釋放。
     /// </exception>
+    /// <remarks>
+    /// Safe to call concurrently or repeatedly; only the first call performs disposal. Native calls already in progress on other
+    /// threads (for example <see cref="EnumerateDevicesAsync"/>) keep the native object alive until they return, and the native
+    /// object is released when the last of them finishes.
+    /// 可安全地並行或重複呼叫，只有第一次呼叫會執行釋放。其他執行緒上已在進行中的原生呼叫
+    /// （例如 <see cref="EnumerateDevicesAsync"/>）會讓原生物件存活到呼叫返回，最後一個呼叫結束時才釋放原生物件。
+    /// </remarks>
     public void Dispose()
     {
-        if (_disposed)
+        // 先標記為釋放中，讓之後的公開呼叫與新註冊一律視為已釋放；
+        // 回呼註冊的清理仍可透過 EnterNativeForCleanup 使用尚未歸零的原生參考。
+        if (Interlocked.CompareExchange(ref _disposeState, 1, 0) != 0)
         {
             return;
         }
@@ -866,17 +889,8 @@ public sealed class GameInputClient : IDisposable
             }
         }
 
-        if (_native is not null)
-        {
-#if NET10_0_OR_GREATER
-            _native.Value.Release();
-#else
-            Marshal.ReleaseComObject(_native);
-#endif
-            _native = null;
-        }
-
-        _disposed = true;
+        // SafeHandle 保證 ReleaseHandle 只執行一次，並延後到最後一個進行中的原生呼叫結束。
+        _handle.Dispose();
         GC.SuppressFinalize(this);
 
         if (disposeFailures is not null)
@@ -898,7 +912,7 @@ public sealed class GameInputClient : IDisposable
         bool disposed;
         lock (_syncRoot)
         {
-            disposed = _disposed;
+            disposed = IsDisposeStarted;
             if (!disposed)
             {
                 _registrations.Add(registration);
@@ -915,12 +929,14 @@ public sealed class GameInputClient : IDisposable
 
     private void StopCallback(ulong token)
     {
-        Native.StopCallback(token);
+        using NativeCall call = EnterNativeForCleanup();
+        call.Native.StopCallback(token);
     }
 
     private bool UnregisterCallback(ulong token)
     {
-        return Native.UnregisterCallback(token);
+        using NativeCall call = EnterNativeForCleanup();
+        return call.Native.UnregisterCallback(token);
     }
 
     private void RemoveRegistration(GameInputCallbackRegistration registration)
@@ -943,7 +959,7 @@ public sealed class GameInputClient : IDisposable
         bool disposed;
         lock (_syncRoot)
         {
-            disposed = _disposed;
+            disposed = IsDisposeStarted;
             if (!disposed)
             {
                 _pendingWaitCancellations.Add(cancelForDispose);
@@ -985,13 +1001,132 @@ public sealed class GameInputClient : IDisposable
         return tryCreateSnapshot(reading, out TSnapshot? snapshot) ? snapshot : null;
     }
 
-    private IGameInput Native
+    private bool IsDisposeStarted
     {
         get
         {
-            return _disposed
-                ? throw new ObjectDisposedException(nameof(GameInputClient))
-                : _native ?? throw new ObjectDisposedException(nameof(GameInputClient));
+            return Volatile.Read(ref _disposeState) != 0;
+        }
+    }
+
+    /// <summary>
+    /// Acquires a lease on the native object for a public call; fails once disposal has started.
+    /// 為公開呼叫取得原生物件租約；開始釋放後即失敗。
+    /// </summary>
+    private NativeCall EnterNative()
+    {
+        if (IsDisposeStarted)
+        {
+            throw new ObjectDisposedException(nameof(GameInputClient));
+        }
+
+        return EnterNativeForCleanup();
+    }
+
+    /// <summary>
+    /// Acquires a lease on the native object for callback cleanup; succeeds during disposal as long as the native object has not
+    /// been released yet.
+    /// 為回呼清理取得原生物件租約；只要原生物件尚未釋放，釋放期間仍可成功。
+    /// </summary>
+    private NativeCall EnterNativeForCleanup()
+    {
+        bool success = false;
+        try
+        {
+            _handle.DangerousAddRef(ref success);
+        }
+        catch (ObjectDisposedException)
+        {
+            throw new ObjectDisposedException(nameof(GameInputClient));
+        }
+
+        return new NativeCall(_handle);
+    }
+
+    /// <summary>
+    /// Runs <paramref name="action"/> while holding a lease that keeps the native root object alive, so child objects obtained
+    /// inside it stay valid even if <see cref="Dispose"/> runs concurrently.
+    /// 在持有原生根物件租約的期間執行 <paramref name="action"/>，讓其中取得的子物件即使遇到並行的 <see cref="Dispose"/> 也保持有效。
+    /// </summary>
+    /// <typeparam name="TResult">The result type. 結果型別。</typeparam>
+    /// <param name="action">The action to run. 要執行的動作。</param>
+    /// <returns>The result of <paramref name="action"/>. <paramref name="action"/> 的結果。</returns>
+    internal TResult WithNativeLease<TResult>(Func<TResult> action)
+    {
+        using NativeCall call = EnterNative();
+        return action();
+    }
+
+    /// <summary>
+    /// A lease that keeps the native <see cref="IGameInput"/> alive for the duration of one native call, backed by
+    /// <see cref="SafeHandle.DangerousAddRef"/> and <see cref="SafeHandle.DangerousRelease"/>.
+    /// 在一次原生呼叫期間讓原生 <see cref="IGameInput"/> 保持存活的租約，由
+    /// <see cref="SafeHandle.DangerousAddRef"/> 與 <see cref="SafeHandle.DangerousRelease"/> 支撐。
+    /// </summary>
+    private readonly ref struct NativeCall(GameInputHandle handle)
+    {
+        public IGameInput Native
+        {
+            get
+            {
+                return handle.Native;
+            }
+        }
+
+        public void Dispose()
+        {
+            handle.DangerousRelease();
+        }
+    }
+
+    /// <summary>
+    /// Owns the COM reference returned by <c>GameInputInitialize</c>; <see cref="SafeHandle"/> guarantees the reference is
+    /// released exactly once, and only after every outstanding <see cref="SafeHandle.DangerousAddRef"/> lease has ended.
+    /// 擁有 <c>GameInputInitialize</c> 傳回的 COM 參考；<see cref="SafeHandle"/> 保證這個參考只釋放一次，
+    /// 且只在所有進行中的 <see cref="SafeHandle.DangerousAddRef"/> 租約結束後才釋放。
+    /// </summary>
+    private sealed class GameInputHandle : SafeHandle
+    {
+#if !NET10_0_OR_GREATER
+        private readonly IGameInput _rcw;
+#endif
+
+        public GameInputHandle(IntPtr nativePointer)
+            : base(IntPtr.Zero, ownsHandle: true)
+        {
+            SetHandle(nativePointer);
+#if !NET10_0_OR_GREATER
+            _rcw = (IGameInput)Marshal.GetObjectForIUnknown(nativePointer);
+#endif
+        }
+
+        public override bool IsInvalid
+        {
+            get
+            {
+                return handle == IntPtr.Zero;
+            }
+        }
+
+        public IGameInput Native
+        {
+            get
+            {
+#if NET10_0_OR_GREATER
+                return new IGameInput(handle);
+#else
+                return _rcw;
+#endif
+            }
+        }
+
+        protected override bool ReleaseHandle()
+        {
+#if !NET10_0_OR_GREATER
+            Marshal.ReleaseComObject(_rcw);
+#endif
+            Marshal.Release(handle);
+            return true;
         }
     }
 

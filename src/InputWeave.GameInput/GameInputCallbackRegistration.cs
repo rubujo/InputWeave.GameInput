@@ -13,6 +13,7 @@ public sealed class GameInputCallbackRegistration : IDisposable
     private readonly Action<GameInputCallbackRegistration> _removeRegistration;
     private readonly Action _deactivateContext;
     private GCHandle _contextHandle;
+    private int _disposed;
 
     internal GameInputCallbackRegistration(
         ulong token,
@@ -40,7 +41,13 @@ public sealed class GameInputCallbackRegistration : IDisposable
     /// Whether the registration has been disposed.
     /// 註冊是否已釋放。
     /// </summary>
-    public bool IsDisposed { get; private set; }
+    public bool IsDisposed
+    {
+        get
+        {
+            return Volatile.Read(ref _disposed) != 0;
+        }
+    }
 
     /// <summary>
     /// Unregisters the callback and releases the related managed state.
@@ -59,7 +66,12 @@ public sealed class GameInputCallbackRegistration : IDisposable
             throw new InvalidOperationException("不允許在原生 GameInput 回呼執行緒中同步取消註冊該回呼，這會觸發原生端的致命判斷提示。請改由其他執行緒（例如透過 Task.Run）非同步釋放此註冊。");
         }
 
-        IsDisposed = true;
+        // 回呼執行緒檢查必須在取得釋放權之前，讓被拒絕的呼叫不會把註冊標成已釋放。
+        if (Interlocked.CompareExchange(ref _disposed, 1, 0) != 0)
+        {
+            return;
+        }
+
         _deactivateContext();
 
         try

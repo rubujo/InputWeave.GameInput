@@ -10,7 +10,7 @@ namespace InputWeave.GameInput;
 public sealed class GameInputReading : IDisposable
 {
     private IGameInputReading? _native;
-    private bool _disposed;
+    private int _disposed;
     private GameInputKind? _cachedInputKind;
     private ulong? _cachedTimestamp;
 
@@ -653,7 +653,7 @@ public sealed class GameInputReading : IDisposable
     /// </summary>
     public void Dispose()
     {
-        if (_disposed)
+        if (Interlocked.CompareExchange(ref _disposed, 1, 0) != 0)
         {
             return;
         }
@@ -671,7 +671,6 @@ public sealed class GameInputReading : IDisposable
             _native = null;
         }
 
-        _disposed = true;
         GC.SuppressFinalize(this);
     }
 
@@ -679,7 +678,7 @@ public sealed class GameInputReading : IDisposable
     {
         get
         {
-            return _disposed
+            return Volatile.Read(ref _disposed) != 0
                 ? throw new ObjectDisposedException(nameof(GameInputReading))
                 : _native ?? throw new ObjectDisposedException(nameof(GameInputReading));
         }

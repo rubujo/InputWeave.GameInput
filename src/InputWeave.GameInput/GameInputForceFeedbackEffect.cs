@@ -10,7 +10,7 @@ namespace InputWeave.GameInput;
 public sealed class GameInputForceFeedbackEffect : IDisposable
 {
     private IGameInputForceFeedbackEffect? _native;
-    private bool _disposed;
+    private int _disposed;
 
     internal GameInputForceFeedbackEffect(IGameInputForceFeedbackEffect native)
     {
@@ -118,7 +118,7 @@ public sealed class GameInputForceFeedbackEffect : IDisposable
     /// </summary>
     public void Dispose()
     {
-        if (_disposed)
+        if (Interlocked.CompareExchange(ref _disposed, 1, 0) != 0)
         {
             return;
         }
@@ -133,7 +133,6 @@ public sealed class GameInputForceFeedbackEffect : IDisposable
             _native = null;
         }
 
-        _disposed = true;
         GC.SuppressFinalize(this);
     }
 
@@ -141,7 +140,7 @@ public sealed class GameInputForceFeedbackEffect : IDisposable
     {
         get
         {
-            return _disposed
+            return Volatile.Read(ref _disposed) != 0
                 ? throw new ObjectDisposedException(nameof(GameInputForceFeedbackEffect))
                 : _native ?? throw new ObjectDisposedException(nameof(GameInputForceFeedbackEffect));
         }
