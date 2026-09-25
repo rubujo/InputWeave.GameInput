@@ -64,35 +64,39 @@ if (!manager.TryGetFirstGamepad(out GameInputDevice? device, out _))
     return;
 }
 
-GamepadReadingSnapshot? gamepad = manager.GetCurrentGamepad(device);
-if (gamepad is null)
+if (!manager.TryGetCurrentGamepad(device, out GamepadReadingSnapshot gamepad))
 {
     Console.WriteLine("目前沒有可用的 Gamepad reading。");
     return;
 }
 
-Console.WriteLine($"Buttons: {gamepad.Value.State.Buttons}");
+Console.WriteLine($"A 鍵按下：{gamepad.IsButtonDown(GameInputGamepadButtons.GameInputGamepadA)}");
+Console.WriteLine($"左搖桿：({gamepad.State.LeftThumbstickX:F2}, {gamepad.State.LeftThumbstickY:F2})");
 ```
+
+`TryGetCurrent*` 在有資料時直接輸出快照，不需要處理可為 null 的結果。快照另有 `IsButtonDown`、`WasButtonPressed`、`WasButtonReleased`（鍵盤為 `IsKeyDown`、`WasKeyPressed`、`WasKeyReleased`）等便利方法，比較前後兩個快照即可判斷「剛按下」與「剛放開」。
 
 ### 裝置資訊與快照
 
 ```csharp
+using System;
 using InputWeave.GameInput;
 using InputWeave.GameInput.Interop;
 
 using GameInputDeviceManager manager = GameInputDeviceManager.Create();
 manager.RefreshDevices();
 
-if (manager.TryGetFirstGamepad(out GameInputDevice? gamepadDevice, out GameInputDeviceInfoSnapshot? gamepadInfo))
+foreach (GameInputDeviceInfoSnapshot info in manager.DeviceSnapshots)
 {
-    GamepadReadingSnapshot? snapshot = manager.GetCurrentGamepad(gamepadDevice);
-    if (snapshot is not null)
-    {
-        GameInputGamepadButtons buttons = snapshot.State.Buttons;
-    }
+    Console.WriteLine($"{info.DisplayName}：{info.SupportedInput}，VID 0x{info.VendorId:X4} / PID 0x{info.ProductId:X4}");
 }
 
-_ = gamepadInfo?.DisplayName;
+if (manager.TryGetFirstGamepad(out GameInputDevice? gamepadDevice, out GameInputDeviceInfoSnapshot? gamepadInfo)
+    && manager.TryGetCurrentGamepad(gamepadDevice, out GamepadReadingSnapshot snapshot))
+{
+    GameInputGamepadButtons buttons = snapshot.State.Buttons;
+    Console.WriteLine($"{gamepadInfo?.DisplayName} 目前按鈕：{buttons}");
+}
 ```
 
 裝置管理、各輸入種類快照、分派器、Safe Wait Handle、Rumble scope、Force Feedback、原始報告、非同步 API、事件／`IObservable<T>` 與依賴注入註冊，請參考 [GameInput 常見情境指南](docs/gameinput-cookbook.md)。遇到 runtime、redist、callback 或硬體測試問題時，請先看 [常見錯誤與排查](docs/gameinput-troubleshooting.md)。
@@ -105,7 +109,7 @@ _ = gamepadInfo?.DisplayName;
 - 需要自訂原生結構的封送方式，或要整合既有的原生 C++/COM 呼叫端。
 - 需要診斷層級的原始資料（例如 `GameInputDeviceInfo` 的原生指標欄位），而不是高階快照已複製的欄位。
 
-`InputWeave.GameInput.Interop` 內的列舉、常數與結構是公開型別，可直接使用；COM 介面本身則是 `internal`，一般不會也不需要直接操作。多數高階包裝類別會透過 `NativeInterface` 內部屬性存取對應的低階介面，但這個逃生口主要是給函式庫內部使用；一般應用程式若發現高階 API 涵蓋不到的情境，建議優先回報需求，而不是依賴內部實作細節。
+`InputWeave.GameInput.Interop` 內的列舉、常數與結構是公開型別，可直接使用；COM 介面本身則是 `internal`，一般不會也不需要直接操作。高階包裝類別在每次原生呼叫期間都會取得內部租約來存取對應的低階介面，這屬於函式庫內部實作；一般應用程式若發現高階 API 涵蓋不到的情境，建議優先回報需求，而不是依賴內部實作細節。
 
 ## 範例
 

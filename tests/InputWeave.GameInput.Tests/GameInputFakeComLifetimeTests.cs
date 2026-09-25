@@ -400,6 +400,52 @@ public sealed class GameInputFakeComLifetimeTests
         }
     }
     [TestMethod]
+    public void TryGetCurrentGamepadReturnsSnapshotWithoutUnwrappingNullable()
+    {
+        using FakeComObject fakeRoot = FakeComObject.CreateGameInput();
+        using FakeComObject fakeReading = FakeComObject.CreateReading();
+        using GameInputDeviceManager manager = new(new GameInputClient(new GameInputComHandle(fakeRoot.Pointer)));
+        FakeComObject.CurrentReading = fakeReading.Pointer;
+
+        bool found;
+        GamepadReadingSnapshot snapshot;
+        try
+        {
+            found = manager.TryGetCurrentGamepad(out snapshot);
+        }
+        finally
+        {
+            FakeComObject.CurrentReading = IntPtr.Zero;
+        }
+
+        Assert.IsTrue(found);
+        Assert.AreEqual(FakeComObject.Timestamp, snapshot.Timestamp);
+        Assert.IsTrue(snapshot.IsButtonDown(GameInputGamepadButtons.GameInputGamepadA));
+        Assert.AreEqual(0.5f, snapshot.State.LeftTrigger);
+        Assert.AreEqual(1, fakeReading.RefCount, "短命 reading 讀完後應釋放 out 參數交出的參考。");
+    }
+
+    [TestMethod]
+    public void TryGetCurrentGamepadReturnsFalseWhenNoReadingIsAvailable()
+    {
+        using FakeComObject fakeRoot = FakeComObject.CreateGameInput();
+        using GameInputDeviceManager manager = new(new GameInputClient(new GameInputComHandle(fakeRoot.Pointer)));
+
+        Assert.IsFalse(manager.TryGetCurrentGamepad(out GamepadReadingSnapshot snapshot));
+        Assert.AreEqual(default, snapshot);
+        Assert.IsFalse(manager.TryGetCurrentKeyboard(out _));
+    }
+
+    [TestMethod]
+    public void TryGetCurrentThrowsAfterManagerDispose()
+    {
+        using FakeComObject fakeRoot = FakeComObject.CreateGameInput();
+        GameInputDeviceManager manager = new(new GameInputClient(new GameInputComHandle(fakeRoot.Pointer)));
+        manager.Dispose();
+
+        _ = Assert.ThrowsExactly<ObjectDisposedException>(() => manager.TryGetCurrentGamepad(out _));
+    }
+    [TestMethod]
     public void RegistrationFreesContextOnlyAfterSuccessfulUnregister()
     {
         (GameInputCallbackRegistration registration, WeakReference context, Func<bool> deactivated) = CreateRegistration(unregister: _ => true);
@@ -492,6 +538,7 @@ public sealed class GameInputFakeComLifetimeTests
         private static readonly GetRawDataFunction s_getRawData = GetRawData;
         private static readonly SetRawDataFunction s_setRawData = SetRawData;
         private static readonly GetAxisMappingFunction s_getAxisMapping = GetGamepadAxisMappingInfo;
+        private static readonly GetGamepadStateFunction s_getGamepadState = GetGamepadState;
 
         private readonly IntPtr _vtbl;
         private IntPtr _deviceInfo;
@@ -514,6 +561,9 @@ public sealed class GameInputFakeComLifetimeTests
 
         [UnmanagedFunctionPointer(CallingConvention.StdCall)]
         private delegate int GetDeviceInfoFunction(IntPtr self, IntPtr info);
+
+        [UnmanagedFunctionPointer(CallingConvention.StdCall)]
+        private delegate byte GetGamepadStateFunction(IntPtr self, IntPtr state);
 
         [UnmanagedFunctionPointer(CallingConvention.StdCall)]
         private delegate int CreateForceFeedbackEffectFunction(IntPtr self, uint motorIndex, IntPtr parameters, IntPtr effect);
@@ -552,6 +602,11 @@ public sealed class GameInputFakeComLifetimeTests
         public static bool ReturnNullDeviceInfo { get; set; }
 
         public static byte[]? LastSetRawData { get; set; }
+
+        /// <summary>
+        /// GetCurrentReading 要回傳的 reading；為 IntPtr.Zero 時回報找不到 reading。
+        /// </summary>
+        public static IntPtr CurrentReading { get; set; }
 
         public static GameInputForceFeedbackEffectKind? LastEffectKind { get; set; }
 
@@ -638,6 +693,7 @@ public sealed class GameInputFakeComLifetimeTests
             table->AddRef = (delegate* unmanaged[Stdcall]<IntPtr, uint>)Marshal.GetFunctionPointerForDelegate(s_addRef);
             table->Release = (delegate* unmanaged[Stdcall]<IntPtr, uint>)Marshal.GetFunctionPointerForDelegate(s_release);
             table->GetTimestamp = (delegate* unmanaged[Stdcall]<IntPtr, ulong>)Marshal.GetFunctionPointerForDelegate(s_timestamp);
+            table->GetGamepadState = (delegate* unmanaged[Stdcall]<IntPtr, GameInputGamepadState*, byte>)Marshal.GetFunctionPointerForDelegate(s_getGamepadState);
             return new FakeComObject(vtbl);
         }
 
@@ -724,8 +780,16 @@ public sealed class GameInputFakeComLifetimeTests
         {
             Interlocked.Increment(ref *CallCountSlot(self));
             OnNativeCall?.Invoke();
-            *(IntPtr*)reading = IntPtr.Zero;
-            return GameInputHResult.ReadingNotFound;
+            if (CurrentReading == IntPtr.Zero)
+            {
+                *(IntPtr*)reading = IntPtr.Zero;
+                return GameInputHResult.ReadingNotFound;
+            }
+
+            // 依 COM 慣例，out 參數交出的是呼叫端擁有的新參考。
+            _ = AddRef(CurrentReading);
+            *(IntPtr*)reading = CurrentReading;
+            return 0;
         }
 
         private static int RegisterDeviceCallback(IntPtr self, IntPtr device, GameInputKind inputKind, GameInputDeviceStatus statusFilter, GameInputEnumerationKind enumerationKind, IntPtr context, IntPtr callbackFunc, IntPtr callbackToken)
@@ -794,6 +858,12 @@ public sealed class GameInputFakeComLifetimeTests
                 },
                 mapping,
                 fDeleteOld: false);
+            return 1;
+        }
+
+        private static byte GetGamepadState(IntPtr self, IntPtr state)
+        {
+            *(GameInputGamepadState*)state = new GameInputGamepadState { Buttons = GameInputGamepadButtons.GameInputGamepadA, LeftTrigger = 0.5f };
             return 1;
         }
 

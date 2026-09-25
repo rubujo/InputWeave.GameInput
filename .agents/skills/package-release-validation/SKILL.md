@@ -7,7 +7,7 @@ description: 當需要驗證 NuGet 包裝、發佈前狀態、可轉散發套件
 
 1. 執行 `dotnet restore`、`dotnet build InputWeave.GameInput.slnx -c Release`、`dotnet test InputWeave.GameInput.slnx -c Release`。
 2. 執行 `dotnet format InputWeave.GameInput.slnx --verify-no-changes`。
-3. 執行 `pwsh ./eng/Verify-GameInputBindings.ps1` 與 `pwsh ./eng/Verify-GameInputCoverage.ps1`。
+3. 執行 `pwsh ./eng/Verify-GameInputBindings.ps1`、`pwsh ./eng/Verify-GameInputCoverage.ps1` 與 `pwsh ./eng/Verify-DocSnippets.ps1`（文件 C# 範例必須能實際編譯）。
 4. 執行 `pwsh ./eng/Validate-TextEncoding.ps1` 與 `pwsh ./eng/Validate-AgentDocs.ps1`。
 5. 執行 `dotnet pack src/InputWeave.GameInput/InputWeave.GameInput.csproj -c Release -o .tmp/packages`。
 6. 確認包裝套件版本為 `0.0.1`，發佈標籤名稱為 `v0.0.1`，授權中繼資料為 `CC0-1.0`。

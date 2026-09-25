@@ -4,12 +4,13 @@
 
 ## 遊戲控制器輪詢迴圈
 
-這個片段會列舉裝置、以能力選出第一個支援 Gamepad 的裝置，然後用簡單迴圈讀取目前快照。沒有遊戲控制器或暫時沒有讀取資料時，程式會清楚略過。
+這個片段會列舉裝置、以能力選出第一個支援 Gamepad 的裝置，然後用簡單迴圈讀取目前快照。`TryGetCurrentGamepad` 直接輸出快照，不需要處理可為 null 的結果；`WasButtonPressed` 比較前後兩個快照，只在按鈕「剛按下」的那一幀回傳 `true`。
 
 ```csharp
 using System;
 using System.Threading;
 using InputWeave.GameInput;
+using InputWeave.GameInput.Interop;
 
 using GameInputDeviceManager manager = GameInputDeviceManager.Create();
 manager.RefreshDevices();
@@ -20,63 +21,57 @@ if (!manager.TryGetFirstGamepad(out GameInputDevice? gamepadDevice, out GameInpu
     return;
 }
 
-Console.WriteLine($"使用裝置：{GetDisplayName(gamepadInfo)}");
+Console.WriteLine($"使用裝置：{gamepadInfo?.DisplayName ?? "(未命名裝置)"}");
 
+GamepadReadingSnapshot previous = default;
 for (int frame = 0; frame < 600; frame++)
 {
-    GamepadReadingSnapshot? gamepad = manager.GetCurrentGamepad(gamepadDevice);
-    if (gamepad is null)
+    if (manager.TryGetCurrentGamepad(gamepadDevice, out GamepadReadingSnapshot gamepad))
     {
-        Console.WriteLine("目前沒有可讀取的 Gamepad 快照。");
-    }
-    else
-    {
+        if (gamepad.WasButtonPressed(previous, GameInputGamepadButtons.GameInputGamepadA))
+        {
+            Console.WriteLine("A 鍵剛按下。");
+        }
+
         GameInputGamepadState state = gamepad.State;
         Console.WriteLine(
-            $"Buttons:{state.Buttons} LT:{state.LeftTrigger:F2} RT:{state.RightTrigger:F2} " +
+            $"LT:{state.LeftTrigger:F2} RT:{state.RightTrigger:F2} " +
             $"LX:{state.LeftThumbstickX:F2} LY:{state.LeftThumbstickY:F2}");
+        previous = gamepad;
     }
 
     Thread.Sleep(16);
-}
-
-static string GetDisplayName(GameInputDeviceInfoSnapshot? snapshot)
-{
-    return string.IsNullOrWhiteSpace(snapshot?.DisplayName) ? "(未命名裝置)" : snapshot.DisplayName;
 }
 ```
 
 ## 多輸入輪詢
 
-高階 current reading API 會在沒有資料時回傳 `null`，不需要把 `GameInputReading` 或 COM 物件保存到下一個 frame。應用程式可以依自己的 frame loop 只取需要的 snapshot。
+`TryGetCurrent*` 系列在有資料時回傳 `true` 並直接輸出快照，沒有資料時回傳 `false`，不需要把 `GameInputReading` 或 COM 物件保存到下一個 frame。應用程式可以依自己的 frame loop 只取需要的 snapshot。若偏好可為 null 的回傳值，也可以使用對應的 `GetCurrent*`，但讀取成員前要先經過 `.Value`。
 
 ```csharp
 using System;
 using InputWeave.GameInput;
+using InputWeave.GameInput.Interop;
 
 using GameInputDeviceManager manager = GameInputDeviceManager.Create();
 
-GamepadReadingSnapshot? gamepad = manager.GetCurrentGamepad();
-KeyboardReadingSnapshot? keyboard = manager.GetCurrentKeyboard();
-MouseReadingSnapshot? mouse = manager.GetCurrentMouse();
-SensorsReadingSnapshot? sensors = manager.GetCurrentSensors();
-
-if (gamepad is not null)
+if (manager.TryGetCurrentGamepad(out GamepadReadingSnapshot gamepad))
 {
-    Console.WriteLine($"Gamepad buttons: {gamepad.State.Buttons}");
+    Console.WriteLine($"A 鍵按下：{gamepad.IsButtonDown(GameInputGamepadButtons.GameInputGamepadA)}");
 }
 
-if (keyboard is not null)
+if (manager.TryGetCurrentKeyboard(out KeyboardReadingSnapshot keyboard))
 {
-    Console.WriteLine($"Keys: {keyboard.Keys.Count}");
+    const uint VirtualKeySpace = 0x20;
+    Console.WriteLine($"按下的按鍵數：{keyboard.Keys.Count}，空白鍵：{keyboard.IsKeyDown(VirtualKeySpace)}");
 }
 
-if (mouse is not null)
+if (manager.TryGetCurrentMouse(out MouseReadingSnapshot mouse))
 {
     Console.WriteLine($"Mouse: {mouse.State.PositionX}, {mouse.State.PositionY}");
 }
 
-if (sensors is not null)
+if (manager.TryGetCurrentSensors(out SensorsReadingSnapshot sensors))
 {
     Console.WriteLine($"Orientation W: {sensors.State.OrientationW:F2}");
 }
@@ -145,9 +140,9 @@ using GameInputCallbackRegistration registration = client.RegisterReadingCallbac
 
 static void OnReading(GameInputReading reading)
 {
-    if (reading.TryGetGamepadSnapshot(out GamepadReadingSnapshot? gamepad))
+    if (reading.TryGetGamepadSnapshot(out GamepadReadingSnapshot? gamepad) && gamepad is { } snapshot)
     {
-        Console.WriteLine($"Gamepad snapshot: {gamepad.Timestamp} / {gamepad.State.Buttons}");
+        Console.WriteLine($"Gamepad snapshot: {snapshot.Timestamp} / {snapshot.State.Buttons}");
     }
 }
 ```
@@ -190,7 +185,7 @@ if (rumble is null)
 }
 
 Thread.Sleep(250);
-Console.WriteLine($"已短暫觸發低強度 Rumble：{snapshot.SupportedRumbleMotors}");
+Console.WriteLine($"已短暫觸發低強度 Rumble：{snapshot?.SupportedRumbleMotors}");
 ```
 
 ## Force Feedback 明確啟用
@@ -223,7 +218,7 @@ if (!device!.TryCreateForceFeedbackEffect(0, effectParams, out GameInputForceFee
 
 using (effect)
 {
-    effect.State = GameInputFeedbackEffectState.GameInputFeedbackEffectRunning;
+    effect.State = GameInputFeedbackEffectState.GameInputFeedbackRunning;
 }
 ```
 
@@ -237,8 +232,7 @@ using InputWeave.GameInput;
 
 using GameInputDeviceManager manager = GameInputDeviceManager.Create();
 
-RawDeviceReportSnapshot? report = manager.GetCurrentRawReport();
-if (report is null)
+if (!manager.TryGetCurrentRawReport(out RawDeviceReportSnapshot report))
 {
     Console.WriteLine("目前沒有 raw device report。");
     return;
@@ -248,7 +242,7 @@ byte[] data = report.GetData();
 Console.WriteLine($"Raw report {report.Info.Id}: {data.Length} bytes");
 ```
 
-原生回報的 raw report 大小超過 `GameInputRawDeviceReport.MaxRawDataSize`（64 KB）時，視為裝置或驅動程式回報異常：`TryGetRawReportSnapshot`／`GetCurrentRawReport` 會回傳 `false`／`null`，直接呼叫 `GameInputRawDeviceReport.GetRawDataSize()`／`GetRawData()` 則會拋出 `InvalidOperationException`。實際裝置的 report 遠小於這個上限，一般不會遇到。
+原生回報的 raw report 大小超過 `GameInputRawDeviceReport.MaxRawDataSize`（64 KB）時，視為裝置或驅動程式回報異常：`TryGetRawReportSnapshot`／`TryGetCurrentRawReport`／`GetCurrentRawReport` 會回傳 `false`／`false`／`null`，直接呼叫 `GameInputRawDeviceReport.GetRawDataSize()`／`GetRawData()` 則會拋出 `InvalidOperationException`。實際裝置的 report 遠小於這個上限，一般不會遇到。
 
 ## 非同步 API
 
@@ -256,6 +250,7 @@ Console.WriteLine($"Raw report {report.Info.Id}: {data.Length} bytes");
 
 ```csharp
 using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using InputWeave.GameInput;
@@ -327,6 +322,7 @@ GameInputDeviceManager manager = provider.GetRequiredService<GameInputDeviceMana
 高階 API 涵蓋不到的情境（例如尚未包裝的原生方法、自訂封送）才需要接觸 `InputWeave.GameInput.Interop`。列舉、常數與結構是公開型別，可直接搭配高階 API 使用；COM 介面本身是 `internal`，屬於函式庫內部實作細節。
 
 ```csharp
+using System;
 using InputWeave.GameInput;
 using InputWeave.GameInput.Interop;
 
@@ -344,7 +340,7 @@ if (manager.TryGetFirstGamepad(out GameInputDevice? device, out GameInputDeviceI
 
 ## 執行階段缺失排除
 
-`GameInputRuntime.TryProbe` 可在建立 client 前檢查目前載入原則、候選執行階段、HRESULT 與 Win32 錯誤碼。InputWeave 會用受控載入器對齊 Microsoft C++ 載入器的執行階段選擇行為，但包裝套件不會散佈或安裝 `GameInputRedist.msi`、`GameInputRedist.dll` 或原生橋接 DLL；應用程式安裝流程仍需負責安裝 Microsoft 支援的 GameInput 可轉散發套件。`net10.0-windows` 分支已改用裸 vtable 投影，並已實際跑過 `dotnet publish -p:PublishAot=true` 端對端驗證（見 README「支援範圍」段落），確認裝置列舉、非同步 API、事件、依賴注入等主要路徑在 NativeAOT 下運作正常。
+`GameInputRuntime.TryProbe` 可在建立 client 前檢查目前載入原則、候選執行階段、HRESULT 與 Win32 錯誤碼。InputWeave 會用受控載入器對齊 Microsoft C++ 載入器的執行階段選擇行為，但包裝套件不會散佈或安裝 `GameInputRedist.msi`、`GameInputRedist.dll` 或原生橋接 DLL；應用程式安裝流程仍需負責安裝 Microsoft 支援的 GameInput 可轉散發套件。兩個目標框架都使用裸 vtable 投影；`net10.0-windows` 已實際跑過 `dotnet publish -p:PublishAot=true` 端對端驗證（見 README「支援範圍」段落），確認裝置列舉、非同步 API、事件、依賴注入等主要路徑在 NativeAOT 下運作正常。
 
 ```csharp
 using System;

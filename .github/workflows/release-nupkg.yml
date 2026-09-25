@@ -138,6 +138,9 @@ jobs:
       - name: Verify GameInput coverage
         run: pwsh ./eng/Verify-GameInputCoverage.ps1
 
+      - name: Verify documentation snippets
+        run: pwsh ./eng/Verify-DocSnippets.ps1
+
       - name: Validate text encoding
         run: pwsh ./eng/Validate-TextEncoding.ps1
 

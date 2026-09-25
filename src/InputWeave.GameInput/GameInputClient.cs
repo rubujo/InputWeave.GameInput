@@ -250,6 +250,213 @@ public sealed class GameInputClient : IDisposable
     }
 
     /// <summary>
+    /// Tries to get the current gamepad snapshot from any device, without having to unwrap a nullable result.
+    /// 嘗試從任一裝置取得目前 gamepad 快照，不需要再展開可為 null 的結果。
+    /// </summary>
+    /// <param name="snapshot">Receives the current gamepad snapshot when one is available; otherwise the default value. 有可用資料時接收目前的 gamepad 快照；否則為預設值。</param>
+    /// <returns>Returns true when a reading is available; otherwise returns false. 有可用的讀取資料時傳回 true；否則傳回 false。</returns>
+    public bool TryGetCurrentGamepad(out GamepadReadingSnapshot snapshot)
+    {
+        return TryGetCurrentGamepad(null, out snapshot);
+    }
+
+    /// <summary>
+    /// Tries to get the current gamepad snapshot, without having to unwrap a nullable result.
+    /// 嘗試取得目前 gamepad 快照，不需要再展開可為 null 的結果。
+    /// </summary>
+    /// <param name="device">An optional GameInput device filter. 選用的 GameInput 裝置篩選。</param>
+    /// <param name="snapshot">Receives the current gamepad snapshot when one is available; otherwise the default value. 有可用資料時接收目前的 gamepad 快照；否則為預設值。</param>
+    /// <returns>Returns true when a reading is available; otherwise returns false. 有可用的讀取資料時傳回 true；否則傳回 false。</returns>
+    public bool TryGetCurrentGamepad(GameInputDevice? device, out GamepadReadingSnapshot snapshot)
+    {
+        return TryGetValue(GetCurrentGamepad(device), out snapshot);
+    }
+
+    /// <summary>
+    /// Tries to get the current keyboard snapshot from any device, without having to unwrap a nullable result.
+    /// 嘗試從任一裝置取得目前 keyboard 快照，不需要再展開可為 null 的結果。
+    /// </summary>
+    /// <param name="snapshot">Receives the current keyboard snapshot when one is available; otherwise the default value. 有可用資料時接收目前的 keyboard 快照；否則為預設值。</param>
+    /// <returns>Returns true when a reading is available; otherwise returns false. 有可用的讀取資料時傳回 true；否則傳回 false。</returns>
+    public bool TryGetCurrentKeyboard(out KeyboardReadingSnapshot snapshot)
+    {
+        return TryGetCurrentKeyboard(null, out snapshot);
+    }
+
+    /// <summary>
+    /// Tries to get the current keyboard snapshot, without having to unwrap a nullable result.
+    /// 嘗試取得目前 keyboard 快照，不需要再展開可為 null 的結果。
+    /// </summary>
+    /// <param name="device">An optional GameInput device filter. 選用的 GameInput 裝置篩選。</param>
+    /// <param name="snapshot">Receives the current keyboard snapshot when one is available; otherwise the default value. 有可用資料時接收目前的 keyboard 快照；否則為預設值。</param>
+    /// <returns>Returns true when a reading is available; otherwise returns false. 有可用的讀取資料時傳回 true；否則傳回 false。</returns>
+    public bool TryGetCurrentKeyboard(GameInputDevice? device, out KeyboardReadingSnapshot snapshot)
+    {
+        return TryGetValue(GetCurrentKeyboard(device), out snapshot);
+    }
+
+    /// <summary>
+    /// Tries to get the current mouse snapshot from any device, without having to unwrap a nullable result.
+    /// 嘗試從任一裝置取得目前 mouse 快照，不需要再展開可為 null 的結果。
+    /// </summary>
+    /// <param name="snapshot">Receives the current mouse snapshot when one is available; otherwise the default value. 有可用資料時接收目前的 mouse 快照；否則為預設值。</param>
+    /// <returns>Returns true when a reading is available; otherwise returns false. 有可用的讀取資料時傳回 true；否則傳回 false。</returns>
+    public bool TryGetCurrentMouse(out MouseReadingSnapshot snapshot)
+    {
+        return TryGetCurrentMouse(null, out snapshot);
+    }
+
+    /// <summary>
+    /// Tries to get the current mouse snapshot, without having to unwrap a nullable result.
+    /// 嘗試取得目前 mouse 快照，不需要再展開可為 null 的結果。
+    /// </summary>
+    /// <param name="device">An optional GameInput device filter. 選用的 GameInput 裝置篩選。</param>
+    /// <param name="snapshot">Receives the current mouse snapshot when one is available; otherwise the default value. 有可用資料時接收目前的 mouse 快照；否則為預設值。</param>
+    /// <returns>Returns true when a reading is available; otherwise returns false. 有可用的讀取資料時傳回 true；否則傳回 false。</returns>
+    public bool TryGetCurrentMouse(GameInputDevice? device, out MouseReadingSnapshot snapshot)
+    {
+        return TryGetValue(GetCurrentMouse(device), out snapshot);
+    }
+
+    /// <summary>
+    /// Tries to get the current sensors snapshot from any device, without having to unwrap a nullable result.
+    /// 嘗試從任一裝置取得目前 sensors 快照，不需要再展開可為 null 的結果。
+    /// </summary>
+    /// <param name="snapshot">Receives the current sensors snapshot when one is available; otherwise the default value. 有可用資料時接收目前的 sensors 快照；否則為預設值。</param>
+    /// <returns>Returns true when a reading is available; otherwise returns false. 有可用的讀取資料時傳回 true；否則傳回 false。</returns>
+    public bool TryGetCurrentSensors(out SensorsReadingSnapshot snapshot)
+    {
+        return TryGetCurrentSensors(null, out snapshot);
+    }
+
+    /// <summary>
+    /// Tries to get the current sensors snapshot, without having to unwrap a nullable result.
+    /// 嘗試取得目前 sensors 快照，不需要再展開可為 null 的結果。
+    /// </summary>
+    /// <param name="device">An optional GameInput device filter. 選用的 GameInput 裝置篩選。</param>
+    /// <param name="snapshot">Receives the current sensors snapshot when one is available; otherwise the default value. 有可用資料時接收目前的 sensors 快照；否則為預設值。</param>
+    /// <returns>Returns true when a reading is available; otherwise returns false. 有可用的讀取資料時傳回 true；否則傳回 false。</returns>
+    public bool TryGetCurrentSensors(GameInputDevice? device, out SensorsReadingSnapshot snapshot)
+    {
+        return TryGetValue(GetCurrentSensors(device), out snapshot);
+    }
+
+    /// <summary>
+    /// Tries to get the current controller snapshot from any device, without having to unwrap a nullable result.
+    /// 嘗試從任一裝置取得目前 一般 controller 快照，不需要再展開可為 null 的結果。
+    /// </summary>
+    /// <param name="snapshot">Receives the current controller snapshot when one is available; otherwise the default value. 有可用資料時接收目前的 一般 controller 快照；否則為預設值。</param>
+    /// <returns>Returns true when a reading is available; otherwise returns false. 有可用的讀取資料時傳回 true；否則傳回 false。</returns>
+    public bool TryGetCurrentController(out ControllerReadingSnapshot snapshot)
+    {
+        return TryGetCurrentController(null, out snapshot);
+    }
+
+    /// <summary>
+    /// Tries to get the current controller snapshot, without having to unwrap a nullable result.
+    /// 嘗試取得目前 一般 controller 快照，不需要再展開可為 null 的結果。
+    /// </summary>
+    /// <param name="device">An optional GameInput device filter. 選用的 GameInput 裝置篩選。</param>
+    /// <param name="snapshot">Receives the current controller snapshot when one is available; otherwise the default value. 有可用資料時接收目前的 一般 controller 快照；否則為預設值。</param>
+    /// <returns>Returns true when a reading is available; otherwise returns false. 有可用的讀取資料時傳回 true；否則傳回 false。</returns>
+    public bool TryGetCurrentController(GameInputDevice? device, out ControllerReadingSnapshot snapshot)
+    {
+        return TryGetValue(GetCurrentController(device), out snapshot);
+    }
+
+    /// <summary>
+    /// Tries to get the current arcade stick snapshot from any device, without having to unwrap a nullable result.
+    /// 嘗試從任一裝置取得目前 arcade stick 快照，不需要再展開可為 null 的結果。
+    /// </summary>
+    /// <param name="snapshot">Receives the current arcade stick snapshot when one is available; otherwise the default value. 有可用資料時接收目前的 arcade stick 快照；否則為預設值。</param>
+    /// <returns>Returns true when a reading is available; otherwise returns false. 有可用的讀取資料時傳回 true；否則傳回 false。</returns>
+    public bool TryGetCurrentArcadeStick(out ArcadeStickReadingSnapshot snapshot)
+    {
+        return TryGetCurrentArcadeStick(null, out snapshot);
+    }
+
+    /// <summary>
+    /// Tries to get the current arcade stick snapshot, without having to unwrap a nullable result.
+    /// 嘗試取得目前 arcade stick 快照，不需要再展開可為 null 的結果。
+    /// </summary>
+    /// <param name="device">An optional GameInput device filter. 選用的 GameInput 裝置篩選。</param>
+    /// <param name="snapshot">Receives the current arcade stick snapshot when one is available; otherwise the default value. 有可用資料時接收目前的 arcade stick 快照；否則為預設值。</param>
+    /// <returns>Returns true when a reading is available; otherwise returns false. 有可用的讀取資料時傳回 true；否則傳回 false。</returns>
+    public bool TryGetCurrentArcadeStick(GameInputDevice? device, out ArcadeStickReadingSnapshot snapshot)
+    {
+        return TryGetValue(GetCurrentArcadeStick(device), out snapshot);
+    }
+
+    /// <summary>
+    /// Tries to get the current flight stick snapshot from any device, without having to unwrap a nullable result.
+    /// 嘗試從任一裝置取得目前 flight stick 快照，不需要再展開可為 null 的結果。
+    /// </summary>
+    /// <param name="snapshot">Receives the current flight stick snapshot when one is available; otherwise the default value. 有可用資料時接收目前的 flight stick 快照；否則為預設值。</param>
+    /// <returns>Returns true when a reading is available; otherwise returns false. 有可用的讀取資料時傳回 true；否則傳回 false。</returns>
+    public bool TryGetCurrentFlightStick(out FlightStickReadingSnapshot snapshot)
+    {
+        return TryGetCurrentFlightStick(null, out snapshot);
+    }
+
+    /// <summary>
+    /// Tries to get the current flight stick snapshot, without having to unwrap a nullable result.
+    /// 嘗試取得目前 flight stick 快照，不需要再展開可為 null 的結果。
+    /// </summary>
+    /// <param name="device">An optional GameInput device filter. 選用的 GameInput 裝置篩選。</param>
+    /// <param name="snapshot">Receives the current flight stick snapshot when one is available; otherwise the default value. 有可用資料時接收目前的 flight stick 快照；否則為預設值。</param>
+    /// <returns>Returns true when a reading is available; otherwise returns false. 有可用的讀取資料時傳回 true；否則傳回 false。</returns>
+    public bool TryGetCurrentFlightStick(GameInputDevice? device, out FlightStickReadingSnapshot snapshot)
+    {
+        return TryGetValue(GetCurrentFlightStick(device), out snapshot);
+    }
+
+    /// <summary>
+    /// Tries to get the current racing wheel snapshot from any device, without having to unwrap a nullable result.
+    /// 嘗試從任一裝置取得目前 racing wheel 快照，不需要再展開可為 null 的結果。
+    /// </summary>
+    /// <param name="snapshot">Receives the current racing wheel snapshot when one is available; otherwise the default value. 有可用資料時接收目前的 racing wheel 快照；否則為預設值。</param>
+    /// <returns>Returns true when a reading is available; otherwise returns false. 有可用的讀取資料時傳回 true；否則傳回 false。</returns>
+    public bool TryGetCurrentRacingWheel(out RacingWheelReadingSnapshot snapshot)
+    {
+        return TryGetCurrentRacingWheel(null, out snapshot);
+    }
+
+    /// <summary>
+    /// Tries to get the current racing wheel snapshot, without having to unwrap a nullable result.
+    /// 嘗試取得目前 racing wheel 快照，不需要再展開可為 null 的結果。
+    /// </summary>
+    /// <param name="device">An optional GameInput device filter. 選用的 GameInput 裝置篩選。</param>
+    /// <param name="snapshot">Receives the current racing wheel snapshot when one is available; otherwise the default value. 有可用資料時接收目前的 racing wheel 快照；否則為預設值。</param>
+    /// <returns>Returns true when a reading is available; otherwise returns false. 有可用的讀取資料時傳回 true；否則傳回 false。</returns>
+    public bool TryGetCurrentRacingWheel(GameInputDevice? device, out RacingWheelReadingSnapshot snapshot)
+    {
+        return TryGetValue(GetCurrentRacingWheel(device), out snapshot);
+    }
+
+    /// <summary>
+    /// Tries to get the current raw device report snapshot from any device, without having to unwrap a nullable result.
+    /// 嘗試從任一裝置取得目前 raw device report 快照，不需要再展開可為 null 的結果。
+    /// </summary>
+    /// <param name="snapshot">Receives the current raw device report snapshot when one is available; otherwise the default value. 有可用資料時接收目前的 raw device report 快照；否則為預設值。</param>
+    /// <returns>Returns true when a reading is available; otherwise returns false. 有可用的讀取資料時傳回 true；否則傳回 false。</returns>
+    public bool TryGetCurrentRawReport(out RawDeviceReportSnapshot snapshot)
+    {
+        return TryGetCurrentRawReport(null, out snapshot);
+    }
+
+    /// <summary>
+    /// Tries to get the current raw device report snapshot, without having to unwrap a nullable result.
+    /// 嘗試取得目前 raw device report 快照，不需要再展開可為 null 的結果。
+    /// </summary>
+    /// <param name="device">An optional GameInput device filter. 選用的 GameInput 裝置篩選。</param>
+    /// <param name="snapshot">Receives the current raw device report snapshot when one is available; otherwise the default value. 有可用資料時接收目前的 raw device report 快照；否則為預設值。</param>
+    /// <returns>Returns true when a reading is available; otherwise returns false. 有可用的讀取資料時傳回 true；否則傳回 false。</returns>
+    public bool TryGetCurrentRawReport(GameInputDevice? device, out RawDeviceReportSnapshot snapshot)
+    {
+        return TryGetValue(GetCurrentRawReport(device), out snapshot);
+    }
+
+    /// <summary>
     /// Gets the current low-level reading of the specified kind.
     /// 取得目前指定種類的低階讀取資料。
     /// </summary>
@@ -995,6 +1202,13 @@ public sealed class GameInputClient : IDisposable
         {
             _pendingWaitCancellations.Remove(cancelForDispose);
         }
+    }
+
+    private static bool TryGetValue<TSnapshot>(TSnapshot? value, out TSnapshot snapshot)
+        where TSnapshot : struct
+    {
+        snapshot = value.GetValueOrDefault();
+        return value.HasValue;
     }
 
     private TSnapshot? GetCurrentSnapshot<TSnapshot>(

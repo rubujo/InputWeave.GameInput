@@ -27,7 +27,7 @@
 主要 GameInput 能力皆有受控 API：
 
 - 裝置：`GameInputDevice`、`GameInputDeviceInfoSnapshot`、`GameInputDeviceManager`，並提供依能力選擇第一個裝置的 helper
-- 讀取資料：Controller Axis/Button/Switch、Keyboard、Mouse、Sensors、Arcade Stick、Flight Stick、Gamepad、Racing Wheel、Raw Report，並提供不持有原生生命週期的 snapshot
+- 讀取資料：Controller Axis/Button/Switch、Keyboard、Mouse、Sensors、Arcade Stick、Flight Stick、Gamepad、Racing Wheel、Raw Report，並提供不持有原生生命週期的 snapshot；`GameInputClient`／`GameInputDeviceManager` 同時提供回傳可為 null 的 `GetCurrent*` 與直接輸出快照的 `TryGetCurrent*`，snapshot 另有 `IsButtonDown`／`WasButtonPressed`／`WasButtonReleased`（鍵盤為 `IsKeyDown`／`WasKeyPressed`／`WasKeyReleased`）便利方法
 - 回呼：Reading、Device、System Button、Keyboard Layout，並由 `GameInputCallbackRegistration` 管理 Unregister/Dispose
 - 分派器：`GameInputDispatcher` 與 `GameInputDispatcherWaitHandle`
 - 映射：Gamepad、Flight Stick、Racing Wheel、Arcade Stick Mapping

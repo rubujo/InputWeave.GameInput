@@ -14,6 +14,7 @@
 - Agent 文件檢查：`pwsh ./eng/Validate-AgentDocs.ps1`
 - GameInput 繫結檢查：`pwsh ./eng/Verify-GameInputBindings.ps1`
 - GameInput 覆蓋率檢查：`pwsh ./eng/Verify-GameInputCoverage.ps1`
+- 文件 C# 範例編譯檢查：`pwsh ./eng/Verify-DocSnippets.ps1`
 
 ## GameInput 維護邊界
 

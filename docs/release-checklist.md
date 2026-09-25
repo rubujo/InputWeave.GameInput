@@ -12,6 +12,7 @@ dotnet format InputWeave.GameInput.slnx --verify-no-changes
 pwsh ./eng/Check-GameInputVersion.ps1 -FailOnOutdated
 pwsh ./eng/Verify-GameInputBindings.ps1
 pwsh ./eng/Verify-GameInputCoverage.ps1
+pwsh ./eng/Verify-DocSnippets.ps1
 pwsh ./eng/Validate-TextEncoding.ps1
 pwsh ./eng/Validate-AgentDocs.ps1
 dotnet pack src/InputWeave.GameInput/InputWeave.GameInput.csproj -c Release -o .tmp/packages
@@ -31,6 +32,7 @@ dotnet pack src/InputWeave.GameInput/InputWeave.GameInput.csproj -c Release -o .
 - 可轉散發套件文件不得暗示包裝套件會散佈 `GameInputRedist.msi`、`GameInputRedist.dll` 或原生橋接 DLL。
 - `docs/gameinput-version-report.md` 必須包含目前 Microsoft.GameInput minor 系列的官方版本異動摘要與來源連結。
 - `docs/gameinput-api-coverage.md` 必須標示缺口為 0。
+- `README.md` 與 `docs/*.md` 內的每個 C# 範例都必須是可獨立編譯的頂層程式，並通過 `eng/Verify-DocSnippets.ps1`。
 - `InputWeave.GameInput.xml` 必須包含 public/protected API 的 `summary`、`param` 與 `returns`；`dotnet test` 會驗證 XML 文件完整性。
 
 ## 硬體抽測
