@@ -10,7 +10,6 @@ namespace InputWeave.GameInput;
 public sealed class GameInputDispatcher : IDisposable
 {
     private readonly GameInputComHandle _handle;
-    private int _disposed;
 
     internal GameInputDispatcher(IGameInputDispatcher native)
     {
@@ -67,20 +66,13 @@ public sealed class GameInputDispatcher : IDisposable
     /// </summary>
     public void Dispose()
     {
-        if (Interlocked.CompareExchange(ref _disposed, 1, 0) != 0)
-        {
-            return;
-        }
-
+        // SafeHandle.Dispose 本身冪等且執行緒安全，重複或並行呼叫只會釋放一次。
         _handle.Dispose();
-
         GC.SuppressFinalize(this);
     }
 
-    private ComLease<IGameInputDispatcher> EnterNative()
+    internal ComLease<IGameInputDispatcher> EnterNative()
     {
-        return Volatile.Read(ref _disposed) != 0
-            ? throw new ObjectDisposedException(nameof(GameInputDispatcher))
-            : _handle.Acquire(static pointer => new IGameInputDispatcher(pointer), nameof(GameInputDispatcher));
+        return _handle.Acquire<IGameInputDispatcher>(nameof(GameInputDispatcher));
     }
 }

@@ -10,7 +10,6 @@ namespace InputWeave.GameInput;
 public sealed class GameInputForceFeedbackEffect : IDisposable
 {
     private readonly GameInputComHandle _handle;
-    private int _disposed;
 
     internal GameInputForceFeedbackEffect(IGameInputForceFeedbackEffect native)
     {
@@ -126,20 +125,13 @@ public sealed class GameInputForceFeedbackEffect : IDisposable
     /// </summary>
     public void Dispose()
     {
-        if (Interlocked.CompareExchange(ref _disposed, 1, 0) != 0)
-        {
-            return;
-        }
-
+        // SafeHandle.Dispose 本身冪等且執行緒安全，重複或並行呼叫只會釋放一次。
         _handle.Dispose();
-
         GC.SuppressFinalize(this);
     }
 
-    private ComLease<IGameInputForceFeedbackEffect> EnterNative()
+    internal ComLease<IGameInputForceFeedbackEffect> EnterNative()
     {
-        return Volatile.Read(ref _disposed) != 0
-            ? throw new ObjectDisposedException(nameof(GameInputForceFeedbackEffect))
-            : _handle.Acquire(static pointer => new IGameInputForceFeedbackEffect(pointer), nameof(GameInputForceFeedbackEffect));
+        return _handle.Acquire<IGameInputForceFeedbackEffect>(nameof(GameInputForceFeedbackEffect));
     }
 }

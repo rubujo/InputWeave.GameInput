@@ -11,7 +11,6 @@ namespace InputWeave.GameInput;
 public sealed class GameInputMapper : IDisposable
 {
     private readonly GameInputComHandle _handle;
-    private int _disposed;
 
     internal GameInputMapper(IGameInputMapper native)
     {
@@ -150,13 +149,8 @@ public sealed class GameInputMapper : IDisposable
     /// </summary>
     public void Dispose()
     {
-        if (Interlocked.CompareExchange(ref _disposed, 1, 0) != 0)
-        {
-            return;
-        }
-
+        // SafeHandle.Dispose 本身冪等且執行緒安全，重複或並行呼叫只會釋放一次。
         _handle.Dispose();
-
         GC.SuppressFinalize(this);
     }
 
@@ -186,10 +180,8 @@ public sealed class GameInputMapper : IDisposable
         }
     }
 
-    private ComLease<IGameInputMapper> EnterNative()
+    internal ComLease<IGameInputMapper> EnterNative()
     {
-        return Volatile.Read(ref _disposed) != 0
-            ? throw new ObjectDisposedException(nameof(GameInputMapper))
-            : _handle.Acquire(static pointer => new IGameInputMapper(pointer), nameof(GameInputMapper));
+        return _handle.Acquire<IGameInputMapper>(nameof(GameInputMapper));
     }
 }

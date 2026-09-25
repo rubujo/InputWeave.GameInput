@@ -1,6 +1,8 @@
 using System.Runtime.CompilerServices;
 using InputWeave.GameInput.Interop;
 
+using static InputWeave.GameInput.Tests.TestSupport;
+
 namespace InputWeave.GameInput.Tests;
 
 [TestClass]
@@ -117,6 +119,11 @@ public sealed class GameInputLifetimeTests
                 Assert.Inconclusive("此測試需要至少一個已連線的遊戲控制器、鍵盤或滑鼠。");
             }
 
+            // 先讓其他測試殘留、指向同一個原生裝置的包裝完成終結，避免它們在量測期間釋放參考而干擾計數。
+            GC.Collect();
+            GC.WaitForPendingFinalizers();
+            GC.Collect();
+
             try
             {
                 action(client, devices[0]);
@@ -189,6 +196,56 @@ public sealed class GameInputLifetimeTests
     }
 
     [TestMethod]
+    public void DisposingManagerFromDeviceChangedHandlerDoesNotDeadlock()
+    {
+        // 實機曾重現：在原生回呼中同步等待背景 UnregisterCallback 會互相等待而永久卡住。
+        GameInputDeviceManager manager;
+        try
+        {
+            manager = GameInputDeviceManager.Create();
+        }
+        catch (Exception ex) when (ex is DllNotFoundException or EntryPointNotFoundException)
+        {
+            Assert.Inconclusive($"此測試環境沒有可用的 GameInput 執行階段：{ex.Message}");
+            return;
+        }
+
+        using ManualResetEventSlim handled = new();
+        Exception? failure = null;
+        int calls = 0;
+        manager.DeviceChanged += (_, _) =>
+        {
+            if (Interlocked.Increment(ref calls) != 1)
+            {
+                return;
+            }
+
+            try
+            {
+                manager.Dispose();
+            }
+            catch (Exception ex)
+            {
+                failure = ex;
+            }
+            finally
+            {
+                handled.Set();
+            }
+        };
+
+        if (!SpinWait.SpinUntil(() => Volatile.Read(ref calls) > 0, TimeSpan.FromSeconds(5)))
+        {
+            manager.Dispose();
+            Assert.Inconclusive("此測試需要至少一個已連線裝置，才能觸發初始裝置事件。");
+        }
+
+        Assert.IsTrue(handled.Wait(TimeSpan.FromSeconds(10)), "在 DeviceChanged 處理常式中 Dispose 管理器不得卡死。");
+        Assert.IsNull(failure);
+        _ = Assert.ThrowsExactly<ObjectDisposedException>(() => manager.Devices);
+    }
+
+    [TestMethod]
     public void ConcurrentClientDisposeDoesNotThrow()
     {
         RunWithClient(client =>
@@ -258,55 +315,6 @@ public sealed class GameInputLifetimeTests
             {
                 Assert.Inconclusive($"此測試環境的 GameInput.dll 不含必要進入點：{ex.Message}");
             }
-        }
-    }
-
-    private static void RunConcurrently(int threadCount, Action action)
-    {
-        using Barrier barrier = new(threadCount);
-        Task[] tasks = [.. Enumerable.Range(0, threadCount).Select(_ => Task.Factory.StartNew(
-            () =>
-            {
-                barrier.SignalAndWait();
-                action();
-            },
-            CancellationToken.None,
-            TaskCreationOptions.LongRunning,
-            TaskScheduler.Default))];
-        Task.WaitAll(tasks);
-    }
-
-    private static void RunWithClient(Action<GameInputClient> action)
-    {
-        try
-        {
-            using GameInputClient client = GameInputClient.Create();
-            action(client);
-        }
-        catch (DllNotFoundException ex)
-        {
-            Assert.Inconclusive($"此測試環境未載入 GameInput.dll：{ex.Message}");
-        }
-        catch (EntryPointNotFoundException ex)
-        {
-            Assert.Inconclusive($"此測試環境的 GameInput.dll 不含必要進入點：{ex.Message}");
-        }
-    }
-
-    private static async Task RunWithClientAsync(Func<GameInputClient, Task> action)
-    {
-        try
-        {
-            using GameInputClient client = GameInputClient.Create();
-            await action(client);
-        }
-        catch (DllNotFoundException ex)
-        {
-            Assert.Inconclusive($"此測試環境未載入 GameInput.dll：{ex.Message}");
-        }
-        catch (EntryPointNotFoundException ex)
-        {
-            Assert.Inconclusive($"此測試環境的 GameInput.dll 不含必要進入點：{ex.Message}");
         }
     }
 }

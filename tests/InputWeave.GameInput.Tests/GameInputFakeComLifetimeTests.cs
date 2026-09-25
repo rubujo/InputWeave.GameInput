@@ -2,6 +2,8 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using InputWeave.GameInput.Interop;
 
+using static InputWeave.GameInput.Tests.TestSupport;
+
 namespace InputWeave.GameInput.Tests;
 
 /// <summary>
@@ -199,6 +201,103 @@ public sealed class GameInputFakeComLifetimeTests
     }
 
     [TestMethod]
+    public void DeviceArgumentStaysAliveWhenDisposedDuringClientCall()
+    {
+        using FakeComObject fakeRoot = FakeComObject.CreateGameInput();
+        using FakeComObject fakeDevice = FakeComObject.CreateDevice();
+        using GameInputClient client = new(new GameInputComHandle(fakeRoot.Pointer));
+        GameInputDevice device = new(new IGameInputDevice(fakeDevice.Pointer));
+        int refCountDuringCall = -1;
+        FakeComObject.OnNativeCall = () =>
+        {
+            device.Dispose();
+            refCountDuringCall = fakeDevice.RefCount;
+        };
+
+        try
+        {
+            Assert.IsNull(client.GetCurrentReading(GameInputKind.GameInputKindGamepad, device));
+        }
+        finally
+        {
+            FakeComObject.OnNativeCall = null;
+        }
+
+        Assert.AreEqual(1, refCountDuringCall, "當成參數傳入的裝置在原生呼叫期間被 Dispose 時，租約應讓它存活到呼叫返回。");
+        Assert.AreEqual(0, fakeDevice.RefCount);
+    }
+
+    [TestMethod]
+    public void EnumerateDevicesDisposesCollectedDevicesWhenRegistrationFails()
+    {
+        using FakeComObject fakeRoot = FakeComObject.CreateGameInput();
+        using FakeComObject fakeDevice = FakeComObject.CreateDevice();
+        using GameInputClient client = new(new GameInputComHandle(fakeRoot.Pointer));
+        FakeComObject.EnumeratedDevice = fakeDevice.Pointer;
+
+        try
+        {
+            _ = Assert.ThrowsExactly<GameInputException>(() => client.EnumerateDevices(GameInputKind.GameInputKindGamepad));
+        }
+        finally
+        {
+            FakeComObject.EnumeratedDevice = IntPtr.Zero;
+        }
+
+        Assert.AreEqual(1, fakeDevice.RefCount, "列舉失敗時，回呼已收集的裝置包裝應立即釋放自己的參考。");
+    }
+
+    [TestMethod]
+    public void DisposeSafelyOnCallbackThreadDoesNotWaitForUnregister()
+    {
+        // 模擬 UnregisterCallback 要等目前回呼返回才會完成；舊實作在回呼執行緒上同步等待，會與它互相等待而死結。
+        using ManualResetEventSlim callbackReturned = new();
+        bool deactivated = false;
+        int ownerLeaseAcquired = 0;
+        int ownerLeaseReleased = 0;
+        GameInputCallbackRegistration registration = new(
+            token: 1,
+            GCHandle.Alloc(new object()),
+            deactivateContext: () => deactivated = true,
+            stopCallback: static _ => { },
+            unregisterCallback: _ =>
+            {
+                callbackReturned.Wait();
+                return true;
+            },
+            removeRegistration: static _ => { },
+            acquireOwnerLease: () =>
+            {
+                Interlocked.Increment(ref ownerLeaseAcquired);
+                return () => Interlocked.Increment(ref ownerLeaseReleased);
+            });
+
+        Exception? failure = null;
+        Thread callbackThread = new(() =>
+        {
+            GameInputCallbackThread.Enter();
+            try
+            {
+                failure = registration.DisposeSafely();
+            }
+            finally
+            {
+                GameInputCallbackThread.Exit();
+            }
+        });
+        callbackThread.Start();
+        bool returned = callbackThread.Join(TimeSpan.FromSeconds(5));
+        callbackReturned.Set();
+
+        Assert.IsTrue(returned, "回呼執行緒上的 DisposeSafely 不得等待背景解除註冊，否則會與 UnregisterCallback 死結。");
+        Assert.IsNull(failure);
+        Assert.IsTrue(deactivated, "應立即停用處理常式。");
+        Assert.AreEqual(1, Volatile.Read(ref ownerLeaseAcquired), "應在回呼執行緒上先取得擁有者租約。");
+        Assert.IsTrue(
+            SpinWait.SpinUntil(() => registration.IsDisposed && Volatile.Read(ref ownerLeaseReleased) == 1, TimeSpan.FromSeconds(5)),
+            "背景解除註冊完成後應歸還擁有者租約。");
+    }
+    [TestMethod]
     public void RegistrationFreesContextOnlyAfterSuccessfulUnregister()
     {
         (GameInputCallbackRegistration registration, WeakReference context, Func<bool> deactivated) = CreateRegistration(unregister: _ => true);
@@ -271,21 +370,6 @@ public sealed class GameInputFakeComLifetimeTests
         _ = new GameInputClient(new GameInputComHandle(pointer));
     }
 
-    private static void RunConcurrently(int threadCount, Action action)
-    {
-        using Barrier barrier = new(threadCount);
-        Task[] tasks = [.. Enumerable.Range(0, threadCount).Select(_ => Task.Factory.StartNew(
-            () =>
-            {
-                barrier.SignalAndWait();
-                action();
-            },
-            CancellationToken.None,
-            TaskCreationOptions.LongRunning,
-            TaskScheduler.Default))];
-        Task.WaitAll(tasks);
-    }
-
     /// <summary>
     /// 記憶體中的假 COM 物件，配置為 [vtable 指標][參考計數][原生呼叫次數]。
     /// 以 <see cref="Marshal.GetFunctionPointerForDelegate{TDelegate}(TDelegate)"/> 產生 vtable 函式指標，
@@ -299,6 +383,8 @@ public sealed class GameInputFakeComLifetimeTests
         private static readonly RefCountFunction s_release = Release;
         private static readonly TimestampFunction s_timestamp = GetTimestamp;
         private static readonly DeviceStatusFunction s_deviceStatus = GetDeviceStatus;
+        private static readonly GetCurrentReadingFunction s_getCurrentReading = GetCurrentReading;
+        private static readonly RegisterDeviceCallbackFunction s_registerDeviceCallback = RegisterDeviceCallback;
 
         private readonly IntPtr _vtbl;
         private bool _disposed;
@@ -321,7 +407,18 @@ public sealed class GameInputFakeComLifetimeTests
         [UnmanagedFunctionPointer(CallingConvention.StdCall)]
         private delegate GameInputDeviceStatus DeviceStatusFunction(IntPtr self);
 
+        [UnmanagedFunctionPointer(CallingConvention.StdCall)]
+        private delegate int GetCurrentReadingFunction(IntPtr self, GameInputKind inputKind, IntPtr device, IntPtr reading);
+
+        [UnmanagedFunctionPointer(CallingConvention.StdCall)]
+        private delegate int RegisterDeviceCallbackFunction(IntPtr self, IntPtr device, GameInputKind inputKind, GameInputDeviceStatus statusFilter, GameInputEnumerationKind enumerationKind, IntPtr context, IntPtr callbackFunc, IntPtr callbackToken);
+
         public static Action? OnNativeCall { get; set; }
+
+        /// <summary>
+        /// RegisterDeviceCallback 在回報失敗前，先以此裝置同步觸發一次回呼；為 IntPtr.Zero 時不觸發。
+        /// </summary>
+        public static IntPtr EnumeratedDevice { get; set; }
 
         public IntPtr Pointer { get; }
 
@@ -368,6 +465,8 @@ public sealed class GameInputFakeComLifetimeTests
             table->AddRef = (delegate* unmanaged[Stdcall]<IntPtr, uint>)Marshal.GetFunctionPointerForDelegate(s_addRef);
             table->Release = (delegate* unmanaged[Stdcall]<IntPtr, uint>)Marshal.GetFunctionPointerForDelegate(s_release);
             table->GetCurrentTimestamp = (delegate* unmanaged[Stdcall]<IntPtr, ulong>)Marshal.GetFunctionPointerForDelegate(s_timestamp);
+            table->GetCurrentReading = (delegate* unmanaged[Stdcall]<IntPtr, GameInputKind, IntPtr, void**, int>)Marshal.GetFunctionPointerForDelegate(s_getCurrentReading);
+            table->RegisterDeviceCallback = (delegate* unmanaged[Stdcall]<IntPtr, IntPtr, GameInputKind, GameInputDeviceStatus, GameInputEnumerationKind, IntPtr, IntPtr, ulong*, int>)Marshal.GetFunctionPointerForDelegate(s_registerDeviceCallback);
             return new FakeComObject(vtbl);
         }
 
@@ -420,6 +519,32 @@ public sealed class GameInputFakeComLifetimeTests
             Interlocked.Increment(ref *CallCountSlot(self));
             OnNativeCall?.Invoke();
             return Timestamp;
+        }
+
+        private static int GetCurrentReading(IntPtr self, GameInputKind inputKind, IntPtr device, IntPtr reading)
+        {
+            Interlocked.Increment(ref *CallCountSlot(self));
+            OnNativeCall?.Invoke();
+            *(IntPtr*)reading = IntPtr.Zero;
+            return GameInputHResult.ReadingNotFound;
+        }
+
+        private static int RegisterDeviceCallback(IntPtr self, IntPtr device, GameInputKind inputKind, GameInputDeviceStatus statusFilter, GameInputEnumerationKind enumerationKind, IntPtr context, IntPtr callbackFunc, IntPtr callbackToken)
+        {
+            // 模擬阻塞式列舉：先同步觸發回呼、再回報失敗，驗證已收集的裝置會被釋放。
+            if (EnumeratedDevice != IntPtr.Zero)
+            {
+                ((delegate* unmanaged[Stdcall]<ulong, IntPtr, IGameInputDevice, ulong, GameInputDeviceStatus, GameInputDeviceStatus, void>)callbackFunc)(
+                    0,
+                    context,
+                    new IGameInputDevice(EnumeratedDevice),
+                    0,
+                    GameInputDeviceStatus.GameInputDeviceConnected,
+                    GameInputDeviceStatus.GameInputDeviceNoStatus);
+            }
+
+            *(ulong*)callbackToken = 0;
+            return unchecked((int)0x80004005);
         }
 
         private static GameInputDeviceStatus GetDeviceStatus(IntPtr self)

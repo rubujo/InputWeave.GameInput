@@ -769,10 +769,10 @@ public sealed class GameInputDeviceManager : IDisposable
             // 這個時候同步呼叫 StopDeviceEvents() 會因為仍在回呼執行緒中而丟出
             // InvalidOperationException；改到背景執行緒延後處理，並在執行時重新檢查
             // 目前狀態（延後期間可能又有新訂閱者加入）。
-            // 這裡刻意用 fire-and-forget（不等待背景執行緒完成），因為呼叫端只是取消訂閱、
-            // 不需要確定裝置事件監看已經真正停止才能回傳；跟 GameInputCallbackRegistration.DisposeSafely()
-            // 需要同步等待（因為呼叫端接下來會釋放 registration 依賴的原生資源）是不同的取捨，
-            // 兩者故意沒有合併成同一個共用的「延後到背景執行緒」輔助方法。
+            // 這裡刻意用 fire-and-forget（不等待背景執行緒完成），因為呼叫端只是取消訂閱，
+            // 不需要確定裝置事件監看已經真正停止才能回傳；延後期間會重新檢查訂閱狀態。
+            // GameInputCallbackRegistration.DisposeSafely() 在回呼執行緒上同樣不等待（等待會與 UnregisterCallback 死結），
+            // 而是先取得用戶端租約，確保背景解除註冊完成前原生根物件不會被釋放。
             ThreadPool.QueueUserWorkItem(static state => ((GameInputDeviceManager)state!).StopDeviceEventsIfStillUnwanted(), this);
         }
         else

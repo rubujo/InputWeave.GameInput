@@ -9,7 +9,8 @@ namespace InputWeave.GameInput;
 /// </summary>
 public sealed class GameInputReading : IDisposable
 {
-    private readonly GameInputComHandle _handle;
+    private readonly GameInputComHandle? _handle;
+    private readonly IntPtr _scopedPointer;
     private int _disposed;
     private GameInputKind? _cachedInputKind;
     private ulong? _cachedTimestamp;
@@ -25,13 +26,35 @@ public sealed class GameInputReading : IDisposable
         _handle = new GameInputComHandle(native.Pointer);
     }
 
+    private GameInputReading(IntPtr scopedPointer)
+    {
+        _scopedPointer = scopedPointer;
+    }
+
+    /// <summary>
+    /// Creates a reading that is used only inside an internal <c>using</c> scope; it skips the <see cref="SafeHandle"/>
+    /// allocation on hot paths and releases the owned reference directly on dispose.
+    /// 建立只在內部 <c>using</c> 範圍內使用的 reading；熱路徑上省略 <see cref="SafeHandle"/> 配置，釋放時直接歸還擁有的參考。
+    /// </summary>
+    /// <remarks>
+    /// The caller must guarantee that the instance never escapes the scope and is not used concurrently with
+    /// <see cref="Dispose"/>, because it has no finalizer safety net or call lease.
+    /// 呼叫端必須保證物件不會離開該範圍，也不會與 <see cref="Dispose"/> 並行使用，因為它沒有終結器安全網與呼叫租約。
+    /// </remarks>
+    /// <param name="native">The owned reading reference. 擁有的 reading 參考。</param>
+    /// <returns>The scoped reading. 限定範圍的 reading。</returns>
+    internal static GameInputReading CreateScoped(IGameInputReading native)
+    {
+        return new GameInputReading(native.Pointer);
+    }
+
     internal IGameInputReading NativeInterface
     {
         get
         {
             return Volatile.Read(ref _disposed) != 0
                 ? throw new ObjectDisposedException(nameof(GameInputReading))
-                : new IGameInputReading(_handle.DangerousGetHandle());
+                : new IGameInputReading(_handle?.DangerousGetHandle() ?? _scopedPointer);
         }
     }
 
@@ -646,16 +669,28 @@ public sealed class GameInputReading : IDisposable
             return;
         }
 
-        _handle.Dispose();
+        if (_handle is not null)
+        {
+            _handle.Dispose();
+        }
+        else
+        {
+            Marshal.Release(_scopedPointer);
+        }
 
         GC.SuppressFinalize(this);
     }
 
-    private ComLease<IGameInputReading> EnterNative()
+    internal ComLease<IGameInputReading> EnterNative()
     {
-        return Volatile.Read(ref _disposed) != 0
-            ? throw new ObjectDisposedException(nameof(GameInputReading))
-            : _handle.Acquire(static pointer => new IGameInputReading(pointer), nameof(GameInputReading));
+        if (Volatile.Read(ref _disposed) != 0)
+        {
+            throw new ObjectDisposedException(nameof(GameInputReading));
+        }
+
+        return _handle is not null
+            ? _handle.Acquire<IGameInputReading>(nameof(GameInputReading))
+            : new ComLease<IGameInputReading>(null, GameInputComHandle.FromPointer<IGameInputReading>(_scopedPointer));
     }
 
     private bool HasAnyInputKind(GameInputKind inputKind)

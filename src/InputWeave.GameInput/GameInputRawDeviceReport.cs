@@ -23,7 +23,6 @@ public sealed class GameInputRawDeviceReport : IDisposable
     public const int MaxRawDataSize = 64 * 1024;
 
     private readonly GameInputComHandle _handle;
-    private int _disposed;
 
     internal GameInputRawDeviceReport(IGameInputRawDeviceReport native)
     {
@@ -34,7 +33,7 @@ public sealed class GameInputRawDeviceReport : IDisposable
     {
         get
         {
-            return Volatile.Read(ref _disposed) != 0
+            return _handle.IsClosed
                 ? throw new ObjectDisposedException(nameof(GameInputRawDeviceReport))
                 : new IGameInputRawDeviceReport(_handle.DangerousGetHandle());
         }
@@ -256,21 +255,14 @@ public sealed class GameInputRawDeviceReport : IDisposable
     /// </summary>
     public void Dispose()
     {
-        if (Interlocked.CompareExchange(ref _disposed, 1, 0) != 0)
-        {
-            return;
-        }
-
+        // SafeHandle.Dispose 本身冪等且執行緒安全，重複或並行呼叫只會釋放一次。
         _handle.Dispose();
-
         GC.SuppressFinalize(this);
     }
 
-    private ComLease<IGameInputRawDeviceReport> EnterNative()
+    internal ComLease<IGameInputRawDeviceReport> EnterNative()
     {
-        return Volatile.Read(ref _disposed) != 0
-            ? throw new ObjectDisposedException(nameof(GameInputRawDeviceReport))
-            : _handle.Acquire(static pointer => new IGameInputRawDeviceReport(pointer), nameof(GameInputRawDeviceReport));
+        return _handle.Acquire<IGameInputRawDeviceReport>(nameof(GameInputRawDeviceReport));
     }
 
     internal static int EnsureNativeWrittenCount(ulong written, int capacity, string subject)

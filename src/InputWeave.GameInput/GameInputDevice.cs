@@ -10,7 +10,6 @@ namespace InputWeave.GameInput;
 public sealed class GameInputDevice : IDisposable
 {
     private readonly GameInputComHandle _handle;
-    private int _disposed;
     private GameInputDeviceInfoSnapshot? _cachedInfoSnapshot;
 
 #if NET10_0_OR_GREATER
@@ -28,7 +27,7 @@ public sealed class GameInputDevice : IDisposable
     {
         get
         {
-            return Volatile.Read(ref _disposed) != 0
+            return _handle.IsClosed
                 ? throw new ObjectDisposedException(nameof(GameInputDevice))
                 : new IGameInputDevice(_handle.DangerousGetHandle());
         }
@@ -553,8 +552,8 @@ public sealed class GameInputDevice : IDisposable
 #endif
 
         using ComLease<IGameInputDevice> call = EnterNative();
-        int hResult = call.Native.SendRawDeviceOutput(report.NativeInterface);
-        GC.KeepAlive(report);
+        using ComLease<IGameInputRawDeviceReport> reportLease = report.EnterNative();
+        int hResult = call.Native.SendRawDeviceOutput(reportLease.Native);
         GameInputException.ThrowIfFailed(hResult);
     }
 
@@ -564,21 +563,14 @@ public sealed class GameInputDevice : IDisposable
     /// </summary>
     public void Dispose()
     {
-        if (Interlocked.CompareExchange(ref _disposed, 1, 0) != 0)
-        {
-            return;
-        }
-
+        // SafeHandle.Dispose 本身冪等且執行緒安全，重複或並行呼叫只會釋放一次。
         _handle.Dispose();
-
         GC.SuppressFinalize(this);
     }
 
-    private ComLease<IGameInputDevice> EnterNative()
+    internal ComLease<IGameInputDevice> EnterNative()
     {
-        return Volatile.Read(ref _disposed) != 0
-            ? throw new ObjectDisposedException(nameof(GameInputDevice))
-            : _handle.Acquire(static pointer => new IGameInputDevice(pointer), nameof(GameInputDevice));
+        return _handle.Acquire<IGameInputDevice>(nameof(GameInputDevice));
     }
 
     internal static int EnsureNativeWrittenCount(uint written, int capacity, string subject)

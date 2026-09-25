@@ -1,5 +1,7 @@
 using InputWeave.GameInput.Interop;
 
+using static InputWeave.GameInput.Tests.TestSupport;
+
 namespace InputWeave.GameInput.Tests;
 
 [TestClass]
@@ -96,39 +98,5 @@ public sealed class GameInputClientAsyncTests
             ArgumentException exception = Assert.ThrowsExactly<ArgumentException>(() => client.FindDeviceFromPlatformString(tooLong));
             Assert.AreEqual("value", exception.ParamName);
         });
-    }
-
-    private static async Task RunWithClientAsync(Func<GameInputClient, Task> action)
-    {
-        try
-        {
-            using GameInputClient client = GameInputClient.Create();
-            await action(client);
-        }
-        catch (DllNotFoundException ex)
-        {
-            Assert.Inconclusive($"此測試環境未載入 GameInput.dll：{ex.Message}");
-        }
-        catch (EntryPointNotFoundException ex)
-        {
-            Assert.Inconclusive($"此測試環境的 GameInput.dll 不含必要進入點：{ex.Message}");
-        }
-    }
-
-    private static void RunWithClient(Action<GameInputClient> action)
-    {
-        try
-        {
-            using GameInputClient client = GameInputClient.Create();
-            action(client);
-        }
-        catch (DllNotFoundException ex)
-        {
-            Assert.Inconclusive($"此測試環境未載入 GameInput.dll：{ex.Message}");
-        }
-        catch (EntryPointNotFoundException ex)
-        {
-            Assert.Inconclusive($"此測試環境的 GameInput.dll 不含必要進入點：{ex.Message}");
-        }
     }
 }

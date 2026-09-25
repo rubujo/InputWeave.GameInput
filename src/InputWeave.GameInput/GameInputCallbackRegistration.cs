@@ -12,6 +12,7 @@ public sealed class GameInputCallbackRegistration : IDisposable
     private readonly Func<ulong, bool> _unregisterCallback;
     private readonly Action<GameInputCallbackRegistration> _removeRegistration;
     private readonly Action _deactivateContext;
+    private readonly Func<Action?> _acquireOwnerLease;
     private GCHandle _contextHandle;
     private int _disposed;
 
@@ -21,7 +22,8 @@ public sealed class GameInputCallbackRegistration : IDisposable
         Action deactivateContext,
         Action<ulong> stopCallback,
         Func<ulong, bool> unregisterCallback,
-        Action<GameInputCallbackRegistration> removeRegistration)
+        Action<GameInputCallbackRegistration> removeRegistration,
+        Func<Action?>? acquireOwnerLease = null)
     {
         Token = token;
         _contextHandle = contextHandle;
@@ -29,6 +31,7 @@ public sealed class GameInputCallbackRegistration : IDisposable
         _stopCallback = stopCallback;
         _unregisterCallback = unregisterCallback;
         _removeRegistration = removeRegistration;
+        _acquireOwnerLease = acquireOwnerLease ?? (static () => null);
     }
 
     /// <summary>
@@ -99,14 +102,16 @@ public sealed class GameInputCallbackRegistration : IDisposable
 
     /// <summary>
     /// The safe disposal method for internal library use: disposes synchronously via <see cref="Dispose"/> when not on the native
-    /// callback thread; when on the native callback thread, invokes <see cref="Dispose"/> on a background thread and waits
-    /// synchronously for it to finish, so the caller knows the registration has truly been torn down on return instead of
-    /// possibly still pending like a fire-and-forget deferral.
-    /// 供程式庫內部呼叫的安全釋放方法：不在原生回呼執行緒中時直接同步 <see cref="Dispose"/>；
-    /// 在原生回呼執行緒中時，改在背景執行緒呼叫 <see cref="Dispose"/> 並同步等待其完成，
-    /// 讓呼叫端可以確定回傳時這個註冊已經真正解除，而不是像 fire-and-forget 延後那樣可能還沒完成。
+    /// callback thread. On the native callback thread it deactivates the handler immediately and unregisters on a background
+    /// thread without waiting, because <c>UnregisterCallback</c> only returns once no callback is running, so waiting here would
+    /// deadlock (verified on real hardware). A lease on the owning client is taken on the calling thread and released after the
+    /// background unregistration, so the native root object stays alive until then.
+    /// 供程式庫內部呼叫的安全釋放方法：不在原生回呼執行緒中時直接同步 <see cref="Dispose"/>。在原生回呼執行緒中時，
+    /// 會立即停用處理常式，並在背景執行緒解除註冊而不等待——<c>UnregisterCallback</c> 要等沒有回呼在執行時才會返回，
+    /// 在此等待會造成死結（已以實機驗證）。擁有者用戶端的租約在呼叫端執行緒上取得、背景解除註冊後才歸還，
+    /// 確保原生根物件在那之前保持存活。
     /// </summary>
-    /// <returns>The exception raised during disposal; <c>null</c> when disposal completed successfully. 釋放過程中發生的例外；順利完成時為 <c>null</c>。</returns>
+    /// <returns>The exception raised during synchronous disposal; <c>null</c> when disposal completed or was deferred. 同步釋放時發生的例外；順利完成或已延後處理時為 <c>null</c>。</returns>
     internal Exception? DisposeSafely()
     {
         if (!GameInputCallbackThread.IsExecutingCallback)
@@ -122,25 +127,29 @@ public sealed class GameInputCallbackRegistration : IDisposable
             }
         }
 
-        using ManualResetEventSlim completed = new(initialState: false);
-        Exception? deferredException = null;
-        ThreadPool.QueueUserWorkItem(_ =>
+        if (IsDisposed)
         {
+            return null;
+        }
+
+        _deactivateContext();
+        Action? releaseOwnerLease = _acquireOwnerLease();
+        ThreadPool.QueueUserWorkItem(static state =>
+        {
+            (GameInputCallbackRegistration registration, Action? release) = ((GameInputCallbackRegistration, Action?))state!;
             try
             {
-                Dispose();
+                registration.Dispose();
             }
             catch (Exception ex)
             {
-                deferredException = ex;
+                GameInputClient.RaiseUnhandledCallbackException(ex);
             }
             finally
             {
-                completed.Set();
+                release?.Invoke();
             }
-        });
-
-        completed.Wait();
-        return deferredException;
+        }, (this, releaseOwnerLease));
+        return null;
     }
 }
