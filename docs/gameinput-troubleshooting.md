@@ -30,7 +30,19 @@
 1. 確認裝置已連線，並且 Windows 可以在系統設定或遊戲控制器工具中看到它。
 2. 呼叫 `RefreshDevices(GameInputKind, GameInputDeviceStatus)` 時確認 `inputKind` 與 `statusFilter` 沒有篩掉目標裝置。
 3. `GetCurrent*` API 回傳 `null` 不一定是錯誤，可能只是目前沒有該輸入種類的 reading；輪詢迴圈應把 `null` 視為正常暫態。
-4. 若剛建立 aggregate device，不要立刻用剛取得的 device ID 查詢；請先等 device callback 或 `GameInputDeviceManager.DeviceChanged` 收到狀態通知。
+
+## 物件生命週期與執行緒
+
+常見症狀：
+
+- 呼叫 `GameInputDevice`、`GameInputReading` 等物件時拋出 `GameInputException`，訊息為「GameInput 原生物件已不再存在」。
+- .NET Framework 4.8 應用程式在 UI 執行緒建立 `GameInputClient` 或 `GameInputDeviceManager` 後，呼叫 `EnumerateDevicesAsync`、`RefreshDevicesAsync` 拋出 `InvalidCastException`（`E_NOINTERFACE`）。
+
+說明與處理方式：
+
+1. 所有包裝型別的 `Dispose()` 都可重複、並行呼叫，只有第一次會釋放原生參考。`GameInputClient.Dispose()` 會等其他執行緒上已在進行中的原生呼叫返回後，才釋放原生物件。
+2. GameInput 根物件釋放後，從它取得的裝置、reading 等子物件都會失效。請先釋放子物件，最後才釋放 `GameInputClient` 或 `GameInputDeviceManager`；需要保留的資料請先轉成 snapshot。
+3. .NET Framework 4.8 使用 COM Interop 的 RCW，而 RCW 會綁定建立時的 COM apartment。GameInput 沒有提供跨 apartment 的 proxy，所以在 STA（WinForms、WPF 的 UI 執行緒）建立的物件不能在 MTA 背景執行緒使用，反之亦然。在修正之前，請在同一個 apartment 建立並使用 GameInput 物件，例如整組都在背景 MTA 執行緒上建立與輪詢，再把 snapshot 交給 UI 執行緒。`net10.0-windows` 不使用 RCW，沒有這個限制。
 
 ## Callback 例外沒有直接拋出
 

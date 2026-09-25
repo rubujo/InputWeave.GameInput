@@ -54,6 +54,14 @@ public sealed class GameInputClient : IDisposable
     /// Creates a GameInput v3 client.
     /// 建立 GameInput v3 用戶端。
     /// </summary>
+    /// <remarks>
+    /// On .NET Framework 4.8 the COM Interop wrappers are bound to the COM apartment of the creating thread, and GameInput provides
+    /// no cross-apartment proxy; create and use the client and its child objects within the same apartment (for example, not
+    /// on an STA UI thread and then from <see cref="Task.Run(Action)"/>). <c>net10.0-windows</c> has no such restriction.
+    /// 在 .NET Framework 4.8 上，COM Interop 包裝會綁定建立執行緒的 COM apartment，而 GameInput 沒有提供跨 apartment 的 proxy；
+    /// 請在同一個 apartment 建立並使用用戶端及其子物件（例如不要在 STA 的 UI 執行緒建立後，再從 <see cref="Task.Run(Action)"/> 使用）。
+    /// <c>net10.0-windows</c> 沒有這個限制。
+    /// </remarks>
     /// <exception cref="GameInputException">GameInput initialization failed. GameInput 初始化失敗。</exception>
     /// <returns>The newly created <see cref="GameInputClient"/> instance. 新建立的 <see cref="GameInputClient"/> 執行個體。</returns>
     public static GameInputClient Create()
@@ -322,22 +330,6 @@ public sealed class GameInputClient : IDisposable
     /// Finds a device by its device ID.
     /// 依裝置 ID 尋找裝置。
     /// </summary>
-    /// <remarks>
-    /// Empirically observed: within the very short window right after <see cref="CreateAggregateDevice"/> while native device
-    /// registration has not finished, calling this method immediately with the freshly obtained <see cref="AppLocalDeviceId"/>
-    /// can occasionally trigger an access violation (<c>0xC0000005</c>) inside the native GameInput runtime that managed
-    /// exception handling cannot catch, instead of cleanly returning a device-not-found HRESULT; querying a device ID that never
-    /// existed does not have this problem. The official documentation states that aggregate devices emit status notifications
-    /// through callbacks registered via <see cref="RegisterDeviceCallback"/>, so to query a freshly created aggregate device, the
-    /// correct approach is to first wait for its status notification using <see cref="RegisterDeviceCallback"/> (or
-    /// <see cref="GameInputDeviceManager.DeviceChanged"/>) instead of guessing a delay.
-    /// 實測觀察到：緊接在 <see cref="CreateAggregateDevice"/> 之後、原生裝置註冊尚未完成的極短暫時間窗內，立即用剛取得的
-    /// <see cref="AppLocalDeviceId"/> 呼叫這個方法，偶爾會在原生 GameInput 執行階段觸發無法被 managed 例外攔截的存取違規
-    /// （<c>0xC0000005</c>），而非乾淨地回傳「找不到裝置」的 HRESULT；查詢一個從未存在過的裝置 ID 則不會有這個問題。
-    /// 官方文件說明聚合裝置會透過 <see cref="RegisterDeviceCallback"/> 註冊的回呼發出狀態通知，因此若要查詢剛建立的聚合裝置，
-    /// 正確做法是先用 <see cref="RegisterDeviceCallback"/>（或 <see cref="GameInputDeviceManager.DeviceChanged"/>）
-    /// 等到該裝置的狀態通知後再查詢，而不是猜測一個延遲時間。
-    /// </remarks>
     /// <param name="deviceId">The GameInput device identifier. GameInput 裝置識別值。</param>
     /// <returns>The matching device wrapper. 符合的裝置包裝。</returns>
     public GameInputDevice FindDeviceFromId(in AppLocalDeviceId deviceId)
@@ -465,12 +457,6 @@ public sealed class GameInputClient : IDisposable
     /// Creates an aggregate device.
     /// 建立聚合裝置。
     /// </summary>
-    /// <remarks>
-    /// The returned <see cref="AppLocalDeviceId"/> should not be passed to <see cref="FindDeviceFromId"/> immediately; see that
-    /// method's documentation for the known native timing hazard.
-    /// 傳回的 <see cref="AppLocalDeviceId"/> 不建議立即傳入 <see cref="FindDeviceFromId"/> 查詢，詳見該方法文件說明的
-    /// 已知原生時序風險。
-    /// </remarks>
     /// <param name="inputKind">The GameInput input kind to query or filter. 要查詢或篩選的 GameInput 輸入種類。</param>
     /// <returns>The device identifier of the aggregate device. 聚合裝置的裝置識別值。</returns>
     public AppLocalDeviceId CreateAggregateDevice(GameInputKind inputKind)
@@ -848,9 +834,13 @@ public sealed class GameInputClient : IDisposable
     /// <remarks>
     /// Safe to call concurrently or repeatedly; only the first call performs disposal. Native calls already in progress on other
     /// threads (for example <see cref="EnumerateDevicesAsync"/>) keep the native object alive until they return, and the native
-    /// object is released when the last of them finishes.
+    /// object is released when the last of them finishes. Once the native object is released, child objects obtained from this
+    /// client (devices, readings, dispatchers and so on) become invalid and their native calls fail with
+    /// <see cref="GameInputHResult.ObjectNoLongerExists"/>; dispose them first and keep snapshots for data you still need.
     /// 可安全地並行或重複呼叫，只有第一次呼叫會執行釋放。其他執行緒上已在進行中的原生呼叫
     /// （例如 <see cref="EnumerateDevicesAsync"/>）會讓原生物件存活到呼叫返回，最後一個呼叫結束時才釋放原生物件。
+    /// 原生物件釋放後，從這個用戶端取得的子物件（裝置、reading、dispatcher 等）都會失效，原生呼叫會以
+    /// <see cref="GameInputHResult.ObjectNoLongerExists"/> 失敗；請先釋放子物件，需要保留的資料請先轉成快照。
     /// </remarks>
     public void Dispose()
     {

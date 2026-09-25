@@ -378,17 +378,15 @@ public sealed class GameInputDevice : IDisposable
     /// 清除震動狀態。
     /// </summary>
     /// <remarks>
-    /// The native GameInput API documentation marks the <c>SetRumbleState</c> parameter as optional, allowing <c>nullptr</c> to
-    /// mean stop rumbling, but testing showed that some device driver/runtime implementations trigger a native memory access
-    /// violation when given a null pointer (on .NET Core / .NET 5+ such access violations are corrupted-process-state exceptions
-    /// that managed exception handling cannot catch, crashing the whole process). This method therefore passes an all-zero
-    /// <see cref="GameInputRumbleParams"/> instead (semantically equivalent to stopping rumble), so the native call always
-    /// receives a pointer to legitimately allocated memory, avoiding this known native-side issue.
-    /// GameInput 原生 API 文件把 <c>SetRumbleState</c> 的參數標為選用、可傳入 <c>nullptr</c> 表示停止震動，
-    /// 但實測發現部分裝置的驅動／執行階段實作在收到空指標時會觸發原生端記憶體存取違規（這類存取違規在
-    /// .NET Core / .NET 5+ 是處理序毀損狀態例外，無法用 managed 例外處理接住，會直接讓整個處理序當掉）。
-    /// 因此這裡改傳入全欄位為零的 <see cref="GameInputRumbleParams"/>（語意等價於停止震動），
-    /// 讓原生呼叫一律收到指向合法配置記憶體的指標，避免觸發這個已知的原生端問題。
+    /// The native GameInput API documentation marks the <c>SetRumbleState</c> parameter as <c>_In_opt_</c>, but with GameInput
+    /// runtime 3.5.274 and an Xbox One controller, passing <c>nullptr</c> reproducibly triggers a native access violation
+    /// (<c>0xC0000005</c>) that crashes the whole process and cannot be caught by managed exception handling. This method
+    /// therefore passes an all-zero <see cref="GameInputRumbleParams"/> instead, which is semantically equivalent to stopping
+    /// rumble and always gives the native call a valid pointer.
+    /// GameInput 原生 API 文件把 <c>SetRumbleState</c> 的參數標為 <c>_In_opt_</c>，但在 GameInput 執行階段 3.5.274 搭配
+    /// Xbox One 控制器實測，傳入 <c>nullptr</c> 會穩定觸發原生存取違規（<c>0xC0000005</c>），直接讓整個處理序結束，
+    /// 無法用 managed 例外處理攔截。因此這個方法改傳入全欄位為零的 <see cref="GameInputRumbleParams"/>，
+    /// 語意等同停止震動，並讓原生呼叫一律收到有效的指標。
     /// </remarks>
     public void ClearRumbleState()
     {
