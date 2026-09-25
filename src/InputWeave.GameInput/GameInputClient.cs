@@ -1008,7 +1008,7 @@ public sealed class GameInputClient : IDisposable
         {
             if (TryGetContext(context, out ReadingCallbackContext? callbackContext))
             {
-                using GameInputReading managedReading = new(reading);
+                using GameInputReading managedReading = WrapBorrowedReading(reading);
                 callbackContext!.Handler(managedReading);
             }
         }
@@ -1032,13 +1032,13 @@ public sealed class GameInputClient : IDisposable
         {
             if (TryGetContext(context, out DeviceEnumerationContext? enumerationContext))
             {
-                enumerationContext!.Devices.Add(new GameInputDevice(device));
+                enumerationContext!.Devices.Add(WrapBorrowedDevice(device));
                 return;
             }
 
             if (TryGetContext(context, out DeviceCallbackContext? callbackContext))
             {
-                using GameInputDevice managedDevice = new(device);
+                using GameInputDevice managedDevice = WrapBorrowedDevice(device);
                 callbackContext!.Handler(managedDevice, timestamp, currentStatus, previousStatus);
             }
         }
@@ -1062,7 +1062,7 @@ public sealed class GameInputClient : IDisposable
         {
             if (TryGetContext(context, out SystemButtonCallbackContext? callbackContext))
             {
-                using GameInputDevice managedDevice = new(device);
+                using GameInputDevice managedDevice = WrapBorrowedDevice(device);
                 callbackContext!.Handler(managedDevice, timestamp, currentButtons, previousButtons);
             }
         }
@@ -1086,7 +1086,7 @@ public sealed class GameInputClient : IDisposable
         {
             if (TryGetContext(context, out KeyboardLayoutCallbackContext? callbackContext))
             {
-                using GameInputDevice managedDevice = new(device);
+                using GameInputDevice managedDevice = WrapBorrowedDevice(device);
                 callbackContext!.Handler(managedDevice, timestamp, currentLayout, previousLayout);
             }
         }
@@ -1110,6 +1110,42 @@ public sealed class GameInputClient : IDisposable
         {
             // 事件訂閱者拋出的例外同樣不可跨越原生 P/Invoke 邊界，於此吞下。
         }
+    }
+
+    /// <summary>
+    /// Wraps a device pointer borrowed from a native callback into a wrapper that owns its own COM reference.
+    /// 把原生回呼借用的裝置指標包裝成持有自身 COM 參考的包裝。
+    /// </summary>
+    /// <remarks>
+    /// COM callback parameters are owned by the caller and are not AddRef'd for the callee. On .NET Framework the RCW marshaler
+    /// takes its own reference, but the .NET 10 struct wrapper does not, so the wrapper must AddRef here to balance the
+    /// <see cref="GameInputDevice.Dispose"/> Release; otherwise the device is over-released and the native heap is corrupted.
+    /// COM 回呼參數由呼叫端擁有，不會替被呼叫端 AddRef。.NET Framework 的 RCW 封送會自行取得參考，
+    /// 但 .NET 10 的結構包裝不會，因此必須在此 AddRef 以平衡 <see cref="GameInputDevice.Dispose"/> 的 Release；
+    /// 否則裝置會被過度釋放並破壞原生堆積。
+    /// </remarks>
+    private static GameInputDevice WrapBorrowedDevice(IGameInputDevice device)
+    {
+#if NET10_0_OR_GREATER
+        device.AddRef();
+#endif
+        return new GameInputDevice(device);
+    }
+
+    /// <summary>
+    /// Wraps a reading pointer borrowed from a native callback into a wrapper that owns its own COM reference.
+    /// 把原生回呼借用的 reading 指標包裝成持有自身 COM 參考的包裝。
+    /// </summary>
+    /// <remarks>
+    /// See <see cref="WrapBorrowedDevice"/> for the reference-counting rationale.
+    /// 參考計數的理由請見 <see cref="WrapBorrowedDevice"/>。
+    /// </remarks>
+    private static GameInputReading WrapBorrowedReading(IGameInputReading reading)
+    {
+#if NET10_0_OR_GREATER
+        reading.AddRef();
+#endif
+        return new GameInputReading(reading);
     }
 
     private static bool TryGetContext<TContext>(IntPtr context, out TContext? callbackContext)
