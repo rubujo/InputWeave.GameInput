@@ -81,7 +81,7 @@ dotnet test InputWeave.GameInput.slnx -c Release --filter Hardware
 
 仍需注意：
 
-- `.csproj` 目前不宣告 `IsAotCompatible` 或 `IsTrimmable`。
+- `.csproj` 只對 `net10.0-windows` 宣告 `IsAotCompatible`，建置時會以 trim／AOT 分析器檢查相容性；`net48` 不適用。
 - 本專案不宣告 single-file 發佈相容性。
 - 低階 `InputWeave.GameInput.Interop` 逃生口若被應用程式直接使用，仍應在目標發佈形狀下自行驗證。
 

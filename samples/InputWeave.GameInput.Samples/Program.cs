@@ -386,7 +386,7 @@ static void DemonstrateMapping(GameInputDeviceManager manager)
 
     if (mapper.TryGetGamepadButtonMappingInfo(GameInputGamepadButtons.GameInputGamepadA, out GameInputButtonMapping buttonMapping))
     {
-        Console.WriteLine($"GamepadA 按鈕映射：{buttonMapping}");
+        Console.WriteLine($"GamepadA 按鈕映射：元素={buttonMapping.ControllerElementKind}, 索引={buttonMapping.ControllerIndex}, 反向={buttonMapping.IsInverted}, 開關方向={buttonMapping.SwitchPosition}");
     }
     else
     {
@@ -395,7 +395,7 @@ static void DemonstrateMapping(GameInputDeviceManager manager)
 
     if (mapper.TryGetGamepadAxisMappingInfo(GameInputGamepadAxes.GameInputGamepadLeftThumbstickX, out GameInputAxisMapping axisMapping))
     {
-        Console.WriteLine($"左搖桿 X 軸映射：{axisMapping}");
+        Console.WriteLine($"左搖桿 X 軸映射：元素={axisMapping.ControllerElementKind}, 索引={axisMapping.ControllerIndex}, 反向={axisMapping.IsInverted}, 雙按鈕={axisMapping.FromTwoButtons}");
     }
     else
     {
