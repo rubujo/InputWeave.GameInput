@@ -28,11 +28,30 @@ public sealed class GameInputClient : IDisposable
     /// </remarks>
     public const int MaxPlatformStringLength = 1024;
 
-#if !NET10_0_OR_GREATER
+#if NET10_0_OR_GREATER
+    private static unsafe IntPtr ReadingCallbackPointer => (IntPtr)(delegate* unmanaged[Stdcall]<ulong, IntPtr, IGameInputReading, void>)&OnReadingCallback;
+
+    private static unsafe IntPtr DeviceCallbackPointer => (IntPtr)(delegate* unmanaged[Stdcall]<ulong, IntPtr, IGameInputDevice, ulong, GameInputDeviceStatus, GameInputDeviceStatus, void>)&OnDeviceCallback;
+
+    private static unsafe IntPtr SystemButtonCallbackPointer => (IntPtr)(delegate* unmanaged[Stdcall]<ulong, IntPtr, IGameInputDevice, ulong, GameInputSystemButtons, GameInputSystemButtons, void>)&OnSystemButtonCallback;
+
+    private static unsafe IntPtr KeyboardLayoutCallbackPointer => (IntPtr)(delegate* unmanaged[Stdcall]<ulong, IntPtr, IGameInputDevice, ulong, uint, uint, void>)&OnKeyboardLayoutCallback;
+#else
+    // .NET Framework 沒有 UnmanagedCallersOnly；依「Marshalling a Delegate as a Callback Method」的做法，
+    // 以 UnmanagedFunctionPointer 委派取得原生可呼叫的函式指標，並用靜態欄位讓委派在整個處理序期間保持存活，
+    // 避免原生端呼叫到已被 GC 回收的 thunk。
     private static readonly GameInputReadingCallback s_readingCallback = OnReadingCallback;
     private static readonly GameInputDeviceCallback s_deviceCallback = OnDeviceCallback;
     private static readonly GameInputSystemButtonCallback s_systemButtonCallback = OnSystemButtonCallback;
     private static readonly GameInputKeyboardLayoutCallback s_keyboardLayoutCallback = OnKeyboardLayoutCallback;
+
+    private static IntPtr ReadingCallbackPointer { get; } = Marshal.GetFunctionPointerForDelegate(s_readingCallback);
+
+    private static IntPtr DeviceCallbackPointer { get; } = Marshal.GetFunctionPointerForDelegate(s_deviceCallback);
+
+    private static IntPtr SystemButtonCallbackPointer { get; } = Marshal.GetFunctionPointerForDelegate(s_systemButtonCallback);
+
+    private static IntPtr KeyboardLayoutCallbackPointer { get; } = Marshal.GetFunctionPointerForDelegate(s_keyboardLayoutCallback);
 #endif
 
 #if NET10_0_OR_GREATER
@@ -55,12 +74,11 @@ public sealed class GameInputClient : IDisposable
     /// 建立 GameInput v3 用戶端。
     /// </summary>
     /// <remarks>
-    /// On .NET Framework 4.8 the COM Interop wrappers are bound to the COM apartment of the creating thread, and GameInput provides
-    /// no cross-apartment proxy; create and use the client and its child objects within the same apartment (for example, not
-    /// on an STA UI thread and then from <see cref="Task.Run(Action)"/>). <c>net10.0-windows</c> has no such restriction.
-    /// 在 .NET Framework 4.8 上，COM Interop 包裝會綁定建立執行緒的 COM apartment，而 GameInput 沒有提供跨 apartment 的 proxy；
-    /// 請在同一個 apartment 建立並使用用戶端及其子物件（例如不要在 STA 的 UI 執行緒建立後，再從 <see cref="Task.Run(Action)"/> 使用）。
-    /// <c>net10.0-windows</c> 沒有這個限制。
+    /// All target frameworks call GameInput through raw vtable function pointers instead of COM Interop runtime callable wrappers,
+    /// so the client and its child objects can be used from any thread regardless of COM apartment, matching GameInput's own
+    /// thread-safe design.
+    /// 所有目標框架都透過原始 vtable 函式指標呼叫 GameInput，而非 COM Interop 的執行階段可呼叫包裝（RCW），
+    /// 因此用戶端與其子物件可以在任何執行緒上使用，不受 COM apartment 限制，與 GameInput 本身的執行緒安全設計一致。
     /// </remarks>
     /// <exception cref="GameInputException">GameInput initialization failed. GameInput 初始化失敗。</exception>
     /// <returns>The newly created <see cref="GameInputClient"/> instance. 新建立的 <see cref="GameInputClient"/> 執行個體。</returns>
@@ -388,29 +406,14 @@ public sealed class GameInputClient : IDisposable
         ulong token = 0;
         try
         {
-#if NET10_0_OR_GREATER
-            int hResult;
-            unsafe
-            {
-                hResult = call.Native.RegisterDeviceCallback(
-                    device: null,
-                    inputKind,
-                    statusFilter,
-                    GameInputEnumerationKind.GameInputBlockingEnumeration,
-                    GCHandle.ToIntPtr(contextHandle),
-                    (IntPtr)(delegate* unmanaged[Stdcall]<ulong, IntPtr, IGameInputDevice, ulong, GameInputDeviceStatus, GameInputDeviceStatus, void>)&OnDeviceCallback,
-                    out token);
-            }
-#else
             int hResult = call.Native.RegisterDeviceCallback(
                 device: null,
                 inputKind,
                 statusFilter,
                 GameInputEnumerationKind.GameInputBlockingEnumeration,
                 GCHandle.ToIntPtr(contextHandle),
-                s_deviceCallback,
+                DeviceCallbackPointer,
                 out token);
-#endif
 
             GameInputException.ThrowIfFailed(hResult);
             return context.Devices.ToArray();
@@ -506,22 +509,13 @@ public sealed class GameInputClient : IDisposable
         ulong token = 0;
         try
         {
-#if NET10_0_OR_GREATER
-            int hResult;
-            unsafe
-            {
-                using NativeCall call = EnterNative();
-                hResult = call.Native.RegisterReadingCallback(
-                    device?.NativeInterface,
-                    inputKind,
-                    GCHandle.ToIntPtr(handle),
-                    (IntPtr)(delegate* unmanaged[Stdcall]<ulong, IntPtr, IGameInputReading, void>)&OnReadingCallback,
-                    out token);
-            }
-#else
             using NativeCall call = EnterNative();
-            int hResult = call.Native.RegisterReadingCallback(device?.NativeInterface, inputKind, GCHandle.ToIntPtr(handle), s_readingCallback, out token);
-#endif
+            int hResult = call.Native.RegisterReadingCallback(
+                device?.NativeInterface,
+                inputKind,
+                GCHandle.ToIntPtr(handle),
+                ReadingCallbackPointer,
+                out token);
             GameInputException.ThrowIfFailed(hResult);
             return AddRegistration(token, handle, context.Deactivate);
         }
@@ -686,24 +680,15 @@ public sealed class GameInputClient : IDisposable
         ulong token = 0;
         try
         {
-#if NET10_0_OR_GREATER
-            int hResult;
-            unsafe
-            {
-                using NativeCall call = EnterNative();
-                hResult = call.Native.RegisterDeviceCallback(
-                    device?.NativeInterface,
-                    inputKind,
-                    statusFilter,
-                    enumerationKind,
-                    GCHandle.ToIntPtr(handle),
-                    (IntPtr)(delegate* unmanaged[Stdcall]<ulong, IntPtr, IGameInputDevice, ulong, GameInputDeviceStatus, GameInputDeviceStatus, void>)&OnDeviceCallback,
-                    out token);
-            }
-#else
             using NativeCall call = EnterNative();
-            int hResult = call.Native.RegisterDeviceCallback(device?.NativeInterface, inputKind, statusFilter, enumerationKind, GCHandle.ToIntPtr(handle), s_deviceCallback, out token);
-#endif
+            int hResult = call.Native.RegisterDeviceCallback(
+                device?.NativeInterface,
+                inputKind,
+                statusFilter,
+                enumerationKind,
+                GCHandle.ToIntPtr(handle),
+                DeviceCallbackPointer,
+                out token);
             GameInputException.ThrowIfFailed(hResult);
             return AddRegistration(token, handle, context.Deactivate);
         }
@@ -742,22 +727,13 @@ public sealed class GameInputClient : IDisposable
         ulong token = 0;
         try
         {
-#if NET10_0_OR_GREATER
-            int hResult;
-            unsafe
-            {
-                using NativeCall call = EnterNative();
-                hResult = call.Native.RegisterSystemButtonCallback(
-                    device?.NativeInterface,
-                    buttonFilter,
-                    GCHandle.ToIntPtr(handle),
-                    (IntPtr)(delegate* unmanaged[Stdcall]<ulong, IntPtr, IGameInputDevice, ulong, GameInputSystemButtons, GameInputSystemButtons, void>)&OnSystemButtonCallback,
-                    out token);
-            }
-#else
             using NativeCall call = EnterNative();
-            int hResult = call.Native.RegisterSystemButtonCallback(device?.NativeInterface, buttonFilter, GCHandle.ToIntPtr(handle), s_systemButtonCallback, out token);
-#endif
+            int hResult = call.Native.RegisterSystemButtonCallback(
+                device?.NativeInterface,
+                buttonFilter,
+                GCHandle.ToIntPtr(handle),
+                SystemButtonCallbackPointer,
+                out token);
             GameInputException.ThrowIfFailed(hResult);
             return AddRegistration(token, handle, context.Deactivate);
         }
@@ -795,21 +771,12 @@ public sealed class GameInputClient : IDisposable
         ulong token = 0;
         try
         {
-#if NET10_0_OR_GREATER
-            int hResult;
-            unsafe
-            {
-                using NativeCall call = EnterNative();
-                hResult = call.Native.RegisterKeyboardLayoutCallback(
-                    device?.NativeInterface,
-                    GCHandle.ToIntPtr(handle),
-                    (IntPtr)(delegate* unmanaged[Stdcall]<ulong, IntPtr, IGameInputDevice, ulong, uint, uint, void>)&OnKeyboardLayoutCallback,
-                    out token);
-            }
-#else
             using NativeCall call = EnterNative();
-            int hResult = call.Native.RegisterKeyboardLayoutCallback(device?.NativeInterface, GCHandle.ToIntPtr(handle), s_keyboardLayoutCallback, out token);
-#endif
+            int hResult = call.Native.RegisterKeyboardLayoutCallback(
+                device?.NativeInterface,
+                GCHandle.ToIntPtr(handle),
+                KeyboardLayoutCallbackPointer,
+                out token);
             GameInputException.ThrowIfFailed(hResult);
             return AddRegistration(token, handle, context.Deactivate);
         }
@@ -1077,17 +1044,10 @@ public sealed class GameInputClient : IDisposable
     /// </summary>
     private sealed class GameInputHandle : SafeHandle
     {
-#if !NET10_0_OR_GREATER
-        private readonly IGameInput _rcw;
-#endif
-
         public GameInputHandle(IntPtr nativePointer)
             : base(IntPtr.Zero, ownsHandle: true)
         {
             SetHandle(nativePointer);
-#if !NET10_0_OR_GREATER
-            _rcw = (IGameInput)Marshal.GetObjectForIUnknown(nativePointer);
-#endif
         }
 
         public override bool IsInvalid
@@ -1102,19 +1062,12 @@ public sealed class GameInputClient : IDisposable
         {
             get
             {
-#if NET10_0_OR_GREATER
                 return new IGameInput(handle);
-#else
-                return _rcw;
-#endif
             }
         }
 
         protected override bool ReleaseHandle()
         {
-#if !NET10_0_OR_GREATER
-            Marshal.ReleaseComObject(_rcw);
-#endif
             Marshal.Release(handle);
             return true;
         }
@@ -1242,18 +1195,15 @@ public sealed class GameInputClient : IDisposable
     /// 把原生回呼借用的裝置指標包裝成持有自身 COM 參考的包裝。
     /// </summary>
     /// <remarks>
-    /// COM callback parameters are owned by the caller and are not AddRef'd for the callee. On .NET Framework the RCW marshaler
-    /// takes its own reference, but the .NET 10 struct wrapper does not, so the wrapper must AddRef here to balance the
-    /// <see cref="GameInputDevice.Dispose"/> Release; otherwise the device is over-released and the native heap is corrupted.
-    /// COM 回呼參數由呼叫端擁有，不會替被呼叫端 AddRef。.NET Framework 的 RCW 封送會自行取得參考，
-    /// 但 .NET 10 的結構包裝不會，因此必須在此 AddRef 以平衡 <see cref="GameInputDevice.Dispose"/> 的 Release；
-    /// 否則裝置會被過度釋放並破壞原生堆積。
+    /// COM callback parameters are owned by the caller and are not AddRef'd for the callee (see "Rules for Managing Reference
+    /// Counts"), so the wrapper must AddRef here to balance the <see cref="GameInputDevice.Dispose"/> Release; otherwise the device
+    /// is over-released and the native heap is corrupted.
+    /// COM 回呼參數由呼叫端擁有，不會替被呼叫端 AddRef（見「Rules for Managing Reference Counts」），
+    /// 因此必須在此 AddRef 以平衡 <see cref="GameInputDevice.Dispose"/> 的 Release；否則裝置會被過度釋放並破壞原生堆積。
     /// </remarks>
     private static GameInputDevice WrapBorrowedDevice(IGameInputDevice device)
     {
-#if NET10_0_OR_GREATER
         device.AddRef();
-#endif
         return new GameInputDevice(device);
     }
 
@@ -1267,9 +1217,7 @@ public sealed class GameInputClient : IDisposable
     /// </remarks>
     private static GameInputReading WrapBorrowedReading(IGameInputReading reading)
     {
-#if NET10_0_OR_GREATER
         reading.AddRef();
-#endif
         return new GameInputReading(reading);
     }
 

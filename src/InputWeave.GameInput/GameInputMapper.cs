@@ -150,11 +150,7 @@ public sealed class GameInputMapper : IDisposable
 
         if (_native is not null)
         {
-#if NET10_0_OR_GREATER
             _native.Value.Release();
-#else
-            Marshal.ReleaseComObject(_native);
-#endif
             _native = null;
         }
 

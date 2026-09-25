@@ -36,13 +36,13 @@
 常見症狀：
 
 - 呼叫 `GameInputDevice`、`GameInputReading` 等物件時拋出 `GameInputException`，訊息為「GameInput 原生物件已不再存在」。
-- .NET Framework 4.8 應用程式在 UI 執行緒建立 `GameInputClient` 或 `GameInputDeviceManager` 後，呼叫 `EnumerateDevicesAsync`、`RefreshDevicesAsync` 拋出 `InvalidCastException`（`E_NOINTERFACE`）。
 
 說明與處理方式：
 
 1. 所有包裝型別的 `Dispose()` 都可重複、並行呼叫，只有第一次會釋放原生參考。`GameInputClient.Dispose()` 會等其他執行緒上已在進行中的原生呼叫返回後，才釋放原生物件。
 2. GameInput 根物件釋放後，從它取得的裝置、reading 等子物件都會失效。請先釋放子物件，最後才釋放 `GameInputClient` 或 `GameInputDeviceManager`；需要保留的資料請先轉成 snapshot。
-3. .NET Framework 4.8 使用 COM Interop 的 RCW，而 RCW 會綁定建立時的 COM apartment。GameInput 沒有提供跨 apartment 的 proxy，所以在 STA（WinForms、WPF 的 UI 執行緒）建立的物件不能在 MTA 背景執行緒使用，反之亦然。在修正之前，請在同一個 apartment 建立並使用 GameInput 物件，例如整組都在背景 MTA 執行緒上建立與輪詢，再把 snapshot 交給 UI 執行緒。`net10.0-windows` 不使用 RCW，沒有這個限制。
+3. 所有目標框架都透過 vtable 函式指標呼叫 GameInput，不使用 COM Interop 的 RCW，所以 GameInput 物件不受 COM apartment 限制：在 STA（WinForms、WPF 的 UI 執行緒）建立的物件可以在背景執行緒使用，反之亦然。
+4. 背景程式或主控台程式收不到輸入時，請確認焦點政策：GameInput 預設只把輸入交給前景應用程式，需要背景輸入時請呼叫 `SetFocusPolicy(GameInputFocusPolicy.GameInputEnableBackgroundInput)`。另外，實測 GameInput 3.5.274 收不到以 `SendInput` 模擬的鍵盤輸入，自動化測試請改用實體裝置。
 
 ## Callback 例外沒有直接拋出
 

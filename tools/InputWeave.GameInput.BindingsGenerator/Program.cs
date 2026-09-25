@@ -572,8 +572,21 @@ internal static partial class GameInputInteropWriter
         WriteFile(outputDir, "GameInputIids.g.cs", WriteIids(manifest, ns, docs));
         WriteFile(outputDir, "GameInputCallbacks.NetFramework.g.cs", WriteCallbacks(manifest, ns, docs));
         WriteFile(outputDir, "GameInputStructs.g.cs", WriteStructs(manifest, ns, docs));
-        WriteFile(outputDir, "GameInputNativeInterfaces.NetFramework.g.cs", WriteComImportInterfaces(manifest, ns, docs));
-        WriteFile(outputDir, "GameInputNativeInterfaces.Net10.g.cs", WriteVtableInterfaces(manifest, ns, docs));
+
+        // 兩個 TFM 共用裸 vtable 投影：.NET Framework 的 RCW 會綁定建立時的 COM apartment，
+        // 而 GameInput 沒有跨 apartment 的 proxy，因此 net48 也不使用 [ComImport]。
+        WriteFile(outputDir, "GameInputNativeInterfaces.g.cs", WriteVtableInterfaces(manifest, ns, docs));
+        DeleteObsoleteFile(outputDir, "GameInputNativeInterfaces.NetFramework.g.cs");
+        DeleteObsoleteFile(outputDir, "GameInputNativeInterfaces.Net10.g.cs");
+    }
+
+    private static void DeleteObsoleteFile(string outputDir, string fileName)
+    {
+        string path = Path.Combine(outputDir, fileName);
+        if (File.Exists(path))
+        {
+            File.Delete(path);
+        }
     }
 
     private static void WriteFile(string outputDir, string fileName, string content)
@@ -675,7 +688,7 @@ internal static partial class GameInputInteropWriter
             string declaration = GetCallbackDeclaration(callback.Name);
             DeclarationInfo declarationInfo = DeclarationInfo.Parse(declaration);
             XmlDocWriter.AppendDocumentation(builder, docs, callback.Name, string.Empty, declarationInfo.Parameters, declarationInfo.HasReturn);
-            builder.AppendLine("[UnmanagedFunctionPointer(CallingConvention.Winapi)]");
+            builder.AppendLine("[UnmanagedFunctionPointer(CallingConvention.StdCall)]");
             builder.AppendLine(declaration);
             builder.AppendLine();
         }
@@ -719,44 +732,9 @@ internal static partial class GameInputInteropWriter
         builder.AppendLine();
     }
 
-    private static string WriteComImportInterfaces(AbiManifest manifest, string ns, GameInputXmlDocsCatalog docs)
-    {
-        StringBuilder builder = new();
-        builder.AppendLine("#if NETFRAMEWORK");
-        builder.Append(GameInputEnumWriter.CreateGeneratedBuilder().ToString());
-        builder.AppendLine("using System;");
-        builder.AppendLine("using System.Runtime.InteropServices;");
-        builder.AppendLine();
-        GameInputEnumWriter.AppendFileScopedNamespace(builder, ns);
-        foreach (InterfaceDefinition interfaceDefinition in manifest.Interfaces)
-        {
-            XmlDocWriter.AppendDocumentation(builder, docs, interfaceDefinition.Name, string.Empty);
-            builder.AppendLine("[ComImport]");
-            builder.AppendLine($"[Guid(\"{interfaceDefinition.Iid}\")]");
-            builder.AppendLine("[InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]");
-            builder.AppendLine($"public interface {interfaceDefinition.Name}");
-            builder.AppendLine("{");
-            foreach (InterfaceMethodDefinition method in interfaceDefinition.Methods)
-            {
-                WriteInterfaceMethod(builder, docs, interfaceDefinition.Name, method.Name);
-            }
-
-            TrimLastBlankLine(builder);
-            builder.AppendLine("}");
-            builder.AppendLine();
-        }
-
-        TrimLastBlankLine(builder);
-        builder.AppendLine();
-        builder.AppendLine("#endif");
-        return builder.ToString();
-    }
-
     private static string WriteVtableInterfaces(AbiManifest manifest, string ns, GameInputXmlDocsCatalog docs)
     {
-        StringBuilder builder = new();
-        builder.AppendLine("#if NET10_0_OR_GREATER");
-        builder.Append(GameInputEnumWriter.CreateGeneratedBuilder().ToString());
+        StringBuilder builder = GameInputEnumWriter.CreateGeneratedBuilder();
         builder.AppendLine("using System;");
         builder.AppendLine("using System.Runtime.InteropServices;");
         builder.AppendLine();
@@ -768,8 +746,6 @@ internal static partial class GameInputInteropWriter
         }
 
         TrimLastBlankLine(builder);
-        builder.AppendLine();
-        builder.AppendLine("#endif");
         return builder.ToString();
     }
 
@@ -894,10 +870,10 @@ internal static partial class GameInputInteropWriter
     {
         return callbackName switch
         {
-            "GameInputReadingCallback" => "public delegate void GameInputReadingCallback(ulong callbackToken, IntPtr context, IGameInputReading reading);",
-            "GameInputDeviceCallback" => "public delegate void GameInputDeviceCallback(ulong callbackToken, IntPtr context, IGameInputDevice device, ulong timestamp, GameInputDeviceStatus currentStatus, GameInputDeviceStatus previousStatus);",
-            "GameInputSystemButtonCallback" => "public delegate void GameInputSystemButtonCallback(ulong callbackToken, IntPtr context, IGameInputDevice device, ulong timestamp, GameInputSystemButtons currentButtons, GameInputSystemButtons previousButtons);",
-            "GameInputKeyboardLayoutCallback" => "public delegate void GameInputKeyboardLayoutCallback(ulong callbackToken, IntPtr context, IGameInputDevice device, ulong timestamp, uint currentLayout, uint previousLayout);",
+            "GameInputReadingCallback" => "internal delegate void GameInputReadingCallback(ulong callbackToken, IntPtr context, IGameInputReading reading);",
+            "GameInputDeviceCallback" => "internal delegate void GameInputDeviceCallback(ulong callbackToken, IntPtr context, IGameInputDevice device, ulong timestamp, GameInputDeviceStatus currentStatus, GameInputDeviceStatus previousStatus);",
+            "GameInputSystemButtonCallback" => "internal delegate void GameInputSystemButtonCallback(ulong callbackToken, IntPtr context, IGameInputDevice device, ulong timestamp, GameInputSystemButtons currentButtons, GameInputSystemButtons previousButtons);",
+            "GameInputKeyboardLayoutCallback" => "internal delegate void GameInputKeyboardLayoutCallback(ulong callbackToken, IntPtr context, IGameInputDevice device, ulong timestamp, uint currentLayout, uint previousLayout);",
             _ => throw new InvalidOperationException($"未支援的 GameInput callback：{callbackName}。")
         };
     }
@@ -1098,23 +1074,6 @@ internal static partial class GameInputInteropWriter
             .Replace("Dpad", "DPad", StringComparison.Ordinal)
             .Replace("Pnp", "Pnp", StringComparison.Ordinal)
             .Replace("Id", "Id", StringComparison.Ordinal);
-    }
-
-    private static void WriteInterfaceMethod(StringBuilder builder, GameInputXmlDocsCatalog docs, string interfaceName, string methodName)
-    {
-        string key = interfaceName + "." + methodName;
-        MethodDeclaration method = GetMethodDeclaration(key);
-
-        DeclarationInfo declarationInfo = DeclarationInfo.Parse(method.Declaration);
-        XmlDocWriter.AppendDocumentation(builder, docs, key, "    ", declarationInfo.Parameters, declarationInfo.HasReturn);
-        builder.AppendLine("    [PreserveSig]");
-        if (method.MarshalBoolReturn)
-        {
-            builder.AppendLine("    [return: MarshalAs(UnmanagedType.I1)]");
-        }
-
-        builder.AppendLine("    " + method.Declaration);
-        builder.AppendLine();
     }
 
     private static MethodDeclaration GetMethodDeclaration(string key)
@@ -1478,14 +1437,21 @@ internal sealed partial record VtableMethodPlan(
 
 internal sealed partial record DeclarationInfo(string ReturnType, IReadOnlyList<string> Parameters)
 {
+    private static readonly string[] s_delegatePrefixes = ["public delegate ", "internal delegate "];
+
     public bool HasReturn => ReturnType != "void";
 
     public static DeclarationInfo Parse(string declaration)
     {
         string normalized = declaration.Trim().TrimEnd(';');
-        normalized = normalized.StartsWith("public delegate ", StringComparison.Ordinal)
-            ? normalized["public delegate ".Length..]
-            : normalized;
+        foreach (string prefix in s_delegatePrefixes)
+        {
+            if (normalized.StartsWith(prefix, StringComparison.Ordinal))
+            {
+                normalized = normalized[prefix.Length..];
+                break;
+            }
+        }
 
         Match match = DeclarationRegex().Match(normalized);
         if (!match.Success)

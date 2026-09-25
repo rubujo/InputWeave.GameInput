@@ -11,7 +11,6 @@ public sealed class GameInputLifetimeTests
         | GameInputKind.GameInputKindKeyboard
         | GameInputKind.GameInputKindMouse;
 
-#if NET10_0_OR_GREATER
     [TestMethod]
     public void EnumerateDevicesDoesNotChangeNativeReferenceCount()
     {
@@ -100,7 +99,63 @@ public sealed class GameInputLifetimeTests
             }
         });
     }
-#endif
+
+    [TestMethod]
+    public void ClientCreatedOnStaThreadIsUsableFromMtaThreadsAndBack()
+    {
+        // .NET Framework 的 RCW 會綁定建立時的 COM apartment；互通層改用 vtable 函式指標後，
+        // 在 STA 建立的物件必須能在 MTA 使用，MTA 取得的裝置也必須能回到 STA 使用。
+        Exception? failure = null;
+        bool inconclusive = false;
+        Thread staThread = new(() =>
+        {
+            try
+            {
+                using GameInputClient client = GameInputClient.Create();
+                GameInputDevice[] devices = [.. Task.Run(() => client.EnumerateDevicesAsync(AnyCommonKind)).GetAwaiter().GetResult()];
+                try
+                {
+                    if (devices.Length == 0)
+                    {
+                        inconclusive = true;
+                        return;
+                    }
+
+                    GameInputDeviceInfoSnapshot snapshot = devices[0].GetDeviceInfoSnapshot();
+                    Assert.AreNotEqual(GameInputKind.GameInputKindUnknown, snapshot.SupportedInput, "STA 執行緒應能讀取 MTA 列舉到的裝置資訊。");
+                    _ = Task.Run(client.GetCurrentTimestamp).GetAwaiter().GetResult();
+                }
+                finally
+                {
+                    foreach (GameInputDevice device in devices)
+                    {
+                        device.Dispose();
+                    }
+                }
+            }
+            catch (Exception ex) when (ex is DllNotFoundException or EntryPointNotFoundException)
+            {
+                inconclusive = true;
+            }
+            catch (Exception ex)
+            {
+                failure = ex;
+            }
+        });
+        staThread.SetApartmentState(ApartmentState.STA);
+        staThread.Start();
+        staThread.Join();
+
+        if (failure is not null)
+        {
+            Assert.Fail($"跨 apartment 使用 GameInput 物件失敗：{failure}");
+        }
+
+        if (inconclusive)
+        {
+            Assert.Inconclusive("此測試需要 GameInput runtime 與至少一個已連線的遊戲控制器、鍵盤或滑鼠。");
+        }
+    }
 
     [TestMethod]
     public void ConcurrentClientDisposeDoesNotThrow()
@@ -147,9 +202,7 @@ public sealed class GameInputLifetimeTests
         {
             try
             {
-                // net48 的 RCW 會綁定建立時的 COM apartment；MSTest 的 net48 測試執行緒是 STA，在 MTA 背景執行緒使用會失敗。
-                // 這個測試只驗證 Dispose 並行安全，因此在 MTA 執行緒建立，避免與 apartment 限制混在一起。
-                GameInputDeviceManager manager = await Task.Run(GameInputDeviceManager.Create);
+                GameInputDeviceManager manager = GameInputDeviceManager.Create();
                 Task[] tasks = [.. Enumerable.Range(0, 4).Select(_ => Task.Run(() => manager.RefreshDevices()))];
                 RunConcurrently(4, manager.Dispose);
 

@@ -7,17 +7,19 @@ description: 當需要從 Microsoft GameInput.h 重產 C# 互通層繫結，或�
 
 1. 確認 `Microsoft.GameInput` 版本與 `eng/gameinput-baseline.json` 一致。
 2. 修改產生邏輯時，只改 `tools/InputWeave.GameInput.BindingsGenerator`。
-3. 使用 `pwsh ./eng/Update-GameInputVersion.ps1 -Version <版本>`，或直接執行產生器並搭配 `--docs eng/gameinput-xml-docs.json` 與 `--interop-output-dir src/InputWeave.GameInput/Interop/Generated`，重產 `Interop/Generated` 下的列舉、常數、HRESULT、IID、回呼委派、結構配置與 `gameinput-abi-manifest.json`。COM 介面依 TFM 產生兩種形式（見下方「net10 裸 vtable 投影」）。
-4. ABI 檢查必須涵蓋列舉值、結構欄位順序、COM IID、Vtable 方法順序、HRESULT 與回呼委派；`net10` 的 vtable 方法順序由 `eng/Verify-GameInputBindings.ps1` 自動比對 `gameinput-abi-manifest.json`，不得只靠編譯成功判斷正確性。
-5. C++ `bool` 對應必須確認為 1 位元組；`net48` 的 C# 結構欄位與 COM 回傳值需明確指定 `UnmanagedType.I1`；`net10` 的裸 vtable 方法回傳型別用 `byte`，wrapper 內以 `!= 0` 轉換。
+3. 使用 `pwsh ./eng/Update-GameInputVersion.ps1 -Version <版本>`，或直接執行產生器並搭配 `--docs eng/gameinput-xml-docs.json` 與 `--interop-output-dir src/InputWeave.GameInput/Interop/Generated`，重產 `Interop/Generated` 下的列舉、常數、HRESULT、IID、回呼委派、結構配置與 `gameinput-abi-manifest.json`。COM 介面由 `net48` 與 `net10` 共用同一份裸 vtable 投影（見下方「裸 vtable 投影」）。
+4. ABI 檢查必須涵蓋列舉值、結構欄位順序、COM IID、Vtable 方法順序、HRESULT 與回呼委派；vtable 方法順序由 `eng/Verify-GameInputBindings.ps1` 自動比對 `gameinput-abi-manifest.json`，不得只靠編譯成功判斷正確性。
+5. C++ `bool` 對應必須確認為 1 位元組；C# 結構欄位需明確指定 `UnmanagedType.I1`，裸 vtable 方法回傳型別用 `byte`，wrapper 內以 `!= 0` 轉換。以 `fixed` 直接交給原生端寫入的結構不經過封送，受控配置必須與原生配置逐欄一致（由 `GameInputInteropTests.PointerPassedStructsHaveIdenticalManagedAndNativeLayout` 驗證）。
 6. 不要手改產生式互通層；若產生結果不正確，修改 `tools/InputWeave.GameInput.BindingsGenerator` 後重產。
 7. 產生檔必須使用 File-scoped Namespace，不得輸出 `#pragma warning disable`。
 8. 產生檔必須包含完整 XML 文件註解；若缺少 `summary`、`param` 或 `returns`，修改 `eng/gameinput-xml-docs.json` 與產生器後重產。
 9. 執行 `pwsh ./eng/Verify-GameInputBindings.ps1`、`dotnet test InputWeave.GameInput.slnx -c Release --no-build` 與 `pwsh ./eng/Validate-TextEncoding.ps1`；vtable slot 順序或簽章寫錯不會編譯失敗，而是靜默呼叫錯方法或記憶體毀損，因此務必用真實 GameInput.dll 跑過 `dotnet test`（本機若已安裝 GameInput runtime，測試不會走 `Inconclusive` 分支），不能只看編譯結果。
 
-## net10 裸 vtable 投影（NativeAOT 相容互通層，已採用）
+## 裸 vtable 投影（兩個 TFM 共用，已採用）
 
-`net10.0-windows` 的 COM 介面**不使用** `[ComImport]` 或來源產生式 `[GeneratedComInterface]`／`ComWrappers`，而是仿照 `TerraFX.Interop.Windows`／`DirectN` 的做法，把每個介面投影成**裸 vtable 結構 + `delegate* unmanaged[Stdcall]<...>` 函式指標**，呼叫端手動 `AddRef`/`Release`。`net48` 維持 `[ComImport]` 完全不變（產生器輸出拆成 `GameInputNativeInterfaces.NetFramework.g.cs`／`GameInputNativeInterfaces.Net10.g.cs` 兩份）。
+`net48` 與 `net10.0-windows` 的 COM 介面都**不使用** `[ComImport]` 或來源產生式 `[GeneratedComInterface]`／`ComWrappers`，而是仿照 `TerraFX.Interop.Windows`／`DirectN` 的做法，把每個介面投影成**裸 vtable 結構 + `delegate* unmanaged[Stdcall]<...>` 函式指標**，呼叫端手動 `AddRef`/`Release`。產生器輸出單一份 `GameInputNativeInterfaces.g.cs`，兩個 TFM 共用。
+
+**為何 `net48` 也不用 `[ComImport]`**：.NET Framework 的 RCW 會綁定建立時的 COM context，只有實作 `IAgileObject` 或聚合 FTM 的物件才能跨 apartment；GameInput 兩者皆無、也沒有 proxy/stub，所以在 STA（WinForms/WPF UI 執行緒）建立的物件從 MTA 呼叫會 `E_NOINTERFACE`（`InvalidCastException`），反向使用甚至會讓處理序結束。GameInput 官方文件說明 API「100% thread-safe」，且自 1.1 版起不需 `CoInitialize`，直接呼叫 vtable 最符合其設計。`net48` 可使用 `delegate* unmanaged[Stdcall]`：C# 規格說明單一具名呼叫慣例編碼為 `CallKind` `unmanaged stdcall`（不加 modopt），只有 `unmanaged ext` 才需要 `RuntimeFeature.UnmanagedCallKind`；Microsoft Learn 也說明 .NET Framework 支援 `CallingConvention` 列舉可描述的呼叫慣例（含 `StdCall`）。已以實機 GameInput 3.5.274 驗證 STA 建立、MTA 呼叫與反向使用皆正常（`GameInputLifetimeTests.ClientCreatedOnStaThreadIsUsableFromMtaThreadsAndBack`）。
 
 **為何不用 `GeneratedComInterface`（歷史紀錄，之前確認的限制）**：
 
@@ -32,9 +34,9 @@ description: 當需要從 Microsoft GameInput.h 重產 C# 互通層繫結，或�
 - 每個介面產生 `{Name}Vtbl`（`[StructLayout(LayoutKind.Sequential)]`，欄位依 `GameInput.h` 原始 vtable 順序排列，前三個固定是 `QueryInterface`/`AddRef`/`Release`）與 `{Name}`（`internal readonly unsafe struct`，只包一個 `Pointer` 欄位，透過 `Vtbl->Method(Pointer, ...)` 呼叫）。
 - 借用型（in）COM 介面參數傳 `.Pointer`（`null` 用 `IntPtr.Zero`）；`out` COM 介面參數在 vtable 層是 `void**`，wrapper 讀出原始指標後包裝成新的 `{Type}((IntPtr)raw)`——依 COM 慣例，這是呼叫端擁有的新參考，由呼叫端負責 `Release()`。
 - `ref`/`out` 的 blittable 結構或純量參數（如 `AppLocalDeviceId`、`GameInputMouseState`、`ulong callbackToken`）在 vtable 層是 `T*`，wrapper 用 `fixed (T* p = &value)` 直接對參數本身取址呼叫，不需要額外複製。
-- 陣列＋計數參數（`GetControllerAxisState` 等）與委派回呼參數（`RegisterReadingCallback` 等）一律改成 `IntPtr`：陣列由高階類別（`GameInputReading.cs`／`GameInputDevice.cs`）用 `fixed` 釘選後傳入；回呼由 `GameInputClient.cs` 用 `[UnmanagedCallersOnly(CallConvs = [typeof(CallConvStdcall)])]` 靜態方法 + `&OnXxxCallback` 取原始函式指標傳入，取代 `Marshal.GetFunctionPointerForDelegate`。
+- 陣列＋計數參數（`GetControllerAxisState` 等）與委派回呼參數（`RegisterReadingCallback` 等）一律改成 `IntPtr`：陣列由高階類別（`GameInputReading.cs`／`GameInputDevice.cs`）用 `fixed` 釘選後傳入；回呼函式指標由 `GameInputClient.cs` 的 `XxxCallbackPointer` 屬性提供——`net10` 用 `[UnmanagedCallersOnly(CallConvs = [typeof(CallConvStdcall)])]` 靜態方法 + `&OnXxxCallback`；`net48` 沒有 `UnmanagedCallersOnly`，改用 `GameInputCallbacks.NetFramework.g.cs` 的 `[UnmanagedFunctionPointer(CallingConvention.StdCall)]` 委派（參數為 blittable 的 vtable 包裝結構）搭配 `Marshal.GetFunctionPointerForDelegate`，並以靜態欄位讓委派在整個處理序期間保持存活。
 - `string` 參數（`FindDeviceFromPlatformString`）由 wrapper 用 `fixed (char* p = value)` 轉成原生緩衝區。
-- 消費端（`GameInputClient.cs`／`GameInputDevice.cs`／`GameInputReading.cs`／`GameInputDispatcher.cs`／`GameInputForceFeedbackEffect.cs`／`GameInputMapper.cs`／`GameInputRawDeviceReport.cs`）的 `_native` 欄位型別維持 `IGameInputXxx?`（`net10` 下等同 `Nullable<struct>`，`net48` 下是可為 Null 的介面參考，語法相同不需要 `#if`）；`Dispose()` 依 TFM 分流呼叫 `_native.Value.Release()`（`net10`）或 `Marshal.ReleaseComObject(_native)`（`net48`）。
-- `GameInputClient.Create()` 在 `net10` 下用 `new IGameInput(nativePointer); native.AddRef();` 取代 `Marshal.GetObjectForIUnknown`，語意與 `net48` 對稱（`GameInputInitialize` 交出的參考在 `finally` 釋放，包裝物件自己持有另一個 `AddRef`）。
+- 消費端（`GameInputClient.cs`／`GameInputDevice.cs`／`GameInputReading.cs`／`GameInputDispatcher.cs`／`GameInputForceFeedbackEffect.cs`／`GameInputMapper.cs`／`GameInputRawDeviceReport.cs`）的 `_native` 欄位型別是 `IGameInputXxx?`（`Nullable<struct>`）；`Dispose()` 一律呼叫 `_native.Value.Release()`，不使用 `Marshal.ReleaseComObject`。從原生回呼借用的指標依 COM 規則由呼叫端擁有，包裝前必須先 `AddRef`（`WrapBorrowedDevice`／`WrapBorrowedReading`）。
+- `GameInputClient.Create()` 直接把 `GameInputInitialize` 交出的參考轉交給 `SafeHandle`（`GameInputHandle`），每次原生呼叫以 `DangerousAddRef`／`DangerousRelease` 取得租約，`ReleaseHandle` 以 `Marshal.Release` 釋放。
 
 不要在此設計上重新嘗試 `GeneratedComInterface`／`ComWrappers`；若未來 .NET 對巢狀 COM 物件開放可自訂的確定性釋放路徑，才值得重新評估。

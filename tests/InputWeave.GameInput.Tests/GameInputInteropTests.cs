@@ -24,6 +24,29 @@ public sealed class GameInputInteropTests
     }
 
     [TestMethod]
+    public unsafe void PointerPassedStructsHaveIdenticalManagedAndNativeLayout()
+    {
+        // vtable 互通層以 fixed 把受控結構直接交給原生端寫入，不經過封送；
+        // 受控記憶體配置必須與封送（原生）配置逐欄一致，否則原生寫入會錯位。
+        GameInputKeyState keyState = default;
+        byte* keyBase = (byte*)&keyState;
+        Assert.AreEqual(Marshal.SizeOf<GameInputKeyState>(), sizeof(GameInputKeyState));
+        Assert.AreEqual((long)Marshal.OffsetOf<GameInputKeyState>(nameof(GameInputKeyState.ScanCode)), (byte*)&keyState.ScanCode - keyBase);
+        Assert.AreEqual((long)Marshal.OffsetOf<GameInputKeyState>(nameof(GameInputKeyState.CodePoint)), (byte*)&keyState.CodePoint - keyBase);
+        Assert.AreEqual((long)Marshal.OffsetOf<GameInputKeyState>(nameof(GameInputKeyState.VirtualKey)), (byte*)&keyState.VirtualKey - keyBase);
+        Assert.AreEqual((long)Marshal.OffsetOf<GameInputKeyState>(nameof(GameInputKeyState.IsDeadKey)), (byte*)&keyState.IsDeadKey - keyBase);
+
+        Assert.AreEqual(Marshal.SizeOf<AppLocalDeviceId>(), sizeof(AppLocalDeviceId));
+        Assert.AreEqual(Marshal.SizeOf<GameInputGamepadState>(), sizeof(GameInputGamepadState));
+        Assert.AreEqual(Marshal.SizeOf<GameInputMouseState>(), sizeof(GameInputMouseState));
+        Assert.AreEqual(Marshal.SizeOf<GameInputArcadeStickState>(), sizeof(GameInputArcadeStickState));
+        Assert.AreEqual(Marshal.SizeOf<GameInputFlightStickState>(), sizeof(GameInputFlightStickState));
+        Assert.AreEqual(Marshal.SizeOf<GameInputRacingWheelState>(), sizeof(GameInputRacingWheelState));
+        Assert.AreEqual(Marshal.SizeOf<GameInputSensorsState>(), sizeof(GameInputSensorsState));
+        Assert.AreEqual(Marshal.SizeOf<GameInputRawDeviceReportInfo>(), sizeof(GameInputRawDeviceReportInfo));
+    }
+
+    [TestMethod]
     public void BlittableStructSizesMatchNativeHeaderForCommonStates()
     {
         Assert.AreEqual(32, Marshal.SizeOf<AppLocalDeviceId>());
@@ -108,7 +131,6 @@ public sealed class GameInputInteropTests
         }
     }
 
-#if NET10_0_OR_GREATER
     [TestMethod]
     public void GeneratedComCallbackParametersUseRawFunctionPointers()
     {
@@ -169,7 +191,6 @@ public sealed class GameInputInteropTests
             Assert.AreEqual("Release", vtableFields[2].Name);
         }
     }
-#endif
 
     [TestMethod]
     public void NativeDllImportsConstrainSearchPaths()

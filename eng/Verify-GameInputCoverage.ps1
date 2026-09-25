@@ -88,7 +88,8 @@ foreach ($callback in $manifest.callbacks)
 
 foreach ($interface in $manifest.interfaces)
 {
-    Assert-TextContent -Text $allSource -Expected "interface $($interface.name)" -FailureMessage "低階 interop 缺少 COM interface $($interface.name)。"
+    Assert-TextContent -Text $allSource -Expected "struct $($interface.name)(IntPtr pointer)" -FailureMessage "低階 interop 缺少 COM interface $($interface.name) 的 vtable 包裝結構。"
+    Assert-TextContent -Text $allSource -Expected "struct $($interface.name)Vtbl" -FailureMessage "低階 interop 缺少 COM interface $($interface.name) 的 vtable 結構。"
 }
 
 foreach ($hresult in $manifest.hResults)

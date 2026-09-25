@@ -111,7 +111,6 @@ public sealed class GameInputReading : IDisposable
         }
 
         float[] state = new float[NativeSizeGuard.EnsureCount(count, NativeSizeGuard.MaxElementCount, "controller 軸數量")];
-#if NET10_0_OR_GREATER
         uint written;
         unsafe
         {
@@ -120,9 +119,6 @@ public sealed class GameInputReading : IDisposable
                 written = Native.GetControllerAxisState((uint)state.Length, (IntPtr)pointer);
             }
         }
-#else
-        uint written = Native.GetControllerAxisState(count, state);
-#endif
         written = Math.Min(written, count);
         if (written == count)
         {
@@ -149,7 +145,6 @@ public sealed class GameInputReading : IDisposable
             throw new ArgumentNullException(nameof(stateArray));
         }
 #endif
-#if NET10_0_OR_GREATER
         unsafe
         {
             fixed (float* pointer = stateArray)
@@ -157,9 +152,6 @@ public sealed class GameInputReading : IDisposable
                 return Native.GetControllerAxisState((uint)stateArray.Length, (IntPtr)pointer);
             }
         }
-#else
-        return Native.GetControllerAxisState((uint)stateArray.Length, stateArray);
-#endif
     }
 
     /// <summary>
@@ -177,7 +169,6 @@ public sealed class GameInputReading : IDisposable
         }
 
         byte[] nativeState = new byte[NativeSizeGuard.EnsureCount(count, NativeSizeGuard.MaxElementCount, "controller 按鈕數量")];
-#if NET10_0_OR_GREATER
         uint written;
         unsafe
         {
@@ -186,9 +177,6 @@ public sealed class GameInputReading : IDisposable
                 written = Native.GetControllerButtonState((uint)nativeState.Length, (IntPtr)pointer);
             }
         }
-#else
-        uint written = Native.GetControllerButtonState(count, nativeState);
-#endif
         written = Math.Min(written, count);
         bool[] state = new bool[(int)written];
         for (int index = 0; index < state.Length; index++)
@@ -215,7 +203,6 @@ public sealed class GameInputReading : IDisposable
             throw new ArgumentNullException(nameof(stateArray));
         }
 #endif
-#if NET10_0_OR_GREATER
         unsafe
         {
             fixed (byte* pointer = stateArray)
@@ -223,9 +210,6 @@ public sealed class GameInputReading : IDisposable
                 return Native.GetControllerButtonState((uint)stateArray.Length, (IntPtr)pointer);
             }
         }
-#else
-        return Native.GetControllerButtonState((uint)stateArray.Length, stateArray);
-#endif
     }
 
     /// <summary>
@@ -243,7 +227,6 @@ public sealed class GameInputReading : IDisposable
         }
 
         GameInputSwitchPosition[] state = new GameInputSwitchPosition[NativeSizeGuard.EnsureCount(count, NativeSizeGuard.MaxElementCount, "controller 開關數量")];
-#if NET10_0_OR_GREATER
         uint written;
         unsafe
         {
@@ -252,9 +235,6 @@ public sealed class GameInputReading : IDisposable
                 written = Native.GetControllerSwitchState((uint)state.Length, (IntPtr)pointer);
             }
         }
-#else
-        uint written = Native.GetControllerSwitchState(count, state);
-#endif
         written = Math.Min(written, count);
         if (written == count)
         {
@@ -281,7 +261,6 @@ public sealed class GameInputReading : IDisposable
             throw new ArgumentNullException(nameof(stateArray));
         }
 #endif
-#if NET10_0_OR_GREATER
         unsafe
         {
             fixed (GameInputSwitchPosition* pointer = stateArray)
@@ -289,9 +268,6 @@ public sealed class GameInputReading : IDisposable
                 return Native.GetControllerSwitchState((uint)stateArray.Length, (IntPtr)pointer);
             }
         }
-#else
-        return Native.GetControllerSwitchState((uint)stateArray.Length, stateArray);
-#endif
     }
 
     /// <summary>
@@ -309,7 +285,6 @@ public sealed class GameInputReading : IDisposable
         }
 
         GameInputKeyState[] state = new GameInputKeyState[NativeSizeGuard.EnsureCount(count, NativeSizeGuard.MaxElementCount, "鍵盤按鍵數量")];
-#if NET10_0_OR_GREATER
         uint written;
         unsafe
         {
@@ -318,9 +293,6 @@ public sealed class GameInputReading : IDisposable
                 written = Native.GetKeyState((uint)state.Length, (IntPtr)pointer);
             }
         }
-#else
-        uint written = Native.GetKeyState(count, state);
-#endif
         written = Math.Min(written, count);
         if (written == count)
         {
@@ -347,7 +319,6 @@ public sealed class GameInputReading : IDisposable
             throw new ArgumentNullException(nameof(stateArray));
         }
 #endif
-#if NET10_0_OR_GREATER
         unsafe
         {
             fixed (GameInputKeyState* pointer = stateArray)
@@ -355,9 +326,6 @@ public sealed class GameInputReading : IDisposable
                 return Native.GetKeyState((uint)stateArray.Length, (IntPtr)pointer);
             }
         }
-#else
-        return Native.GetKeyState((uint)stateArray.Length, stateArray);
-#endif
     }
 
     /// <summary>
@@ -660,14 +628,7 @@ public sealed class GameInputReading : IDisposable
 
         if (_native is not null)
         {
-#if NET10_0_OR_GREATER
             _native.Value.Release();
-#else
-            if (Marshal.IsComObject(_native))
-            {
-                _ = Marshal.ReleaseComObject(_native);
-            }
-#endif
             _native = null;
         }
 

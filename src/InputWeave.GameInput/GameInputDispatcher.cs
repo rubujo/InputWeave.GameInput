@@ -72,11 +72,7 @@ public sealed class GameInputDispatcher : IDisposable
 
         if (_native is not null)
         {
-#if NET10_0_OR_GREATER
             _native.Value.Release();
-#else
-            Marshal.ReleaseComObject(_native);
-#endif
             _native = null;
         }
 

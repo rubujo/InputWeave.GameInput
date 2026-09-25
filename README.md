@@ -40,7 +40,7 @@ dotnet add package InputWeave.GameInput --version 0.0.1
 
 ## 支援範圍
 
-本套件支援一般 .NET Framework 與 .NET Windows 應用程式。`net48` 維持傳統 `[ComImport]` COM interop 路徑；`net10.0-windows` 改用不依賴 CLR 內建 COM 封送的裸 vtable 投影（`delegate* unmanaged` 函式指標 + 手動 `AddRef`/`Release`），巢狀 COM 物件也能確定性釋放。
+本套件支援一般 .NET Framework 與 .NET Windows 應用程式。`net48` 與 `net10.0-windows` 共用同一套不依賴 CLR 內建 COM 封送的裸 vtable 投影（`delegate* unmanaged[Stdcall]` 函式指標 + 手動 `AddRef`/`Release`），巢狀 COM 物件也能確定性釋放。因為不使用 COM Interop 的 RCW，GameInput 物件不會綁定建立時的 COM apartment，在 WinForms、WPF 的 UI 執行緒（STA）建立後，也能在背景執行緒使用。
 
 `net10.0-windows` 路徑已實際跑過 `dotnet publish -p:PublishAot=true` 端對端驗證：用一個獨立探測專案引用本函式庫，實測裝置列舉、非同步 API、Snapshot 相等性／雜湊、事件、依賴注入解析等主要路徑，`ilc` 原生程式碼產生與連結皆順利完成，產生的原生執行檔在真實 GameInput 執行階段（含實體 Xbox 控制器）下行為正常，過程中發現並修正了 3 處 trim/AOT 分析錯誤（泛型 `Marshal.PtrToStructure<T>`／`Marshal.SizeOf(Type)` 呼叫缺少必要標注，詳見 `GameInputDeviceInfoSnapshot.cs`／`GameInputMapper.cs`）。本套件不包含原生橋接 DLL；發佈前仍建議在目標環境自行跑一輪驗證，尤其是還沒被涵蓋到的低階 Interop 逃生口路徑。
 

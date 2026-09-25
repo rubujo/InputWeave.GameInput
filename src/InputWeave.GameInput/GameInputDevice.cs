@@ -467,7 +467,6 @@ public sealed class GameInputDevice : IDisposable
             return indexes;
         }
 
-#if NET10_0_OR_GREATER
         unsafe
         {
             fixed (byte* pointer = indexes)
@@ -475,9 +474,6 @@ public sealed class GameInputDevice : IDisposable
                 hResult = Native.GetExtraAxisIndexes(inputKind, count, (IntPtr)pointer);
             }
         }
-#else
-        hResult = Native.GetExtraAxisIndexes(inputKind, count, indexes);
-#endif
         GameInputException.ThrowIfFailed(hResult);
         return indexes;
     }
@@ -499,7 +495,6 @@ public sealed class GameInputDevice : IDisposable
             return indexes;
         }
 
-#if NET10_0_OR_GREATER
         unsafe
         {
             fixed (byte* pointer = indexes)
@@ -507,9 +502,6 @@ public sealed class GameInputDevice : IDisposable
                 hResult = Native.GetExtraButtonIndexes(inputKind, count, (IntPtr)pointer);
             }
         }
-#else
-        hResult = Native.GetExtraButtonIndexes(inputKind, count, indexes);
-#endif
         GameInputException.ThrowIfFailed(hResult);
         return indexes;
     }
@@ -563,11 +555,7 @@ public sealed class GameInputDevice : IDisposable
 
         if (_native is not null)
         {
-#if NET10_0_OR_GREATER
             _native.Value.Release();
-#else
-            Marshal.ReleaseComObject(_native);
-#endif
             _native = null;
         }
 
