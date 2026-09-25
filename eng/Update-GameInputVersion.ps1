@@ -170,10 +170,11 @@ $formattedVersionNotes
 ## 追版流程
 
 1. 執行 ``pwsh ./eng/Check-GameInputVersion.ps1 -FailOnOutdated`` 確認 NuGet 是否有新版。
-2. 若有新版，執行 ``pwsh ./eng/Update-GameInputVersion.ps1``。
-3. 檢查 ``Directory.Packages.props``、``eng/gameinput-baseline.json``、``eng/gameinput-version-notes.json``、``src/InputWeave.GameInput/Interop/Generated/`` 下的 ``.g.cs``、``gameinput-abi-manifest.json`` 與本報告。
-4. 執行 ``dotnet build``、``dotnet test``、``pwsh ./eng/Verify-GameInputBindings.ps1``、``pwsh ./eng/Verify-GameInputCoverage.ps1``。
-5. 若 GameInput.h 公開 API 有新增或異動，先更新產生器映射，再更新覆蓋率與版本文件。
+2. 執行 ``pwsh ./eng/Show-GameInputGitHubReleases.ps1`` 交叉核對 [microsoftconnect/GameInput](https://github.com/microsoftconnect/GameInput) 的 GitHub Releases——GitHub tag 版號與 NuGet 版號編號機制不同，NuGet 套件說明可能未列出 Release Notes 上的細節，需人工核對後視需要更新 ``eng/gameinput-version-notes.json``，再執行 ``-MarkReviewed`` 標記。
+3. 若有新版，執行 ``pwsh ./eng/Update-GameInputVersion.ps1``。
+4. 檢查 ``Directory.Packages.props``、``eng/gameinput-baseline.json``、``eng/gameinput-version-notes.json``、``src/InputWeave.GameInput/Interop/Generated/`` 下的 ``.g.cs``、``gameinput-abi-manifest.json`` 與本報告。
+5. 執行 ``dotnet build``、``dotnet test``、``pwsh ./eng/Verify-GameInputBindings.ps1``、``pwsh ./eng/Verify-GameInputCoverage.ps1``。
+6. 若 GameInput.h 公開 API 有新增或異動，先更新產生器映射，再更新覆蓋率與版本文件。
 "@
 Write-Utf8NoBomFile -Path (Join-Path $repoRoot 'docs\gameinput-version-report.md') -Content ($report + [Environment]::NewLine)
 
