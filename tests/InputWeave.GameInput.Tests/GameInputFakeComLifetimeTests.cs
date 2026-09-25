@@ -172,6 +172,33 @@ public sealed class GameInputFakeComLifetimeTests
     }
 
     [TestMethod]
+    public void DeviceEventQueueIsBoundedAndDropsOldestEvents()
+    {
+        using FakeComObject fake = FakeComObject.CreateGameInput();
+        using GameInputDeviceManager manager = new(new GameInputClient(new GameInputComHandle(fake.Pointer)));
+        int total = GameInputDeviceManager.MaxQueuedEvents + 500;
+
+        for (int index = 0; index < total; index++)
+        {
+            manager.PublishDeviceEvent(new GameInputDeviceManagerEvent(
+                (ulong)index,
+                GameInputDeviceStatus.GameInputDeviceConnected,
+                GameInputDeviceStatus.GameInputDeviceNoStatus,
+                default));
+        }
+
+        List<ulong> queued = [];
+        while (manager.TryDequeueEvent(out GameInputDeviceManagerEvent managerEvent))
+        {
+            queued.Add(managerEvent.Timestamp);
+        }
+
+        Assert.HasCount(GameInputDeviceManager.MaxQueuedEvents, queued, "佇列應只保留上限數量的事件。");
+        Assert.AreEqual((ulong)(total - GameInputDeviceManager.MaxQueuedEvents), queued[0], "滿了應丟棄最舊的事件。");
+        Assert.AreEqual((ulong)(total - 1), queued[queued.Count - 1]);
+    }
+
+    [TestMethod]
     public void RegistrationFreesContextOnlyAfterSuccessfulUnregister()
     {
         (GameInputCallbackRegistration registration, WeakReference context, Func<bool> deactivated) = CreateRegistration(unregister: _ => true);

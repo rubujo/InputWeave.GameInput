@@ -303,6 +303,8 @@ sealed class DeviceChangeObserver : IObserver<GameInputDeviceManagerEvent>
 }
 ```
 
+`TryDequeueEvent` 讀取的事件佇列最多保留最近 1024 筆，滿了會丟棄最舊的事件；只訂閱推送事件的應用程式不需要清空佇列，也不會讓記憶體無限增加。
+
 手動呼叫 `StartDeviceEvents()`／`StopDeviceEvents()` 跟訂閱 `DeviceChanged`／`DeviceChanges` 可以混用：手動啟動的監看不會被事件訂閱的取消動作意外停止；手動停止後若仍有訂閱者，下一次新增訂閱者時會自動恢復監看。`manager.Dispose()` 時，所有 `DeviceChanges` 訂閱者都會收到一次 `IObserver<T>.OnCompleted()`；在 `Dispose()` 之後才呼叫 `Subscribe` 的新訂閱者，會立即收到 `OnCompleted()` 而不會收到任何 `OnNext()`。
 
 ## 依賴注入註冊

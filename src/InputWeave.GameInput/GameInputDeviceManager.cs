@@ -27,6 +27,12 @@ public sealed class GameInputDeviceManager : IDisposable
 #endif
     private readonly List<GameInputDevice> _devices = [];
     private readonly List<GameInputDeviceInfoSnapshot> _snapshots = [];
+    /// <summary>
+    /// The maximum number of device events kept for <see cref="TryDequeueEvent"/>; the oldest event is dropped when full.
+    /// 供 <see cref="TryDequeueEvent"/> 保留的裝置事件上限；滿了會丟棄最舊的事件。
+    /// </summary>
+    internal const int MaxQueuedEvents = 1024;
+
     private readonly Queue<GameInputDeviceManagerEvent> _events = new();
 #if NET10_0_OR_GREATER
     private readonly System.Threading.Lock _pushLock = new();
@@ -40,7 +46,7 @@ public sealed class GameInputDeviceManager : IDisposable
     private bool _manualDeviceEventsActive;
     private int _disposed;
 
-    private GameInputDeviceManager(GameInputClient client)
+    internal GameInputDeviceManager(GameInputClient client)
     {
         _client = client;
         _deviceChanges = new EventObservable<GameInputDeviceManagerEvent>(AddPushSubscriber, RemovePushSubscriber);
@@ -406,6 +412,12 @@ public sealed class GameInputDeviceManager : IDisposable
     /// Tries to dequeue the next device event from the event queue.
     /// 嘗試從事件佇列取出下一筆裝置事件。
     /// </summary>
+    /// <remarks>
+    /// The queue keeps at most the 1024 most recent events; when it is full the oldest event is dropped, so poll regularly if every
+    /// event matters, or use <see cref="DeviceChanged"/> / <see cref="DeviceChanges"/> instead.
+    /// 佇列最多保留最近 1024 筆事件，滿了會丟棄最舊的事件；若每筆事件都重要，請定期輪詢，或改用
+    /// <see cref="DeviceChanged"/>／<see cref="DeviceChanges"/>。
+    /// </remarks>
     /// <param name="managerEvent">The output field that receives the dequeued device event. 參數 managerEvent。</param>
     /// <returns>Returns true when an event was dequeued; returns false when the queue is empty. 成功取出事件時傳回 true；佇列為空時傳回 false。</returns>
     public bool TryDequeueEvent(out GameInputDeviceManagerEvent managerEvent)
@@ -658,9 +670,20 @@ public sealed class GameInputDeviceManager : IDisposable
     private void EnqueueDeviceEvent(GameInputDevice device, ulong timestamp, GameInputDeviceStatus currentStatus, GameInputDeviceStatus previousStatus)
     {
         GameInputDeviceInfoSnapshot snapshot = device.GetDeviceInfoSnapshot();
-        GameInputDeviceManagerEvent managerEvent = new(timestamp, currentStatus, previousStatus, snapshot);
+        PublishDeviceEvent(new GameInputDeviceManagerEvent(timestamp, currentStatus, previousStatus, snapshot));
+    }
+
+    internal void PublishDeviceEvent(GameInputDeviceManagerEvent managerEvent)
+    {
         lock (_events)
         {
+            // 只訂閱推送事件、從不呼叫 TryDequeueEvent 的使用者也會經過這裡；
+            // 佇列設上限並丟棄最舊事件（同 BoundedChannelFullMode.DropOldest），避免長時間執行時記憶體無限增加。
+            if (_events.Count >= MaxQueuedEvents)
+            {
+                _ = _events.Dequeue();
+            }
+
             _events.Enqueue(managerEvent);
         }
 
