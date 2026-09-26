@@ -632,7 +632,7 @@ public sealed class GameInputDevice : IDisposable
         return (supportedMotors & motor) == motor;
     }
 
-    private static void ValidateRumbleStrength(GameInputRumbleParams parameters)
+    internal static void ValidateRumbleStrength(GameInputRumbleParams parameters)
     {
         ValidateRumbleStrength(parameters.LowFrequency, nameof(parameters.LowFrequency));
         ValidateRumbleStrength(parameters.HighFrequency, nameof(parameters.HighFrequency));
@@ -642,7 +642,8 @@ public sealed class GameInputDevice : IDisposable
 
     private static void ValidateRumbleStrength(float value, string parameterName)
     {
-        if (value < 0 || value > 1)
+        // 以反向條件判斷，NaN 與 0.0～1.0 以外的值都會被拒絕；value < 0 || value > 1 對 NaN 皆為 false 而會放行。
+        if (!(value >= 0 && value <= 1))
         {
             throw new ArgumentOutOfRangeException(parameterName, value, "Rumble 強度必須介於 0.0 到 1.0。");
         }
