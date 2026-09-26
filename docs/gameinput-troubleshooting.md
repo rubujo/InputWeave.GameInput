@@ -33,7 +33,7 @@
 
 ## 裝置列舉很慢
 
-`EnumerateDevices`、`RefreshDevices` 使用 GameInput 的阻塞式列舉（`GameInputBlockingEnumeration`），時間幾乎都花在原生 `RegisterDeviceCallback` 等待初始回呼完成。實測 GameInput 3.5.274 每次約 960 毫秒，與輸入種類、裝置數量無關。
+`EnumerateDevices`、`RefreshDevices` 使用 GameInput 的阻塞式列舉（`GameInputBlockingEnumeration`），時間幾乎都花在原生 `RegisterDeviceCallback` 等待初始回呼完成。實測 GameInput 3.5.274 與 3.5.278 每次都約 960 毫秒，與輸入種類、裝置數量無關。
 
 處理方式：
 
