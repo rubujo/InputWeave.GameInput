@@ -15,7 +15,7 @@
 - 套件版本：`0.0.1`
 - 發佈標籤：`v0.0.1`
 - 目標框架：`net48;net8.0;net10.0`
-- GameInput 基準：`Microsoft.GameInput` `3.5.274`，API 版本 `3`
+- GameInput 基準：`Microsoft.GameInput` `3.5.278`，API 版本 `3`
 - GameInput 版本異動：[docs/gameinput-version-report.md](docs/gameinput-version-report.md)
 - 授權中繼資料：`CC0-1.0`
 - API 覆蓋率：[docs/gameinput-api-coverage.md](docs/gameinput-api-coverage.md)

@@ -21,7 +21,7 @@ public sealed class GameInputCoverageTests
         string report = File.ReadAllText(FindRepoFile("docs/gameinput-api-coverage.md"));
 
         Assert.Contains("InputWeave.GameInput v0.0.1", report);
-        Assert.Contains("Microsoft.GameInput 3.5.274", report);
+        Assert.Contains("Microsoft.GameInput 3.5.278", report);
         Assert.Contains("缺口：0", report);
         Assert.IsFalse(report.Contains("v.0.0.1", StringComparison.Ordinal));
     }
@@ -33,7 +33,7 @@ public sealed class GameInputCoverageTests
 
         Assert.Contains("## Microsoft 官方 ", report);
         Assert.Contains("版本異動摘要", report);
-        Assert.Contains("https://www.nuget.org/packages/Microsoft.GameInput/3.5.274", report);
+        Assert.Contains("https://www.nuget.org/packages/Microsoft.GameInput/3.5.278", report);
     }
 
     [TestMethod]
