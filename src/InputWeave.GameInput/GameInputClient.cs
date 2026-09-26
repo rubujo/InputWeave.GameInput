@@ -60,7 +60,23 @@ public sealed class GameInputClient : IDisposable
 #else
     private readonly object _syncRoot = new();
 #endif
-    private static IntPtr s_anchoredRoot;
+    private const GameInputKind AllInputKinds =
+        GameInputKind.GameInputKindRawDeviceReport
+        | GameInputKind.GameInputKindController
+        | GameInputKind.GameInputKindKeyboard
+        | GameInputKind.GameInputKindMouse
+        | GameInputKind.GameInputKindSensors
+        | GameInputKind.GameInputKindArcadeStick
+        | GameInputKind.GameInputKindFlightStick
+        | GameInputKind.GameInputKindGamepad
+        | GameInputKind.GameInputKindRacingWheel;
+
+#if NET9_0_OR_GREATER
+    private static readonly System.Threading.Lock s_runtimeInitializationLock = new();
+#else
+    private static readonly object s_runtimeInitializationLock = new();
+#endif
+    private static bool s_runtimeInitialized;
     private readonly List<GameInputCallbackRegistration> _registrations = [];
     private readonly List<Action> _pendingWaitCancellations = [];
     private readonly GameInputComHandle _handle;
@@ -78,9 +94,11 @@ public sealed class GameInputClient : IDisposable
     /// <remarks>
     /// All target frameworks call GameInput through raw vtable function pointers instead of COM Interop runtime callable wrappers,
     /// so the client and its child objects can be used from any thread regardless of COM apartment, matching GameInput's own
-    /// thread-safe design.
+    /// thread-safe design. The first call in a process also waits (about one second) until GameInput has discovered the devices
+    /// that are already connected, so device events registered afterwards report only real status changes.
     /// 所有目標框架都透過原始 vtable 函式指標呼叫 GameInput，而非 COM Interop 的執行階段可呼叫包裝（RCW），
     /// 因此用戶端與其子物件可以在任何執行緒上使用，不受 COM apartment 限制，與 GameInput 本身的執行緒安全設計一致。
+    /// 處理序內第一次呼叫還會等待 GameInput 發現已連線的裝置（約一秒），之後註冊的裝置事件只會回報真正的狀態變化。
     /// </remarks>
     /// <exception cref="GameInputException">GameInput initialization failed. GameInput 初始化失敗。</exception>
     /// <returns>The newly created <see cref="GameInputClient"/> instance. 新建立的 <see cref="GameInputClient"/> 執行個體。</returns>
@@ -92,7 +110,7 @@ public sealed class GameInputClient : IDisposable
 
         // GameInputInitialize 的輸出指標依 COM 慣例已 AddRef，擁有權直接轉交給 SafeHandle。
         GameInputComHandle handle = new(nativePointer);
-        AnchorRuntimeRoot(nativePointer);
+        InitializeRuntimeOnce(nativePointer);
         try
         {
             return new GameInputClient(handle);
@@ -1131,33 +1149,60 @@ public sealed class GameInputClient : IDisposable
     }
 
     /// <summary>
-    /// Keeps one extra reference to the GameInput runtime's singleton root object for the rest of the process, so its reference
-    /// count never drops to zero.
-    /// 替 GameInput 執行階段的單例根物件保留一份額外參考直到處理序結束，讓參考計數永遠不會降到零。
+    /// Performs the one-time, process-wide runtime setup on the first client creation: anchors the singleton root object and
+    /// waits for the initial device discovery. Concurrent first calls wait until the setup has finished.
+    /// 在第一次建立 client 時執行一次性的處理序層級設定：保留單例根物件的錨點參考並等待初始裝置探索完成。
+    /// 同時進行的第一次呼叫會等到設定完成。
     /// </summary>
     /// <remarks>
     /// <c>GameInputInitialize</c> returns the same singleton root to every caller. Measured with GameInput 3.5.274 and 3.5.278,
     /// the process crashes with an access violation when that root's last reference is released on one thread while another
     /// thread calls <c>GameInputInitialize</c> (for example one client being disposed while another is created), whereas holding
     /// an anchor reference survived more than 15,000 such overlaps. This matches the loader, which also keeps the runtime module
-    /// loaded until the process exits.
+    /// loaded until the process exits. In addition, for about one second after the root is first created the runtime reports
+    /// every connected device as newly connected, even to callbacks registered with <c>GameInputNoEnumeration</c>; a blocking
+    /// enumeration waits for that discovery so later waits for device events are not completed by devices that were already
+    /// connected.
     /// <c>GameInputInitialize</c> 對每個呼叫端都傳回同一個單例根物件。以 GameInput 3.5.274 與 3.5.278 實測，
     /// 一條執行緒釋放該根物件最後一份參考、同時另一條執行緒呼叫 <c>GameInputInitialize</c>（例如一個 client 釋放時另一個正在建立）
     /// 會讓處理序以存取違規崩潰；保留錨點參考後，超過 15,000 次同樣的重疊都正常。這與載入器讓執行階段模組常駐到處理序結束的做法一致。
+    /// 此外，根物件第一次建立後約一秒內，執行階段會把每個已連線裝置都當成剛連線回報，即使回呼以 <c>GameInputNoEnumeration</c>
+    /// 註冊也一樣；以阻塞式列舉等待這段探索完成，之後等待裝置事件時才不會被原本就已連線的裝置完成。
     /// </remarks>
     /// <param name="root">The root object pointer returned by <c>GameInputInitialize</c>. <c>GameInputInitialize</c> 傳回的根物件指標。</param>
-    private static void AnchorRuntimeRoot(IntPtr root)
+    private static void InitializeRuntimeOnce(IntPtr root)
     {
-        if (Volatile.Read(ref s_anchoredRoot) != IntPtr.Zero)
+        if (Volatile.Read(ref s_runtimeInitialized))
         {
             return;
         }
 
-        Marshal.AddRef(root);
-        if (Interlocked.CompareExchange(ref s_anchoredRoot, root, IntPtr.Zero) != IntPtr.Zero)
+        lock (s_runtimeInitializationLock)
         {
-            // 其他執行緒已先保留錨點；歸還多取的參考。呼叫端的 SafeHandle 仍持有一份，這裡不會讓計數歸零。
-            Marshal.Release(root);
+            if (s_runtimeInitialized)
+            {
+                return;
+            }
+
+            // 錨點參考刻意不歸還，讓單例根物件的參考計數永遠不會歸零。
+            Marshal.AddRef(root);
+
+            // context 為零時原生回呼會直接略過，不需要配置 GCHandle；探索失敗只是失去這項保證，不讓建立 client 失敗。
+            IGameInput native = GameInputComHandle.FromPointer<IGameInput>(root);
+            int hResult = native.RegisterDeviceCallback(
+                null,
+                AllInputKinds,
+                GameInputDeviceStatus.GameInputDeviceAnyStatus,
+                GameInputEnumerationKind.GameInputBlockingEnumeration,
+                IntPtr.Zero,
+                DeviceCallbackPointer,
+                out ulong token);
+            if (hResult >= 0 && token != 0)
+            {
+                _ = native.UnregisterCallback(token);
+            }
+
+            Volatile.Write(ref s_runtimeInitialized, true);
         }
     }
 

@@ -24,6 +24,23 @@ if (!available)
 
 const GameInputKind kinds = GameInputKind.GameInputKindGamepad | GameInputKind.GameInputKindKeyboard | GameInputKind.GameInputKindMouse;
 
+// 必須是處理序內第一個 client：GameInput 會在根物件第一次建立後約一秒內，把已連線裝置當成剛連線回報；
+// Create 應先等這段探索完成，之後等待裝置事件時不應被原本就已連線的裝置完成。
+using (GameInputDeviceManager firstManager = GameInputDeviceManager.Create())
+{
+    using CancellationTokenSource timeout = new(TimeSpan.FromSeconds(1.5));
+    try
+    {
+        GameInputDeviceManagerEvent unexpected = await firstManager.WaitForDeviceEventAsync(timeout.Token);
+        Console.Error.WriteLine($"建立後立即等待裝置事件卻被既有裝置完成：{unexpected.Device.DisplayName}（{unexpected.PreviousStatus} -> {unexpected.CurrentStatus}）");
+        return 1;
+    }
+    catch (OperationCanceledException)
+    {
+        Console.WriteLine("建立後立即等待裝置事件：1.5 秒內沒有被既有裝置完成");
+    }
+}
+
 using (GameInputClient client = GameInputClient.Create())
 {
     IReadOnlyList<GameInputDevice> devices = await client.EnumerateDevicesAsync(kinds);
