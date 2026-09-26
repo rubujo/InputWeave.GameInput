@@ -193,6 +193,25 @@ jobs:
                   }
               }
 
+              # 每個目標框架都必須有組件與 XML 文件，避免誤刪 TFM 後仍產出缺漏的套件。
+              $requiredEntries = foreach ($framework in @('net48', 'net8.0', 'net10.0')) {
+                  "lib/$framework/InputWeave.GameInput.dll"
+                  "lib/$framework/InputWeave.GameInput.xml"
+              }
+              $missingEntries = @($requiredEntries | Where-Object { $entries -notcontains $_ })
+              if ($missingEntries.Count -gt 0) {
+                  throw "套件缺少必要的目標框架檔案：$($missingEntries -join ', ')"
+              }
+
+              $unexpectedFrameworks = @($entries |
+                  Where-Object { $_ -match '^lib/(?<framework>[^/]+)/' } |
+                  ForEach-Object { $_.Split('/')[1] } |
+                  Sort-Object -Unique |
+                  Where-Object { $_ -notin @('net48', 'net8.0', 'net10.0') })
+              if ($unexpectedFrameworks.Count -gt 0) {
+                  throw "套件包含未預期的目標框架：$($unexpectedFrameworks -join ', ')"
+              }
+
               $nuspecEntry = $archive.Entries |
                   Where-Object { $_.FullName -eq 'InputWeave.GameInput.nuspec' } |
                   Select-Object -First 1

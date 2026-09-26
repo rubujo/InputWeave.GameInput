@@ -18,6 +18,8 @@
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
     <EmbedUntrackedSources>true</EmbedUntrackedSources>
     <DebugType>embedded</DebugType>
+    <!-- pack 時比對相容 TFM（net8.0 與 net10.0）的公開 API 與套件結構是否一致。 -->
+    <EnablePackageValidation>true</EnablePackageValidation>
     <IsAotCompatible Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net8.0'))">true</IsAotCompatible>
   </PropertyGroup>
 

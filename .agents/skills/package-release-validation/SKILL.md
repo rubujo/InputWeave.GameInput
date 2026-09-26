@@ -9,7 +9,7 @@ description: 當需要驗證 NuGet 包裝、發佈前狀態、可轉散發套件
 2. 執行 `dotnet format InputWeave.GameInput.slnx --verify-no-changes`。
 3. 執行 `pwsh ./eng/Verify-GameInputBindings.ps1`、`pwsh ./eng/Verify-GameInputCoverage.ps1` 與 `pwsh ./eng/Verify-DocSnippets.ps1`（文件 C# 範例必須能實際編譯）。
 4. 執行 `pwsh ./eng/Validate-TextEncoding.ps1` 與 `pwsh ./eng/Validate-AgentDocs.ps1`。
-5. 執行 `dotnet pack src/InputWeave.GameInput/InputWeave.GameInput.csproj -c Release -o .tmp/packages`。
+5. 執行 `dotnet pack src/InputWeave.GameInput/InputWeave.GameInput.csproj -c Release -o .tmp/packages`；`EnablePackageValidation` 會在 pack 時比對 `net8.0` 與 `net10.0` 的公開 API，出現 `CP` 開頭錯誤時修正程式碼，不要產生隱藏檔略過。
 6. 確認包裝套件版本為 `0.0.1`，發佈標籤名稱為 `v0.0.1`，授權中繼資料為 `CC0-1.0`。
-7. 確認 `.nupkg` 不包含 `GameInputRedist.msi`、`GameInputRedist.dll` 或原生橋接 DLL。
+7. 確認 `.nupkg` 只包含 `lib/net48`、`lib/net8.0`、`lib/net10.0` 三組 `InputWeave.GameInput.dll` 與 `.xml`，且不包含 `GameInputRedist.msi`、`GameInputRedist.dll` 或原生橋接 DLL。
 8. 發佈前重跑 NuGet ID、GitHub 與商標名稱檢查，避免與既有套件或品牌衝突。

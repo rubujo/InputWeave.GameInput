@@ -46,6 +46,10 @@ jobs:
       - name: Test
         run: dotnet test InputWeave.GameInput.slnx -c Release --no-build
 
+      # pack 會執行 EnablePackageValidation，提早發現各目標框架公開 API 不一致。
+      - name: Pack with package validation
+        run: dotnet pack src/InputWeave.GameInput/InputWeave.GameInput.csproj -c Release --no-build -o .tmp/packages
+
       - name: Verify formatting
         run: dotnet format InputWeave.GameInput.slnx --verify-no-changes
 
