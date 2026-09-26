@@ -174,6 +174,36 @@ public sealed class GameInputFakeComLifetimeTests
     }
 
     [TestMethod]
+    public async Task AwaitableCallbackFaultsTaskWhenConversionThrows()
+    {
+        using FakeComObject fake = FakeComObject.CreateGameInput();
+        using GameInputClient client = new(new GameInputComHandle(fake.Pointer));
+        InvalidOperationException conversionFailure = new("轉換失敗");
+        GameInputCallbackRegistration? registration = null;
+
+        Task<int> task = client.RunAwaitableCallback<int>(
+            (_, onError) =>
+            {
+                registration = new GameInputCallbackRegistration(
+                    token: 1,
+                    GCHandle.Alloc(new object()),
+                    deactivateContext: static () => { },
+                    unregisterCallback: static _ => true,
+                    removeRegistration: static _ => { });
+                ThreadPool.QueueUserWorkItem(_ => onError(conversionFailure));
+                return registration;
+            },
+            CancellationToken.None,
+            nameof(GameInputClient));
+
+        Task completed = await Task.WhenAny(task, Task.Delay(TimeSpan.FromSeconds(5)));
+        Assert.AreSame(task, completed, "回呼內轉換失敗時，等待中的工作應以例外結束，而不是永遠不會完成。");
+        InvalidOperationException actual = await Assert.ThrowsExactlyAsync<InvalidOperationException>(() => task);
+        Assert.AreSame(conversionFailure, actual);
+        Assert.IsTrue(SpinWait.SpinUntil(() => registration!.IsDisposed, TimeSpan.FromSeconds(2)), "工作失敗後應解除一次性回呼註冊。");
+    }
+
+    [TestMethod]
     public void DeviceEventQueueIsBoundedAndDropsOldestEvents()
     {
         using FakeComObject fake = FakeComObject.CreateGameInput();

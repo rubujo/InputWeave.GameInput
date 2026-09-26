@@ -246,7 +246,7 @@ Console.WriteLine($"Raw report {report.Info.Id}: {data.Length} bytes");
 
 ## 非同步 API
 
-`RefreshDevicesAsync`／`EnumerateDevicesAsync` 只是把阻塞式列舉包在 `Task.Run` 中執行，方便 UI 執行緒呼叫；`WaitForDeviceEventAsync`／`WaitForReadingAsync` 則是真正等待原生事件的非同步方法，內部註冊一次性回呼，完成或取消後會在背景執行緒解除註冊。
+`RefreshDevicesAsync`／`EnumerateDevicesAsync` 只是把阻塞式列舉包在 `Task.Run` 中執行，方便 UI 執行緒呼叫；`WaitForDeviceEventAsync`／`WaitForReadingAsync` 則是真正等待原生事件的非同步方法，內部註冊一次性回呼，完成或取消後會在背景執行緒解除註冊。`WaitForDeviceEventAsync` 只回報呼叫之後發生的插拔或連線狀態變化，已經連線的裝置不會讓它完成。
 
 ```csharp
 using System;
@@ -271,11 +271,11 @@ catch (OperationCanceledException)
 }
 ```
 
-`WaitForReadingAsync`／`WaitForGamepadAsync` 的轉換委派會在原生回呼「仍然有效」的期間內執行；傳入的 `GameInputReading` 只在回呼執行期間有效，只能在委派內轉換成快照後回傳，不可以把 `GameInputReading` 本身或其原生生命週期往外傳遞。
+`WaitForReadingAsync`／`WaitForGamepadAsync` 的轉換委派會在原生回呼「仍然有效」的期間內執行；傳入的 `GameInputReading` 只在回呼執行期間有效，只能在委派內轉換成快照後回傳，不可以把 `GameInputReading` 本身或其原生生命週期往外傳遞。轉換委派拋出的例外會讓傳回的工作以該例外失敗。
 
 ## 事件與 IObservable 訂閱
 
-`GameInputDeviceManager.DeviceChanged` 是標準 C# event；`DeviceChanges` 則是不依賴 `System.Reactive` 的 `IObservable<T>`。兩者共用同一套裝置事件監看機制，訂閱／取消訂閱會自動管理啟動與停止，處理常式的例外會透過 `GameInputClient.UnhandledCallbackException` 攔截，不會拋出到原生回呼邊界。
+`GameInputDeviceManager.DeviceChanged` 是標準 C# event；`DeviceChanges` 則是不依賴 `System.Reactive` 的 `IObservable<T>`。兩者共用同一套裝置事件監看機制，訂閱／取消訂閱會自動管理啟動與停止，處理常式的例外會透過 `GameInputClient.UnhandledCallbackException` 攔截，不會拋出到原生回呼邊界。開始監看時，已經連線的裝置也會各送出一筆 `GameInputDeviceConnected` 事件，方便同步初始狀態；重複取消訂閱同一個處理常式不會影響其他訂閱者。
 
 ```csharp
 using System;

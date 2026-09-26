@@ -235,10 +235,14 @@ public sealed class GameInputDeviceManager : IDisposable
     /// 非同步等待下一筆裝置狀態事件（例如插拔、連線狀態變化）。
     /// </summary>
     /// <remarks>
+    /// Only status changes that happen after the call are reported; devices that are already connected do not complete the task.
     /// Internally registers a one-shot native callback; upon completion or cancellation it is unregistered on a background
     /// thread, never by calling <see cref="GameInputCallbackRegistration.Dispose"/> synchronously on the native callback thread.
+    /// An exception raised while reading the device information faults the returned task.
+    /// 只回報呼叫之後發生的狀態變化；已經連線的裝置不會讓工作完成。
     /// 內部會註冊一次性原生回呼；完成或取消後會透過背景執行緒解除註冊，
     /// 不會在原生回呼執行緒中同步呼叫 <see cref="GameInputCallbackRegistration.Dispose"/>。
+    /// 讀取裝置資訊時發生的例外會讓傳回的工作以該例外失敗。
     /// </remarks>
     /// <param name="inputKind">The GameInput input kind to query or filter. 要查詢或篩選的 GameInput 輸入種類。</param>
     /// <param name="statusFilter">The device status to filter. 要篩選的裝置狀態。</param>
@@ -252,14 +256,25 @@ public sealed class GameInputDeviceManager : IDisposable
         ThrowIfDisposed();
 
         return _client.RunAwaitableCallback<GameInputDeviceManagerEvent>(
-            onResult => _client.RegisterDeviceCallback(
+            (onResult, onError) => _client.RegisterDeviceCallback(
                 null,
                 inputKind,
                 statusFilter,
-                GameInputEnumerationKind.GameInputAsyncEnumeration,
+                // 只等待註冊之後發生的狀態變化；非同步列舉會先對所有已連線裝置觸發初始回呼，讓工作立即完成。
+                GameInputEnumerationKind.GameInputNoEnumeration,
                 (device, timestamp, currentStatus, previousStatus) =>
                 {
-                    GameInputDeviceInfoSnapshot snapshot = device.GetDeviceInfoSnapshot();
+                    GameInputDeviceInfoSnapshot snapshot;
+                    try
+                    {
+                        snapshot = device.GetDeviceInfoSnapshot();
+                    }
+                    catch (Exception ex)
+                    {
+                        onError(ex);
+                        return;
+                    }
+
                     onResult(new GameInputDeviceManagerEvent(timestamp, currentStatus, previousStatus, snapshot));
                 }),
             cancellationToken,
@@ -325,11 +340,22 @@ public sealed class GameInputDeviceManager : IDisposable
                 return;
             }
 
+            GameInputCallbackRegistration? stopped;
             lock (_pushLock)
             {
+                EventHandler<GameInputDeviceManagerEvent>? before = _deviceChangedHandlers;
                 _deviceChangedHandlers -= value;
-                RemovePushSubscriberLocked();
+                if (ReferenceEquals(before, _deviceChangedHandlers))
+                {
+                    // 未訂閱過或已取消的處理常式不會改變委派鏈，也不得扣減訂閱計數，
+                    // 否則重複取消訂閱會停掉其他仍在訂閱者的裝置事件監看。
+                    return;
+                }
+
+                stopped = RemovePushSubscriberLocked();
             }
+
+            stopped?.DisposeInBackground();
         }
     }
 
@@ -368,7 +394,9 @@ public sealed class GameInputDeviceManager : IDisposable
 
         lock (_pushLock)
         {
-            StopDeviceEvents();
+            // 舊註冊立即停用並在背景解除註冊：不在持有 _pushLock 時等待 UnregisterCallback，
+            // 也不會與新註冊重疊派送事件。
+            DetachDeviceEventsLocked()?.DisposeInBackground();
 
             _deviceEvents = _client.RegisterDeviceCallback(
                 null,
@@ -395,14 +423,15 @@ public sealed class GameInputDeviceManager : IDisposable
     /// </summary>
     public void StopDeviceEvents()
     {
-        Exception? failure;
+        GameInputCallbackRegistration? stopped;
         lock (_pushLock)
         {
-            failure = _deviceEvents?.DisposeSafely();
-            _deviceEvents = null;
-            _manualDeviceEventsActive = false;
+            stopped = DetachDeviceEventsLocked();
         }
 
+        // 在鎖外等待解除註冊：UnregisterCallback 會等進行中的回呼結束，而回呼中的處理常式可能正要取得 _pushLock
+        // （例如在 DeviceChanged 內取消訂閱），持有鎖等待會形成死結。
+        Exception? failure = stopped?.DisposeSafely();
         if (failure is not null)
         {
             throw failure;
@@ -936,10 +965,13 @@ public sealed class GameInputDeviceManager : IDisposable
 
     private void RemovePushSubscriber()
     {
+        GameInputCallbackRegistration? stopped;
         lock (_pushLock)
         {
-            RemovePushSubscriberLocked();
+            stopped = RemovePushSubscriberLocked();
         }
+
+        stopped?.DisposeInBackground();
     }
 
     /// <summary>
@@ -969,44 +1001,39 @@ public sealed class GameInputDeviceManager : IDisposable
     }
 
     /// <summary>
-    /// Assumes the caller already holds <see cref="_pushLock"/>.
-    /// 假設呼叫端已持有 <see cref="_pushLock"/>。
+    /// Decrements the push subscriber count and, when nothing needs the device event watch any more, detaches its registration.
+    /// Assumes the caller already holds <see cref="_pushLock"/>; the caller must dispose the returned registration after releasing
+    /// the lock.
+    /// 扣減推送訂閱者計數；不再需要裝置事件監看時分離其註冊。假設呼叫端已持有 <see cref="_pushLock"/>；
+    /// 呼叫端必須在釋放鎖之後才釋放傳回的註冊。
     /// </summary>
-    private void RemovePushSubscriberLocked()
+    /// <returns>The detached registration to dispose, or <see langword="null"/>. 需要釋放的已分離註冊，或 <see langword="null"/>。</returns>
+    private GameInputCallbackRegistration? RemovePushSubscriberLocked()
     {
         _pushSubscriberCount = Math.Max(0, _pushSubscriberCount - 1);
         if (_pushSubscriberCount != 0 || _manualDeviceEventsActive)
         {
-            return;
+            return null;
         }
 
-        if (GameInputCallbackThread.IsExecutingCallback)
-        {
-            // 這次取消訂閱是從原生回呼執行緒觸發（例如 handler 內自我取消訂閱），
-            // 這個時候同步呼叫 StopDeviceEvents() 會因為仍在回呼執行緒中而丟出
-            // InvalidOperationException；改到背景執行緒延後處理，並在執行時重新檢查
-            // 目前狀態（延後期間可能又有新訂閱者加入）。
-            // 這裡刻意用 fire-and-forget（不等待背景執行緒完成），因為呼叫端只是取消訂閱，
-            // 不需要確定裝置事件監看已經真正停止才能回傳；延後期間會重新檢查訂閱狀態。
-            // GameInputCallbackRegistration.DisposeSafely() 在回呼執行緒上同樣不等待（等待會與 UnregisterCallback 死結），
-            // 而是先取得用戶端租約，確保背景解除註冊完成前原生根物件不會被釋放。
-            ThreadPool.QueueUserWorkItem(static state => ((GameInputDeviceManager)state!).StopDeviceEventsIfStillUnwanted(), this);
-        }
-        else
-        {
-            StopDeviceEvents();
-        }
+        // 取消訂閱時一律在背景解除註冊，不等待：呼叫端可能正持有 EventObservable 的生命週期鎖或自己的鎖，
+        // 而進行中的回呼也可能需要這些鎖；從原生回呼執行緒取消訂閱時同步等待更會與 UnregisterCallback 死結。
+        return DetachDeviceEventsLocked();
     }
 
-    private void StopDeviceEventsIfStillUnwanted()
+    /// <summary>
+    /// Detaches the current device event registration and clears the manual watch flag. Assumes the caller already holds
+    /// <see cref="_pushLock"/>; the caller must dispose the returned registration after releasing the lock.
+    /// 分離目前的裝置事件註冊並清除手動監看旗標。假設呼叫端已持有 <see cref="_pushLock"/>；
+    /// 呼叫端必須在釋放鎖之後才釋放傳回的註冊。
+    /// </summary>
+    /// <returns>The detached registration, or <see langword="null"/> when none was active. 已分離的註冊；沒有作用中的註冊時為 <see langword="null"/>。</returns>
+    private GameInputCallbackRegistration? DetachDeviceEventsLocked()
     {
-        lock (_pushLock)
-        {
-            if (_pushSubscriberCount == 0 && !_manualDeviceEventsActive)
-            {
-                StopDeviceEvents();
-            }
-        }
+        GameInputCallbackRegistration? registration = _deviceEvents;
+        _deviceEvents = null;
+        _manualDeviceEventsActive = false;
+        return registration;
     }
 
     private List<GameInputDevice> ReplaceDevices(IReadOnlyList<GameInputDevice> devices, IReadOnlyList<GameInputDeviceInfoSnapshot> snapshots)

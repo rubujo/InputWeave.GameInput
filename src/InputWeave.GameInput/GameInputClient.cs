@@ -787,12 +787,13 @@ public sealed class GameInputClient : IDisposable
     /// into a snapshot that holds no native lifetime using methods such as <see cref="GameInputReading.TryGetGamepadSnapshot"/>
     /// before returning. Internally a one-shot native callback is registered; upon completion or cancellation it is unregistered
     /// on a background thread, never by calling <see cref="GameInputCallbackRegistration.Dispose"/> synchronously on the native
-    /// callback thread.
+    /// callback thread. An exception thrown by <paramref name="selector"/> faults the returned task.
     /// <paramref name="selector"/> 收到的 <see cref="GameInputReading"/> 只在回呼執行期間有效，
     /// 不可以把它本身、或任何指向其原生生命週期的參考當作 <paramref name="selector"/> 的回傳值往外傳遞；
     /// 應改用 <see cref="GameInputReading.TryGetGamepadSnapshot"/> 等方法轉換成不持有原生生命週期的快照後再回傳。
     /// 內部會註冊一次性原生回呼；完成或取消後會透過背景執行緒解除註冊，
     /// 不會在原生回呼執行緒中同步呼叫 <see cref="GameInputCallbackRegistration.Dispose"/>。
+    /// <paramref name="selector"/> 拋出的例外會讓傳回的工作以該例外失敗。
     /// </remarks>
     /// <typeparam name="TResult">The converted safe result type. 轉換後的安全結果型別。</typeparam>
     /// <param name="inputKind">The GameInput input kind to query or filter. 要查詢或篩選的 GameInput 輸入種類。</param>
@@ -816,7 +817,22 @@ public sealed class GameInputClient : IDisposable
 #endif
 
         return RunAwaitableCallback<TResult>(
-            onResult => RegisterReadingCallback(device, inputKind, reading => onResult(selector(reading))),
+            (onResult, onError) => RegisterReadingCallback(device, inputKind, reading =>
+            {
+                // selector 的例外必須讓等待中的工作失敗；若交給回呼包裝吞下，工作會永遠不會完成。
+                TResult result;
+                try
+                {
+                    result = selector(reading);
+                }
+                catch (Exception ex)
+                {
+                    onError(ex);
+                    return;
+                }
+
+                onResult(result);
+            }),
             cancellationToken,
             nameof(GameInputClient));
     }
@@ -829,12 +845,12 @@ public sealed class GameInputClient : IDisposable
     /// 與 <see cref="GameInputDeviceManager.WaitForDeviceEventAsync(GameInputKind, GameInputDeviceStatus, CancellationToken)"/> 共用。
     /// </summary>
     /// <typeparam name="TResult">The converted safe result type. 轉換後的安全結果型別。</typeparam>
-    /// <param name="register">The delegate that registers the one-shot native callback; after receiving <c>onResult</c>, the callback should finish converting the result before invoking it. 註冊一次性原生回呼的委派；收到 <c>onResult</c> 後應在回呼內把結果轉換完成再呼叫它。</param>
+    /// <param name="register">The delegate that registers the one-shot native callback; it receives <c>onResult</c> and <c>onError</c>, and the callback should finish converting the result before invoking <c>onResult</c>, or pass any conversion exception to <c>onError</c> so the task faults instead of never completing. 註冊一次性原生回呼的委派；會收到 <c>onResult</c> 與 <c>onError</c>，回呼應先把結果轉換完成再呼叫 <c>onResult</c>，轉換時的例外則交給 <c>onError</c>，讓工作失敗而不是永遠不會完成。</param>
     /// <param name="cancellationToken">The cancellation token. 取消語彙。</param>
     /// <param name="disposedObjectName">The object name to attach to the <see cref="ObjectDisposedException"/> when the caller is disposed while the wait is pending. 呼叫端在等待期間被釋放時，<see cref="ObjectDisposedException"/> 要標示的物件名稱。</param>
     /// <returns>A task that produces the converted result when the callback completes. 回呼完成時產生轉換結果的工作。</returns>
     internal Task<TResult> RunAwaitableCallback<TResult>(
-        Func<Action<TResult>, GameInputCallbackRegistration> register,
+        Func<Action<TResult>, Action<Exception>, GameInputCallbackRegistration> register,
         CancellationToken cancellationToken,
         string disposedObjectName)
     {
@@ -850,14 +866,23 @@ public sealed class GameInputClient : IDisposable
         GameInputCallbackRegistration registration;
         try
         {
-            registration = register(result =>
-            {
-                if (completionSource.TrySetResult(result))
+            registration = register(
+                result =>
                 {
-                    UnregisterPendingWait(cancelForDispose);
-                    completion.Complete();
-                }
-            });
+                    if (completionSource.TrySetResult(result))
+                    {
+                        UnregisterPendingWait(cancelForDispose);
+                        completion.Complete();
+                    }
+                },
+                exception =>
+                {
+                    if (completionSource.TrySetException(exception))
+                    {
+                        UnregisterPendingWait(cancelForDispose);
+                        completion.Complete();
+                    }
+                });
         }
         catch
         {

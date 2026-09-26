@@ -137,9 +137,22 @@ public sealed class GameInputCallbackRegistration : IDisposable
             }
         }
 
+        DisposeInBackground();
+        return null;
+    }
+
+    /// <summary>
+    /// Deactivates the handler immediately and unregisters on a background thread without waiting, from any thread. Used when
+    /// the caller holds a lock that a running callback may also need, because waiting for <c>UnregisterCallback</c> there would
+    /// deadlock. A lease on the owning client is taken on the calling thread and released after the background unregistration.
+    /// 在任何執行緒上立即停用處理常式，並在背景執行緒解除註冊而不等待。用於呼叫端持有進行中回呼也可能需要的鎖時，
+    /// 因為在那裡等待 <c>UnregisterCallback</c> 會造成死結。擁有者用戶端的租約在呼叫端執行緒上取得、背景解除註冊後才歸還。
+    /// </summary>
+    internal void DisposeInBackground()
+    {
         if (IsDisposed)
         {
-            return null;
+            return;
         }
 
         _deactivateContext();
@@ -160,6 +173,5 @@ public sealed class GameInputCallbackRegistration : IDisposable
                 release?.Invoke();
             }
         }, (this, releaseOwnerLease));
-        return null;
     }
 }
