@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
 using InputWeave.GameInput.Interop;
 
@@ -382,7 +383,7 @@ public sealed class GameInputReading : IDisposable
     /// </summary>
     /// <param name="snapshot">Receives the gamepad snapshot on success. 成功時接收 gamepad 快照。</param>
     /// <returns>Returns true when the reading contains gamepad state; otherwise returns false. 若 reading 包含 gamepad 狀態，傳回 true；否則傳回 false。</returns>
-    public bool TryGetGamepadSnapshot(out GamepadReadingSnapshot? snapshot)
+    public bool TryGetGamepadSnapshot(out GamepadReadingSnapshot snapshot)
     {
         if (TryGetGamepadState(out GameInputGamepadState state))
         {
@@ -390,7 +391,7 @@ public sealed class GameInputReading : IDisposable
             return true;
         }
 
-        snapshot = null;
+        snapshot = default;
         return false;
     }
 
@@ -412,7 +413,7 @@ public sealed class GameInputReading : IDisposable
     /// </summary>
     /// <param name="snapshot">Receives the mouse snapshot on success. 成功時接收滑鼠快照。</param>
     /// <returns>Returns true when the reading contains mouse state; otherwise returns false. 若 reading 包含滑鼠狀態，傳回 true；否則傳回 false。</returns>
-    public bool TryGetMouseSnapshot(out MouseReadingSnapshot? snapshot)
+    public bool TryGetMouseSnapshot(out MouseReadingSnapshot snapshot)
     {
         if (TryGetMouseState(out GameInputMouseState state))
         {
@@ -420,7 +421,7 @@ public sealed class GameInputReading : IDisposable
             return true;
         }
 
-        snapshot = null;
+        snapshot = default;
         return false;
     }
 
@@ -442,7 +443,7 @@ public sealed class GameInputReading : IDisposable
     /// </summary>
     /// <param name="snapshot">Receives the sensors snapshot on success. 成功時接收感測器快照。</param>
     /// <returns>Returns true when the reading contains sensors state; otherwise returns false. 若 reading 包含感測器狀態，傳回 true；否則傳回 false。</returns>
-    public bool TryGetSensorsSnapshot(out SensorsReadingSnapshot? snapshot)
+    public bool TryGetSensorsSnapshot(out SensorsReadingSnapshot snapshot)
     {
         if (TryGetSensorsState(out GameInputSensorsState state))
         {
@@ -450,7 +451,7 @@ public sealed class GameInputReading : IDisposable
             return true;
         }
 
-        snapshot = null;
+        snapshot = default;
         return false;
     }
 
@@ -472,7 +473,7 @@ public sealed class GameInputReading : IDisposable
     /// </summary>
     /// <param name="snapshot">Receives the arcade stick snapshot on success. 成功時接收 arcade stick 快照。</param>
     /// <returns>Returns true when the reading contains arcade stick state; otherwise returns false. 若 reading 包含 arcade stick 狀態，傳回 true；否則傳回 false。</returns>
-    public bool TryGetArcadeStickSnapshot(out ArcadeStickReadingSnapshot? snapshot)
+    public bool TryGetArcadeStickSnapshot(out ArcadeStickReadingSnapshot snapshot)
     {
         if (TryGetArcadeStickState(out GameInputArcadeStickState state))
         {
@@ -480,7 +481,7 @@ public sealed class GameInputReading : IDisposable
             return true;
         }
 
-        snapshot = null;
+        snapshot = default;
         return false;
     }
 
@@ -502,7 +503,7 @@ public sealed class GameInputReading : IDisposable
     /// </summary>
     /// <param name="snapshot">Receives the flight stick snapshot on success. 成功時接收 flight stick 快照。</param>
     /// <returns>Returns true when the reading contains flight stick state; otherwise returns false. 若 reading 包含 flight stick 狀態，傳回 true；否則傳回 false。</returns>
-    public bool TryGetFlightStickSnapshot(out FlightStickReadingSnapshot? snapshot)
+    public bool TryGetFlightStickSnapshot(out FlightStickReadingSnapshot snapshot)
     {
         if (TryGetFlightStickState(out GameInputFlightStickState state))
         {
@@ -510,7 +511,7 @@ public sealed class GameInputReading : IDisposable
             return true;
         }
 
-        snapshot = null;
+        snapshot = default;
         return false;
     }
 
@@ -532,7 +533,7 @@ public sealed class GameInputReading : IDisposable
     /// </summary>
     /// <param name="snapshot">Receives the racing wheel snapshot on success. 成功時接收 racing wheel 快照。</param>
     /// <returns>Returns true when the reading contains racing wheel state; otherwise returns false. 若 reading 包含 racing wheel 狀態，傳回 true；否則傳回 false。</returns>
-    public bool TryGetRacingWheelSnapshot(out RacingWheelReadingSnapshot? snapshot)
+    public bool TryGetRacingWheelSnapshot(out RacingWheelReadingSnapshot snapshot)
     {
         if (TryGetRacingWheelState(out GameInputRacingWheelState state))
         {
@@ -540,7 +541,7 @@ public sealed class GameInputReading : IDisposable
             return true;
         }
 
-        snapshot = null;
+        snapshot = default;
         return false;
     }
 
@@ -550,7 +551,7 @@ public sealed class GameInputReading : IDisposable
     /// </summary>
     /// <param name="report">The raw device report to send or operate on. 要傳送或操作的 raw device report。</param>
     /// <returns>Returns true when the reading contains a raw report; otherwise returns false. 若 reading 包含 raw report，傳回 true；否則傳回 false。</returns>
-    public bool TryGetRawReport(out GameInputRawDeviceReport? report)
+    public bool TryGetRawReport([NotNullWhen(true)] out GameInputRawDeviceReport? report)
     {
         using ComLease<IGameInputReading> call = EnterNative();
         if (call.Native.GetRawReport(out IGameInputRawDeviceReport? nativeReport) && nativeReport is { } nativeReportValue)
@@ -570,11 +571,11 @@ public sealed class GameInputReading : IDisposable
     /// <param name="snapshot">Receives the keyboard snapshot on success. 成功時接收 keyboard 快照。</param>
     /// <returns>若 reading 包含 keyboard 狀態，傳回 true；否則傳回 false。原生回報的元素數量超過內部上限時
     /// 也視為讀取失敗，傳回 false 而非拋出例外。</returns>
-    public bool TryGetKeyboardSnapshot(out KeyboardReadingSnapshot? snapshot)
+    public bool TryGetKeyboardSnapshot(out KeyboardReadingSnapshot snapshot)
     {
         if (!HasAnyInputKind(GameInputKind.GameInputKindKeyboard))
         {
-            snapshot = null;
+            snapshot = default;
             return false;
         }
 
@@ -587,7 +588,7 @@ public sealed class GameInputReading : IDisposable
         {
             // 原生回報的按鍵數量超過 NativeSizeGuard 上限，視為讀取失敗回傳 false，
             // 維持 Try 方法不拋例外的語意；ObjectDisposedException 屬於呼叫端程式錯誤，仍往外拋。
-            snapshot = null;
+            snapshot = default;
             return false;
         }
     }
@@ -599,11 +600,11 @@ public sealed class GameInputReading : IDisposable
     /// <param name="snapshot">Receives the controller snapshot on success. 成功時接收 controller 快照。</param>
     /// <returns>若 reading 包含 controller 狀態，傳回 true；否則傳回 false。原生回報的元素數量超過內部上限時
     /// 也視為讀取失敗，傳回 false 而非拋出例外。</returns>
-    public bool TryGetControllerSnapshot(out ControllerReadingSnapshot? snapshot)
+    public bool TryGetControllerSnapshot(out ControllerReadingSnapshot snapshot)
     {
         if (!HasAnyInputKind(GameInputKind.GameInputKindController))
         {
-            snapshot = null;
+            snapshot = default;
             return false;
         }
 
@@ -620,7 +621,7 @@ public sealed class GameInputReading : IDisposable
         {
             // 原生回報的元素數量超過 NativeSizeGuard 上限，視為讀取失敗回傳 false，
             // 維持 Try 方法不拋例外的語意；ObjectDisposedException 屬於呼叫端程式錯誤，仍往外拋。
-            snapshot = null;
+            snapshot = default;
             return false;
         }
     }
@@ -632,11 +633,11 @@ public sealed class GameInputReading : IDisposable
     /// <param name="snapshot">Receives the raw report snapshot on success. 成功時接收 raw report 快照。</param>
     /// <returns>若 reading 包含 raw report，傳回 true；否則傳回 false。原生回報的 raw report 大小超過
     /// <see cref="GameInputRawDeviceReport.MaxRawDataSize"/> 時也視為讀取失敗，傳回 false 而非拋出例外。</returns>
-    public bool TryGetRawReportSnapshot(out RawDeviceReportSnapshot? snapshot)
+    public bool TryGetRawReportSnapshot(out RawDeviceReportSnapshot snapshot)
     {
         if (!TryGetRawReport(out GameInputRawDeviceReport? report))
         {
-            snapshot = null;
+            snapshot = default;
             return false;
         }
 
@@ -652,7 +653,7 @@ public sealed class GameInputReading : IDisposable
                 // 原生回報的 raw report 大小超過 GameInputRawDeviceReport.MaxRawDataSize，
                 // 視為讀取失敗回傳 false，維持 Try 方法不拋例外的語意；
                 // ObjectDisposedException 屬於呼叫端程式錯誤，仍往外拋。
-                snapshot = null;
+                snapshot = default;
                 return false;
             }
         }

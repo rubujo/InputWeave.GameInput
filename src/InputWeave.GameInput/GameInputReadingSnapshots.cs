@@ -29,7 +29,7 @@ public readonly record struct KeyboardReadingSnapshot : IEquatable<KeyboardReadi
     /// The currently pressed or active keyboard key states.
     /// 目前按下或作用中的鍵盤按鍵狀態。
     /// </summary>
-    public IReadOnlyList<GameInputKeyState> Keys { get; }
+    public IReadOnlyList<GameInputKeyState> Keys { get => field ?? Array.Empty<GameInputKeyState>(); }
 
     /// <summary>
     /// Compares the contents of <see cref="Keys"/> element by element for value equality.
@@ -133,19 +133,19 @@ public readonly record struct ControllerReadingSnapshot : IEquatable<ControllerR
     /// The controller axis states.
     /// Controller 軸狀態。
     /// </summary>
-    public IReadOnlyList<float> Axes { get; }
+    public IReadOnlyList<float> Axes { get => field ?? Array.Empty<float>(); }
 
     /// <summary>
     /// The controller button states.
     /// Controller 按鈕狀態。
     /// </summary>
-    public IReadOnlyList<bool> Buttons { get; }
+    public IReadOnlyList<bool> Buttons { get => field ?? Array.Empty<bool>(); }
 
     /// <summary>
     /// The controller switch states.
     /// Controller switch 狀態。
     /// </summary>
-    public IReadOnlyList<GameInputSwitchPosition> Switches { get; }
+    public IReadOnlyList<GameInputSwitchPosition> Switches { get => field ?? Array.Empty<GameInputSwitchPosition>(); }
 
     /// <summary>
     /// Compares the contents of <see cref="Axes"/>, <see cref="Buttons"/>, and <see cref="Switches"/> element by element for
@@ -286,7 +286,7 @@ public readonly record struct RawDeviceReportSnapshot : IEquatable<RawDeviceRepo
     /// The copied raw report data.
     /// 已複製的 raw report 資料。
     /// </summary>
-    public IReadOnlyList<byte> Data { get; }
+    public IReadOnlyList<byte> Data { get => field ?? Array.Empty<byte>(); }
 
     /// <summary>
     /// Gets a new array of the raw report data.

@@ -22,7 +22,7 @@ public readonly struct GameInputRuntimeInfo
     /// Gets the name of the GameInput runtime loading policy currently in use.
     /// 取得目前使用的 GameInput runtime 載入策略名稱。
     /// </summary>
-    public string LoaderPolicy { get; }
+    public string LoaderPolicy { get => field ?? string.Empty; }
 
     /// <summary>
     /// Gets the source of the loaded GameInput runtime module.
@@ -34,7 +34,7 @@ public readonly struct GameInputRuntimeInfo
     /// Gets the full path of the loaded GameInput runtime module.
     /// 取得已載入的 GameInput runtime 模組完整路徑。
     /// </summary>
-    public string LoadedModulePath { get; }
+    public string LoadedModulePath { get => field ?? string.Empty; }
 
     /// <summary>
     /// Gets the file version of the loaded GameInput runtime.

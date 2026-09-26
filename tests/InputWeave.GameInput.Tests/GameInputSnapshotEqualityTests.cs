@@ -6,6 +6,39 @@ namespace InputWeave.GameInput.Tests;
 public sealed class GameInputSnapshotEqualityTests
 {
     [TestMethod]
+    public void DefaultSnapshotsWithCollectionsAreSafeToUse()
+    {
+        // TryGet* 失敗時會輸出 default 快照；集合欄位不得為 null，比較、雜湊與讀取都不能拋出例外。
+        AssertDefaultIsSafe<KeyboardReadingSnapshot>(static snapshot => [snapshot.Keys]);
+        AssertDefaultIsSafe<ControllerReadingSnapshot>(static snapshot => [snapshot.Axes, snapshot.Buttons, snapshot.Switches]);
+        AssertDefaultIsSafe<RawDeviceReportSnapshot>(static snapshot => [snapshot.Data, snapshot.GetData()]);
+        AssertDefaultIsSafe<GameInputDeviceInfoSnapshot>(static snapshot => [snapshot.ForceFeedbackMotors, snapshot.InputReports, snapshot.OutputReports]);
+        AssertDefaultIsSafe<GameInputControllerInfoSnapshot>(static snapshot => [snapshot.AxisLabels, snapshot.ButtonLabels, snapshot.Switches]);
+        AssertDefaultIsSafe<GameInputControllerSwitchInfoSnapshot>(static snapshot => [snapshot.Labels]);
+        AssertDefaultIsSafe<GameInputHapticInfoSnapshot>(static snapshot => [snapshot.Locations]);
+        Assert.IsEmpty(default(GameInputRuntimeProbeInfo).Candidates);
+        Assert.IsNotNull(default(GameInputHapticInfoSnapshot).AudioEndpointId);
+        Assert.IsNotNull(default(GameInputRuntimeProbeInfo).LoaderPolicy);
+        Assert.IsNotNull(default(GameInputRuntimeProbeInfo).SelectedModulePath);
+        Assert.IsNotNull(default(GameInputRuntimeInfo).LoaderPolicy);
+        Assert.IsNotNull(default(GameInputRuntimeInfo).LoadedModulePath);
+        Assert.IsNotNull(default(GameInputRuntimeCandidateInfo).ModulePath);
+    }
+
+    private static void AssertDefaultIsSafe<T>(Func<T, System.Collections.IEnumerable[]> collections)
+        where T : struct, IEquatable<T>
+    {
+        T value = default;
+        Assert.IsTrue(value.Equals(default), $"{typeof(T).Name} 的 default 值應等於自己。");
+        _ = value.GetHashCode();
+        _ = value.ToString();
+        foreach (System.Collections.IEnumerable collection in collections(value))
+        {
+            Assert.IsNotNull(collection, $"{typeof(T).Name} 的集合欄位不得為 null。");
+            Assert.IsFalse(collection.GetEnumerator().MoveNext(), $"{typeof(T).Name} 的 default 集合應為空。");
+        }
+    }
+    [TestMethod]
     public void GamepadReadingSnapshotsWithSameValuesAreEqual()
     {
         GameInputGamepadState state = new()

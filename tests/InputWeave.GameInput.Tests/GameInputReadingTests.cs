@@ -93,10 +93,10 @@ public sealed class GameInputReadingTests
         using NativeReadingStub stub = NativeReadingStub.Create(axisCountOverride: (uint)NativeSizeGuard.MaxElementCount + 1);
         using GameInputReading reading = new(stub.Native);
 
-        bool result = reading.TryGetControllerSnapshot(out ControllerReadingSnapshot? snapshot);
+        bool result = reading.TryGetControllerSnapshot(out ControllerReadingSnapshot snapshot);
 
         Assert.IsFalse(result, "原生回報的軸數量超過上限時，Try 方法應回傳 false 而不是拋出例外。");
-        Assert.IsNull(snapshot);
+        Assert.AreEqual(default, snapshot);
     }
 
     /// <summary>

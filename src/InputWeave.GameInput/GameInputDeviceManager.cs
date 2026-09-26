@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using InputWeave.GameInput.Interop;
 
 namespace InputWeave.GameInput;
@@ -781,7 +782,7 @@ public sealed class GameInputDeviceManager : IDisposable
     /// <param name="device">Receives the device wrapper on success. 成功時接收裝置包裝。</param>
     /// <param name="snapshot">Receives the corresponding device information snapshot on success. 成功時接收對應的裝置資訊快照。</param>
     /// <returns>Returns true when the current cache contains a matching device; otherwise returns false. 若目前快取中有符合條件的裝置，傳回 true；否則傳回 false。</returns>
-    public bool TryGetFirstDevice(GameInputKind inputKind, out GameInputDevice? device, out GameInputDeviceInfoSnapshot? snapshot)
+    public bool TryGetFirstDevice(GameInputKind inputKind, [NotNullWhen(true)] out GameInputDevice? device, out GameInputDeviceInfoSnapshot snapshot)
     {
         ThrowIfDisposed();
         lock (_cacheLock)
@@ -798,7 +799,7 @@ public sealed class GameInputDeviceManager : IDisposable
     /// <param name="device">Receives the device wrapper on success. 成功時接收裝置包裝。</param>
     /// <param name="snapshot">Receives the corresponding device information snapshot on success. 成功時接收對應的裝置資訊快照。</param>
     /// <returns>Returns true when the current cache contains a device that supports gamepad input; otherwise returns false. 若目前快取中有支援 gamepad 的裝置，傳回 true；否則傳回 false。</returns>
-    public bool TryGetFirstGamepad(out GameInputDevice? device, out GameInputDeviceInfoSnapshot? snapshot)
+    public bool TryGetFirstGamepad([NotNullWhen(true)] out GameInputDevice? device, out GameInputDeviceInfoSnapshot snapshot)
     {
         return TryGetFirstDevice(GameInputKind.GameInputKindGamepad, out device, out snapshot);
     }
@@ -810,7 +811,7 @@ public sealed class GameInputDeviceManager : IDisposable
     /// <param name="device">Receives the device wrapper on success. 成功時接收裝置包裝。</param>
     /// <param name="snapshot">Receives the corresponding device information snapshot on success. 成功時接收對應的裝置資訊快照。</param>
     /// <returns>Returns true when the current cache contains a device that supports keyboard input; otherwise returns false. 若目前快取中有支援 keyboard 的裝置，傳回 true；否則傳回 false。</returns>
-    public bool TryGetFirstKeyboard(out GameInputDevice? device, out GameInputDeviceInfoSnapshot? snapshot)
+    public bool TryGetFirstKeyboard([NotNullWhen(true)] out GameInputDevice? device, out GameInputDeviceInfoSnapshot snapshot)
     {
         return TryGetFirstDevice(GameInputKind.GameInputKindKeyboard, out device, out snapshot);
     }
@@ -822,7 +823,7 @@ public sealed class GameInputDeviceManager : IDisposable
     /// <param name="device">Receives the device wrapper on success. 成功時接收裝置包裝。</param>
     /// <param name="snapshot">Receives the corresponding device information snapshot on success. 成功時接收對應的裝置資訊快照。</param>
     /// <returns>Returns true when the current cache contains a device that supports mouse input; otherwise returns false. 若目前快取中有支援 mouse 的裝置，傳回 true；否則傳回 false。</returns>
-    public bool TryGetFirstMouse(out GameInputDevice? device, out GameInputDeviceInfoSnapshot? snapshot)
+    public bool TryGetFirstMouse([NotNullWhen(true)] out GameInputDevice? device, out GameInputDeviceInfoSnapshot snapshot)
     {
         return TryGetFirstDevice(GameInputKind.GameInputKindMouse, out device, out snapshot);
     }
@@ -834,7 +835,7 @@ public sealed class GameInputDeviceManager : IDisposable
     /// <param name="device">Receives the device wrapper on success. 成功時接收裝置包裝。</param>
     /// <param name="snapshot">Receives the corresponding device information snapshot on success. 成功時接收對應的裝置資訊快照。</param>
     /// <returns>Returns true when the current cache contains a device that supports rumble; otherwise returns false. 若目前快取中有支援 rumble 的裝置，傳回 true；否則傳回 false。</returns>
-    public bool TryGetFirstRumbleDevice(out GameInputDevice? device, out GameInputDeviceInfoSnapshot? snapshot)
+    public bool TryGetFirstRumbleDevice([NotNullWhen(true)] out GameInputDevice? device, out GameInputDeviceInfoSnapshot snapshot)
     {
         ThrowIfDisposed();
         lock (_cacheLock)
@@ -1029,12 +1030,12 @@ public sealed class GameInputDeviceManager : IDisposable
         }
     }
 
-    private bool TryGetCachedDevice(int index, out GameInputDevice? device, out GameInputDeviceInfoSnapshot? snapshot)
+    private bool TryGetCachedDevice(int index, [NotNullWhen(true)] out GameInputDevice? device, out GameInputDeviceInfoSnapshot snapshot)
     {
         if (index < 0 || index >= _devices.Count || index >= _snapshots.Count)
         {
             device = null;
-            snapshot = null;
+            snapshot = default;
             return false;
         }
 

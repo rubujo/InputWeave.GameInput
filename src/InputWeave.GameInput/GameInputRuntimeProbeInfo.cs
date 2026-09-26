@@ -30,7 +30,7 @@ public readonly struct GameInputRuntimeProbeInfo
     /// Gets the name of the GameInput runtime loading policy currently in use.
     /// 取得目前使用的 GameInput runtime 載入策略名稱。
     /// </summary>
-    public string LoaderPolicy { get; }
+    public string LoaderPolicy { get => field ?? string.Empty; }
 
     /// <summary>
     /// Gets whether a usable GameInput runtime was found.
@@ -48,7 +48,7 @@ public readonly struct GameInputRuntimeProbeInfo
     /// Gets the full path of the finally selected GameInput runtime module.
     /// 取得最後選擇的 GameInput runtime 模組完整路徑。
     /// </summary>
-    public string SelectedModulePath { get; }
+    public string SelectedModulePath { get => field ?? string.Empty; }
 
     /// <summary>
     /// Gets the file version of the finally selected GameInput runtime.
@@ -72,5 +72,5 @@ public readonly struct GameInputRuntimeProbeInfo
     /// Gets the list of candidate GameInput runtime modules from this probe.
     /// 取得本次探測的候選 GameInput runtime 模組清單。
     /// </summary>
-    public IReadOnlyList<GameInputRuntimeCandidateInfo> Candidates { get; }
+    public IReadOnlyList<GameInputRuntimeCandidateInfo> Candidates { get => field ?? Array.Empty<GameInputRuntimeCandidateInfo>(); }
 }

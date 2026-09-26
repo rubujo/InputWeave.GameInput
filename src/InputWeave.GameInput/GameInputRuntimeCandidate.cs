@@ -40,7 +40,7 @@ internal readonly struct GameInputRuntimeCandidate
 
     public GameInputRuntimeModuleKind ModuleKind { get; }
 
-    public string ModulePath { get; }
+    public string ModulePath { get => field ?? string.Empty; }
 
     public bool Exists { get; }
 

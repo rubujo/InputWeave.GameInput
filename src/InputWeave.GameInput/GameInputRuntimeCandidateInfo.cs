@@ -38,7 +38,7 @@ public readonly struct GameInputRuntimeCandidateInfo
     /// Gets the full path of the candidate GameInput runtime module.
     /// 取得候選 GameInput runtime 模組完整路徑。
     /// </summary>
-    public string ModulePath { get; }
+    public string ModulePath { get => field ?? string.Empty; }
 
     /// <summary>
     /// Gets whether the candidate file exists.

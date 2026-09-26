@@ -134,7 +134,7 @@ public sealed class GameInputClient : IDisposable
         return GetCurrentSnapshot(
             GameInputKind.GameInputKindGamepad,
             device,
-            static (GameInputReading reading, out GamepadReadingSnapshot? snapshot) => reading.TryGetGamepadSnapshot(out snapshot));
+            static (GameInputReading reading, out GamepadReadingSnapshot snapshot) => reading.TryGetGamepadSnapshot(out snapshot));
     }
 
     /// <summary>
@@ -148,7 +148,7 @@ public sealed class GameInputClient : IDisposable
         return GetCurrentSnapshot(
             GameInputKind.GameInputKindKeyboard,
             device,
-            static (GameInputReading reading, out KeyboardReadingSnapshot? snapshot) => reading.TryGetKeyboardSnapshot(out snapshot));
+            static (GameInputReading reading, out KeyboardReadingSnapshot snapshot) => reading.TryGetKeyboardSnapshot(out snapshot));
     }
 
     /// <summary>
@@ -162,7 +162,7 @@ public sealed class GameInputClient : IDisposable
         return GetCurrentSnapshot(
             GameInputKind.GameInputKindMouse,
             device,
-            static (GameInputReading reading, out MouseReadingSnapshot? snapshot) => reading.TryGetMouseSnapshot(out snapshot));
+            static (GameInputReading reading, out MouseReadingSnapshot snapshot) => reading.TryGetMouseSnapshot(out snapshot));
     }
 
     /// <summary>
@@ -176,7 +176,7 @@ public sealed class GameInputClient : IDisposable
         return GetCurrentSnapshot(
             GameInputKind.GameInputKindSensors,
             device,
-            static (GameInputReading reading, out SensorsReadingSnapshot? snapshot) => reading.TryGetSensorsSnapshot(out snapshot));
+            static (GameInputReading reading, out SensorsReadingSnapshot snapshot) => reading.TryGetSensorsSnapshot(out snapshot));
     }
 
     /// <summary>
@@ -190,7 +190,7 @@ public sealed class GameInputClient : IDisposable
         return GetCurrentSnapshot(
             GameInputKind.GameInputKindController,
             device,
-            static (GameInputReading reading, out ControllerReadingSnapshot? snapshot) => reading.TryGetControllerSnapshot(out snapshot));
+            static (GameInputReading reading, out ControllerReadingSnapshot snapshot) => reading.TryGetControllerSnapshot(out snapshot));
     }
 
     /// <summary>
@@ -204,7 +204,7 @@ public sealed class GameInputClient : IDisposable
         return GetCurrentSnapshot(
             GameInputKind.GameInputKindArcadeStick,
             device,
-            static (GameInputReading reading, out ArcadeStickReadingSnapshot? snapshot) => reading.TryGetArcadeStickSnapshot(out snapshot));
+            static (GameInputReading reading, out ArcadeStickReadingSnapshot snapshot) => reading.TryGetArcadeStickSnapshot(out snapshot));
     }
 
     /// <summary>
@@ -218,7 +218,7 @@ public sealed class GameInputClient : IDisposable
         return GetCurrentSnapshot(
             GameInputKind.GameInputKindFlightStick,
             device,
-            static (GameInputReading reading, out FlightStickReadingSnapshot? snapshot) => reading.TryGetFlightStickSnapshot(out snapshot));
+            static (GameInputReading reading, out FlightStickReadingSnapshot snapshot) => reading.TryGetFlightStickSnapshot(out snapshot));
     }
 
     /// <summary>
@@ -232,7 +232,7 @@ public sealed class GameInputClient : IDisposable
         return GetCurrentSnapshot(
             GameInputKind.GameInputKindRacingWheel,
             device,
-            static (GameInputReading reading, out RacingWheelReadingSnapshot? snapshot) => reading.TryGetRacingWheelSnapshot(out snapshot));
+            static (GameInputReading reading, out RacingWheelReadingSnapshot snapshot) => reading.TryGetRacingWheelSnapshot(out snapshot));
     }
 
     /// <summary>
@@ -246,7 +246,7 @@ public sealed class GameInputClient : IDisposable
         return GetCurrentSnapshot(
             GameInputKind.GameInputKindRawDeviceReport,
             device,
-            static (GameInputReading reading, out RawDeviceReportSnapshot? snapshot) => reading.TryGetRawReportSnapshot(out snapshot));
+            static (GameInputReading reading, out RawDeviceReportSnapshot snapshot) => reading.TryGetRawReportSnapshot(out snapshot));
     }
 
     /// <summary>
@@ -882,7 +882,7 @@ public sealed class GameInputClient : IDisposable
         return WaitForReadingAsync(
             GameInputKind.GameInputKindGamepad,
             device,
-            static reading => reading.TryGetGamepadSnapshot(out GamepadReadingSnapshot? snapshot) ? snapshot : null,
+            static reading => reading.TryGetGamepadSnapshot(out GamepadReadingSnapshot snapshot) ? snapshot : (GamepadReadingSnapshot?)null,
             cancellationToken);
     }
 
@@ -1224,7 +1224,7 @@ public sealed class GameInputClient : IDisposable
             return null;
         }
 
-        return tryCreateSnapshot(reading, out TSnapshot? snapshot) ? snapshot : null;
+        return tryCreateSnapshot(reading, out TSnapshot snapshot) ? snapshot : null;
     }
 
     private bool IsDisposeStarted
@@ -1273,7 +1273,7 @@ public sealed class GameInputClient : IDisposable
         return action();
     }
 
-    private delegate bool TryCreateReadingSnapshot<TSnapshot>(GameInputReading reading, out TSnapshot? snapshot)
+    private delegate bool TryCreateReadingSnapshot<TSnapshot>(GameInputReading reading, out TSnapshot snapshot)
         where TSnapshot : struct;
 
 #if NET10_0_OR_GREATER

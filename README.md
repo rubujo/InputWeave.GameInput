@@ -91,11 +91,11 @@ foreach (GameInputDeviceInfoSnapshot info in manager.DeviceSnapshots)
     Console.WriteLine($"{info.DisplayName}：{info.SupportedInput}，VID 0x{info.VendorId:X4} / PID 0x{info.ProductId:X4}");
 }
 
-if (manager.TryGetFirstGamepad(out GameInputDevice? gamepadDevice, out GameInputDeviceInfoSnapshot? gamepadInfo)
+if (manager.TryGetFirstGamepad(out GameInputDevice? gamepadDevice, out GameInputDeviceInfoSnapshot gamepadInfo)
     && manager.TryGetCurrentGamepad(gamepadDevice, out GamepadReadingSnapshot snapshot))
 {
     GameInputGamepadButtons buttons = snapshot.State.Buttons;
-    Console.WriteLine($"{gamepadInfo?.DisplayName} 目前按鈕：{buttons}");
+    Console.WriteLine($"{gamepadInfo.DisplayName} 目前按鈕：{buttons}");
 }
 ```
 

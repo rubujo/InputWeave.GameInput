@@ -15,13 +15,13 @@ using InputWeave.GameInput.Interop;
 using GameInputDeviceManager manager = GameInputDeviceManager.Create();
 manager.RefreshDevices();
 
-if (!manager.TryGetFirstGamepad(out GameInputDevice? gamepadDevice, out GameInputDeviceInfoSnapshot? gamepadInfo))
+if (!manager.TryGetFirstGamepad(out GameInputDevice? gamepadDevice, out GameInputDeviceInfoSnapshot gamepadInfo))
 {
     Console.WriteLine("目前沒有支援 Gamepad 的 GameInput 裝置。");
     return;
 }
 
-Console.WriteLine($"使用裝置：{gamepadInfo?.DisplayName ?? "(未命名裝置)"}");
+Console.WriteLine($"使用裝置：{gamepadInfo.DisplayName ?? "(未命名裝置)"}");
 
 GamepadReadingSnapshot previous = default;
 for (int frame = 0; frame < 600; frame++)
@@ -140,7 +140,7 @@ using GameInputCallbackRegistration registration = client.RegisterReadingCallbac
 
 static void OnReading(GameInputReading reading)
 {
-    if (reading.TryGetGamepadSnapshot(out GamepadReadingSnapshot? gamepad) && gamepad is { } snapshot)
+    if (reading.TryGetGamepadSnapshot(out GamepadReadingSnapshot snapshot))
     {
         Console.WriteLine($"Gamepad snapshot: {snapshot.Timestamp} / {snapshot.State.Buttons}");
     }
@@ -167,13 +167,13 @@ if (!enableRumble)
 using GameInputDeviceManager manager = GameInputDeviceManager.Create();
 manager.RefreshDevices();
 
-if (!manager.TryGetFirstRumbleDevice(out GameInputDevice? device, out GameInputDeviceInfoSnapshot? snapshot))
+if (!manager.TryGetFirstRumbleDevice(out GameInputDevice? device, out GameInputDeviceInfoSnapshot snapshot))
 {
     Console.WriteLine("目前沒有宣告支援震動馬達的 GameInput 裝置。");
     return;
 }
 
-using GameInputRumbleScope? rumble = device!.StartRumbleScope(
+using GameInputRumbleScope? rumble = device.StartRumbleScope(
     lowFrequency: 0.15f,
     highFrequency: 0.15f,
     leftTrigger: 0.10f,
@@ -185,7 +185,7 @@ if (rumble is null)
 }
 
 Thread.Sleep(250);
-Console.WriteLine($"已短暫觸發低強度 Rumble：{snapshot?.SupportedRumbleMotors}");
+Console.WriteLine($"已短暫觸發低強度 Rumble：{snapshot.SupportedRumbleMotors}");
 ```
 
 ## Force Feedback 明確啟用
@@ -210,7 +210,7 @@ GameInputForceFeedbackEnvelope envelope = GameInputForceFeedback.Envelope(sustai
 GameInputForceFeedbackMagnitude magnitude = GameInputForceFeedback.Magnitude(normal: 0.25f);
 GameInputForceFeedbackParams effectParams = GameInputForceFeedback.SineWave(magnitude, envelope, frequency: 20);
 
-if (!device!.TryCreateForceFeedbackEffect(0, effectParams, out GameInputForceFeedbackEffect? effect))
+if (!device.TryCreateForceFeedbackEffect(0, effectParams, out GameInputForceFeedbackEffect? effect))
 {
     Console.WriteLine("裝置不支援指定的 Force Feedback effect。");
     return;
@@ -329,11 +329,11 @@ using InputWeave.GameInput.Interop;
 using GameInputDeviceManager manager = GameInputDeviceManager.Create();
 manager.RefreshDevices();
 
-if (manager.TryGetFirstGamepad(out GameInputDevice? device, out GameInputDeviceInfoSnapshot? info))
+if (manager.TryGetFirstGamepad(out GameInputDevice? device, out GameInputDeviceInfoSnapshot info))
 {
     // GameInputKind、GameInputDeviceStatus 等列舉與 GameInputDeviceInfo 結構都是公開型別，
     // 可以直接讀取原生固定欄位快照做進階診斷。
-    GameInputDeviceInfo native = info!.Value.Native;
+    GameInputDeviceInfo native = info.Native;
     Console.WriteLine($"SupportedInput（原生列舉值）：{(int)native.SupportedInput}");
 }
 ```

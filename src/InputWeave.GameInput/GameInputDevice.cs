@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
 using InputWeave.GameInput.Interop;
 
@@ -152,10 +153,11 @@ public sealed class GameInputDevice : IDisposable
     /// </summary>
     /// <param name="snapshot">Receives the haptic information snapshot on success. 成功時接收觸覺資訊快照。</param>
     /// <returns>Returns true when the device provides haptic information; otherwise returns false. 若裝置提供觸覺資訊，傳回 true；否則傳回 false。</returns>
-    public bool TryGetHapticInfoSnapshot(out GameInputHapticInfoSnapshot? snapshot)
+    public bool TryGetHapticInfoSnapshot(out GameInputHapticInfoSnapshot snapshot)
     {
-        snapshot = GetHapticInfoSnapshot();
-        return snapshot is not null;
+        GameInputHapticInfoSnapshot? hapticInfo = GetHapticInfoSnapshot();
+        snapshot = hapticInfo.GetValueOrDefault();
+        return hapticInfo.HasValue;
     }
 
     /// <summary>
@@ -187,7 +189,7 @@ public sealed class GameInputDevice : IDisposable
     /// <param name="parameters">The native GameInput parameters. GameInput 原生參數。</param>
     /// <param name="effect">Receives the force feedback effect on success. 成功時接收 force feedback effect。</param>
     /// <returns>Returns true when the device supports the effect and it was created successfully; otherwise returns false. 若裝置支援並成功建立 effect，傳回 true；否則傳回 false。</returns>
-    public bool TryCreateForceFeedbackEffect(uint motorIndex, in GameInputForceFeedbackParams parameters, out GameInputForceFeedbackEffect? effect)
+    public bool TryCreateForceFeedbackEffect(uint motorIndex, in GameInputForceFeedbackParams parameters, [NotNullWhen(true)] out GameInputForceFeedbackEffect? effect)
     {
         if (!IsForceFeedbackEffectSupported(motorIndex, parameters.Kind))
         {

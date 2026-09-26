@@ -5,8 +5,8 @@
 驗證 README 與 docs 內的 C# 範例都能實際編譯。
 
 .DESCRIPTION
-每個 ```csharp 區塊都視為一個完整的頂層程式（top-level statements），放進參考本程式庫的主控台專案中編譯。
-專案關閉隱式 using，確保範例自行宣告所需的 using；範例與公開 API 不一致時會列出檔案、區塊序號與編譯錯誤並失敗。
+每個 ```csharp 區塊都視為一個完整的頂層程式（top-level statements），放進參考本程式庫的主控台專案中，同時以 net48 與 net10.0-windows 編譯。
+專案關閉隱式 using，確保範例自行宣告所需的 using，並把可為 null 的警告視為錯誤；範例與公開 API 不一致時會列出檔案、區塊序號與編譯錯誤並失敗。
 #>
 
 [CmdletBinding()]
@@ -24,6 +24,12 @@ $dependencyInjectionVersion = @($packagesProps.Project.ItemGroup.PackageVersion 
 if ([string]::IsNullOrWhiteSpace($dependencyInjectionVersion))
 {
     throw 'Directory.Packages.props 缺少 Microsoft.Extensions.DependencyInjection 版本。'
+}
+
+$referenceAssembliesVersion = @($packagesProps.Project.ItemGroup.PackageVersion | Where-Object { $_.Include -eq 'Microsoft.NETFramework.ReferenceAssemblies.net48' })[0].Version
+if ([string]::IsNullOrWhiteSpace($referenceAssembliesVersion))
+{
+    throw 'Directory.Packages.props 缺少 Microsoft.NETFramework.ReferenceAssemblies.net48 版本。'
 }
 
 $documents = @(Join-Path $repoRoot 'README.md') + @(Get-ChildItem -LiteralPath (Join-Path $repoRoot 'docs') -Filter '*.md' -File | Sort-Object Name | ForEach-Object FullName)
@@ -54,13 +60,16 @@ $projectContent = @"
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>net10.0-windows</TargetFramework>
+    <TargetFrameworks>net48;net10.0-windows</TargetFrameworks>
+    <LangVersion>latest</LangVersion>
     <Nullable>enable</Nullable>
+    <WarningsAsErrors>nullable</WarningsAsErrors>
     <ImplicitUsings>disable</ImplicitUsings>
     <ManagePackageVersionsCentrally>false</ManagePackageVersionsCentrally>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="$dependencyInjectionVersion" />
+    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies.net48" Version="$referenceAssembliesVersion" PrivateAssets="all" Condition="'`$(TargetFramework)' == 'net48'" />
     <ProjectReference Include="$libraryProject" />
   </ItemGroup>
 </Project>
@@ -99,4 +108,4 @@ if ($failures.Count -gt 0)
     throw "文件 C# 範例編譯驗證失敗，共 $($failures.Count) 個。"
 }
 
-Write-Information "文件 C# 範例編譯驗證通過：共 $($snippets.Count) 個範例。" -InformationAction Continue
+Write-Information "文件 C# 範例編譯驗證通過：共 $($snippets.Count) 個範例（net48 與 net10.0-windows）。" -InformationAction Continue

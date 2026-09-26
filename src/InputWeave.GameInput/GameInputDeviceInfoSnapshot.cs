@@ -242,19 +242,19 @@ public readonly record struct GameInputDeviceInfoSnapshot : IEquatable<GameInput
     /// The force feedback motor capability information snapshots.
     /// Force feedback motor 能力資訊快照。
     /// </summary>
-    public IReadOnlyList<GameInputForceFeedbackMotorInfo> ForceFeedbackMotors { get; }
+    public IReadOnlyList<GameInputForceFeedbackMotorInfo> ForceFeedbackMotors { get => field ?? Array.Empty<GameInputForceFeedbackMotorInfo>(); }
 
     /// <summary>
     /// The raw input report information the device can provide.
     /// 裝置可提供的 raw input report 資訊。
     /// </summary>
-    public IReadOnlyList<GameInputRawDeviceReportInfo> InputReports { get; }
+    public IReadOnlyList<GameInputRawDeviceReportInfo> InputReports { get => field ?? Array.Empty<GameInputRawDeviceReportInfo>(); }
 
     /// <summary>
     /// The raw output report information the device can accept.
     /// 裝置可接受的 raw output report 資訊。
     /// </summary>
-    public IReadOnlyList<GameInputRawDeviceReportInfo> OutputReports { get; }
+    public IReadOnlyList<GameInputRawDeviceReportInfo> OutputReports { get => field ?? Array.Empty<GameInputRawDeviceReportInfo>(); }
 
     /// <summary>
     /// Compares all members for value equality, where <see cref="ForceFeedbackMotors"/>, <see cref="InputReports"/>, and
@@ -467,19 +467,19 @@ public readonly record struct GameInputControllerInfoSnapshot : IEquatable<GameI
     /// The controller axis label list.
     /// Controller axis label 清單。
     /// </summary>
-    public IReadOnlyList<GameInputLabel> AxisLabels { get; }
+    public IReadOnlyList<GameInputLabel> AxisLabels { get => field ?? Array.Empty<GameInputLabel>(); }
 
     /// <summary>
     /// The controller button label list.
     /// Controller button label 清單。
     /// </summary>
-    public IReadOnlyList<GameInputLabel> ButtonLabels { get; }
+    public IReadOnlyList<GameInputLabel> ButtonLabels { get => field ?? Array.Empty<GameInputLabel>(); }
 
     /// <summary>
     /// The controller switch information snapshot list.
     /// Controller switch 資訊快照清單。
     /// </summary>
-    public IReadOnlyList<GameInputControllerSwitchInfoSnapshot> Switches { get; }
+    public IReadOnlyList<GameInputControllerSwitchInfoSnapshot> Switches { get => field ?? Array.Empty<GameInputControllerSwitchInfoSnapshot>(); }
 
     /// <summary>
     /// Compares the contents of <see cref="AxisLabels"/>, <see cref="ButtonLabels"/>, and <see cref="Switches"/> element by
@@ -567,7 +567,7 @@ public readonly record struct GameInputControllerSwitchInfoSnapshot : IEquatable
     /// The label list for each switch position.
     /// Switch 每個位置對應的 label 清單。
     /// </summary>
-    public IReadOnlyList<GameInputLabel> Labels { get; }
+    public IReadOnlyList<GameInputLabel> Labels { get => field ?? Array.Empty<GameInputLabel>(); }
 
     /// <summary>
     /// The native switch kind.
@@ -629,13 +629,13 @@ public readonly record struct GameInputHapticInfoSnapshot : IEquatable<GameInput
     /// The haptic audio endpoint identifier.
     /// Haptic 音訊端點識別碼。
     /// </summary>
-    public string AudioEndpointId { get; }
+    public string AudioEndpointId { get => field ?? string.Empty; }
 
     /// <summary>
     /// The haptic location identifier list.
     /// Haptic 位置識別碼清單。
     /// </summary>
-    public IReadOnlyList<Guid> Locations { get; }
+    public IReadOnlyList<Guid> Locations { get => field ?? Array.Empty<Guid>(); }
 
     /// <summary>
     /// Compares the contents of <see cref="Locations"/> element by element for value equality.

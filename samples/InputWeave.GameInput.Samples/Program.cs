@@ -165,7 +165,7 @@ static void PrintGamepadSnapshot(GameInputDeviceManager manager)
 {
     WriteSection("Gamepad polling");
 
-    if (!manager.TryGetFirstGamepad(out GameInputDevice? device, out GameInputDeviceInfoSnapshot? snapshot))
+    if (!manager.TryGetFirstGamepad(out GameInputDevice? device, out GameInputDeviceInfoSnapshot snapshot))
     {
         Console.WriteLine("目前沒有支援 gamepad input kind 的裝置；略過 gamepad snapshot。");
         return;
@@ -240,7 +240,7 @@ static void DemonstrateDispatcherAndCallback()
         GameInputKind.GameInputKindGamepad,
         reading =>
         {
-            if (!reading.TryGetGamepadSnapshot(out GamepadReadingSnapshot? snapshot) || snapshot is not { } snapshotValue)
+            if (!reading.TryGetGamepadSnapshot(out GamepadReadingSnapshot snapshotValue))
             {
                 return;
             }
@@ -280,7 +280,7 @@ static void DemonstrateHapticsAndRumble(GameInputDeviceManager manager, bool ena
 {
     WriteSection("Haptics 與 rumble");
 
-    if (!manager.TryGetFirstRumbleDevice(out GameInputDevice? device, out GameInputDeviceInfoSnapshot? snapshot) &&
+    if (!manager.TryGetFirstRumbleDevice(out GameInputDevice? device, out GameInputDeviceInfoSnapshot snapshot) &&
         !manager.TryGetFirstGamepad(out device, out snapshot))
     {
         Console.WriteLine("沒有可用裝置；略過 haptics 與 rumble。");
@@ -289,7 +289,7 @@ static void DemonstrateHapticsAndRumble(GameInputDeviceManager manager, bool ena
 
     Console.WriteLine($"選用裝置：{GetDisplayName(snapshot)}");
 
-    Console.WriteLine(device!.TryGetHapticInfoSnapshot(out GameInputHapticInfoSnapshot? haptic) && haptic is { } hapticValue
+    Console.WriteLine(device.TryGetHapticInfoSnapshot(out GameInputHapticInfoSnapshot hapticValue)
         ? $"Haptic endpoint：{hapticValue.AudioEndpointId} / Locations：{hapticValue.Locations.Count}"
         : "此裝置沒有 haptic 資訊。");
 
@@ -299,7 +299,7 @@ static void DemonstrateHapticsAndRumble(GameInputDeviceManager manager, bool ena
         return;
     }
 
-    if (snapshot!.Value.SupportedRumbleMotors == GameInputRumbleMotors.GameInputRumbleNone)
+    if (snapshot.SupportedRumbleMotors == GameInputRumbleMotors.GameInputRumbleNone)
     {
         Console.WriteLine("此裝置未宣告支援 rumble motor；略過震動測試。");
         return;
@@ -319,7 +319,7 @@ static void DemonstrateHapticsAndRumble(GameInputDeviceManager manager, bool ena
         }
 
         Thread.Sleep(250);
-        Console.WriteLine($"已對支援馬達輸出短暫低強度震動：{snapshot.Value.SupportedRumbleMotors}");
+        Console.WriteLine($"已對支援馬達輸出短暫低強度震動：{snapshot.SupportedRumbleMotors}");
     }
     catch (GameInputException ex)
     {
@@ -331,7 +331,7 @@ static void DemonstrateForceFeedback(GameInputDeviceManager manager)
 {
     WriteSection("Force feedback");
 
-    if (!manager.TryGetFirstGamepad(out GameInputDevice? device, out GameInputDeviceInfoSnapshot? snapshot))
+    if (!manager.TryGetFirstGamepad(out GameInputDevice? device, out GameInputDeviceInfoSnapshot snapshot))
     {
         Console.WriteLine("目前沒有可測試 force feedback 的裝置。");
         return;
@@ -341,7 +341,7 @@ static void DemonstrateForceFeedback(GameInputDeviceManager manager)
     GameInputForceFeedbackMagnitude magnitude = GameInputForceFeedback.Magnitude(normal: 0.25f);
     GameInputForceFeedbackParams effectParams = GameInputForceFeedback.SineWave(magnitude, envelope, frequency: 20);
 
-    if (!device!.TryCreateForceFeedbackEffect(0, effectParams, out GameInputForceFeedbackEffect? effect) || effect is null)
+    if (!device.TryCreateForceFeedbackEffect(0, effectParams, out GameInputForceFeedbackEffect? effect))
     {
         Console.WriteLine($"裝置「{GetDisplayName(snapshot)}」不支援指定的 force feedback effect。");
         return;
@@ -375,13 +375,13 @@ static void DemonstrateMapping(GameInputDeviceManager manager)
 {
     WriteSection("Input mapping");
 
-    if (!manager.TryGetFirstGamepad(out GameInputDevice? device, out GameInputDeviceInfoSnapshot? snapshot))
+    if (!manager.TryGetFirstGamepad(out GameInputDevice? device, out GameInputDeviceInfoSnapshot snapshot))
     {
         Console.WriteLine("目前沒有可查詢映射資訊的 gamepad 裝置。");
         return;
     }
 
-    using GameInputMapper mapper = device!.CreateInputMapper();
+    using GameInputMapper mapper = device.CreateInputMapper();
     Console.WriteLine($"已建立裝置「{GetDisplayName(snapshot)}」的 input mapper。");
 
     if (mapper.TryGetGamepadButtonMappingInfo(GameInputGamepadButtons.GameInputGamepadA, out GameInputButtonMapping buttonMapping))
