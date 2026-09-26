@@ -5,7 +5,8 @@
 驗證 README 與 docs 內的 C# 範例都能實際編譯。
 
 .DESCRIPTION
-每個 ```csharp 區塊都視為一個完整的頂層程式（top-level statements），放進參考本程式庫的主控台專案中，同時以 net48 與 net10.0-windows 編譯。
+每個 ```csharp 區塊都視為一個完整的頂層程式（top-level statements），放進參考本程式庫的主控台專案中，預設同時以 net48、net8.0 與 net10.0 編譯。
+只適用部分目標框架的範例可在語言標記後宣告，例如 ```csharp tfm=net8.0;net10.0；GitHub 只以第一個字判斷語法醒目提示，不影響呈現。
 專案關閉隱式 using，確保範例自行宣告所需的 using，並把可為 null 的警告視為錯誤；範例與公開 API 不一致時會列出檔案、區塊序號與編譯錯誤並失敗。
 #>
 
@@ -38,12 +39,19 @@ foreach ($document in $documents)
 {
     $content = Get-Content -LiteralPath $document -Raw -Encoding utf8
     $index = 0
-    foreach ($match in [System.Text.RegularExpressions.Regex]::Matches($content, '(?s)```csharp\r?\n(?<code>.*?)```'))
+    foreach ($match in [System.Text.RegularExpressions.Regex]::Matches($content, '(?s)```csharp(?:[ \t]+tfm=(?<tfm>[^\r\n]+))?\r?\n(?<code>.*?)```'))
     {
         $index++
+        [string[]]$targetFrameworks = @()
+        if ($match.Groups['tfm'].Success)
+        {
+            $targetFrameworks = @($match.Groups['tfm'].Value.Trim() -split ';' | Where-Object { $_ })
+        }
+
         $snippets.Add([pscustomobject]@{
                 Document = [System.IO.Path]::GetRelativePath($repoRoot, $document)
                 Index = $index
+                TargetFrameworks = $targetFrameworks
                 Code = $match.Groups['code'].Value
             })
     }
@@ -60,7 +68,7 @@ $projectContent = @"
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFrameworks>net48;net10.0-windows</TargetFrameworks>
+    <TargetFrameworks>net48;net8.0;net10.0</TargetFrameworks>
     <LangVersion>latest</LangVersion>
     <Nullable>enable</Nullable>
     <WarningsAsErrors>nullable</WarningsAsErrors>
@@ -82,16 +90,38 @@ $restored = $false
 foreach ($snippet in $snippets)
 {
     Write-Utf8NoBomFile -Path $programPath -Content $snippet.Code
-    $buildArguments = @('build', $workDirectory, '-c', 'Release', '--nologo', '-v', 'q')
-    if ($restored)
+    # 未宣告 tfm= 時一次建置全部目標框架；有宣告時逐一以 -f 建置指定的目標框架。
+    $frameworks = if ($snippet.TargetFrameworks.Count -gt 0) { $snippet.TargetFrameworks } else { @('') }
+    $output = [System.Collections.Generic.List[string]]::new()
+    $buildFailed = $false
+    foreach ($framework in $frameworks)
     {
-        $buildArguments += '--no-restore'
+        $buildArguments = @('build', $workDirectory, '-c', 'Release', '--nologo', '-v', 'q')
+        if ($framework)
+        {
+            $buildArguments += @('-f', $framework)
+        }
+
+        if ($restored)
+        {
+            $buildArguments += '--no-restore'
+        }
+
+        foreach ($line in @(& dotnet @buildArguments 2>&1))
+        {
+            $output.Add("$line")
+        }
+
+        if ($LASTEXITCODE -ne 0)
+        {
+            $buildFailed = $true
+        }
+
+        $restored = $true
     }
 
-    $output = & dotnet @buildArguments 2>&1
-    $restored = $true
-    $errors = @($output | ForEach-Object { "$_" } | Where-Object { $_ -match 'error (CS|NU)\d+' } | ForEach-Object { ($_ -replace '^.*?error ', '') -replace '\s*\[[^\]]*\]\s*$', '' } | Sort-Object -Unique)
-    if ($LASTEXITCODE -ne 0 -or $errors.Count -gt 0)
+    $errors = @($output | Where-Object { $_ -match 'error (CS|NU)\d+' } | ForEach-Object { ($_ -replace '^.*?error ', '') -replace '\s*\[[^\]]*\]\s*$', '' } | Sort-Object -Unique)
+    if ($buildFailed -or $errors.Count -gt 0)
     {
         $detail = if ($errors.Count -gt 0) { $errors -join [Environment]::NewLine + '    ' } else { '建置失敗，未取得編譯錯誤訊息。' }
         $failures.Add("$($snippet.Document) 第 $($snippet.Index) 個 C# 範例無法編譯：$([Environment]::NewLine)    $detail")
@@ -108,4 +138,4 @@ if ($failures.Count -gt 0)
     throw "文件 C# 範例編譯驗證失敗，共 $($failures.Count) 個。"
 }
 
-Write-Information "文件 C# 範例編譯驗證通過：共 $($snippets.Count) 個範例（net48 與 net10.0-windows）。" -InformationAction Continue
+Write-Information "文件 C# 範例編譯驗證通過：共 $($snippets.Count) 個範例（預設 net48、net8.0 與 net10.0）。" -InformationAction Continue

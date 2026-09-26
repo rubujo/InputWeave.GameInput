@@ -21,7 +21,7 @@ public sealed class GameInputDeviceManager : IDisposable
         | GameInputKind.GameInputKindRacingWheel;
 
     private readonly GameInputClient _client;
-#if NET10_0_OR_GREATER
+#if NET9_0_OR_GREATER
     private readonly System.Threading.Lock _cacheLock = new();
 #else
     private readonly object _cacheLock = new();
@@ -35,7 +35,7 @@ public sealed class GameInputDeviceManager : IDisposable
     internal const int MaxQueuedEvents = 1024;
 
     private readonly Queue<GameInputDeviceManagerEvent> _events = new();
-#if NET10_0_OR_GREATER
+#if NET9_0_OR_GREATER
     private readonly System.Threading.Lock _pushLock = new();
 #else
     private readonly object _pushLock = new();
@@ -1083,7 +1083,7 @@ public sealed class GameInputDeviceManager : IDisposable
 
     private void ThrowIfDisposed()
     {
-#if NET10_0_OR_GREATER
+#if NET8_0_OR_GREATER
         ObjectDisposedException.ThrowIf(IsDisposed, this);
 #else
         if (IsDisposed)

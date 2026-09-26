@@ -34,6 +34,8 @@ jobs:
         uses: actions/setup-dotnet@v5
         with:
           global-json-file: global.json
+          # net8.0 目標框架的測試需要 .NET 8 執行階段；SDK 仍依 global.json 使用 .NET 10。
+          dotnet-version: 8.0.x
 
       - name: Restore
         run: dotnet restore InputWeave.GameInput.slnx

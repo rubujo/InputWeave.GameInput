@@ -129,7 +129,7 @@ public sealed class GameInputMapper : IDisposable
         GC.SuppressFinalize(this);
     }
 
-#if NET10_0_OR_GREATER
+#if NET8_0_OR_GREATER
     private static unsafe bool ReadMapping<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors | DynamicallyAccessedMemberTypes.NonPublicConstructors)] T>(bool found, byte* buffer, out T mapping)
         where T : struct
 #else

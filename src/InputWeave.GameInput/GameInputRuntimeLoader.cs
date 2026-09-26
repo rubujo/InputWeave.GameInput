@@ -27,7 +27,7 @@ internal static class GameInputRuntimeLoader
     private const int ProcNotFoundHResult = unchecked((int)0x8007007F);
     private const uint FixedFileInfoSignature = 0xFEEF04BD;
 
-#if NET10_0_OR_GREATER
+#if NET9_0_OR_GREATER
     private static readonly System.Threading.Lock s_syncRoot = new();
 #else
     private static readonly object s_syncRoot = new();

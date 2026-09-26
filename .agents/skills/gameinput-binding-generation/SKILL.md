@@ -17,7 +17,7 @@ description: 當需要從 Microsoft GameInput.h 重產 C# 互通層繫結，或�
 
 ## 裸 vtable 投影（兩個 TFM 共用，已採用）
 
-`net48` 與 `net10.0-windows` 的 COM 介面都**不使用** `[ComImport]` 或來源產生式 `[GeneratedComInterface]`／`ComWrappers`，而是仿照 `TerraFX.Interop.Windows`／`DirectN` 的做法，把每個介面投影成**裸 vtable 結構 + `delegate* unmanaged[Stdcall]<...>` 函式指標**，呼叫端手動 `AddRef`/`Release`。產生器輸出單一份 `GameInputNativeInterfaces.g.cs`，兩個 TFM 共用。
+`net48`、`net8.0` 與 `net10.0` 的 COM 介面都**不使用** `[ComImport]` 或來源產生式 `[GeneratedComInterface]`／`ComWrappers`，而是仿照 `TerraFX.Interop.Windows`／`DirectN` 的做法，把每個介面投影成**裸 vtable 結構 + `delegate* unmanaged[Stdcall]<...>` 函式指標**，呼叫端手動 `AddRef`/`Release`。產生器輸出單一份 `GameInputNativeInterfaces.g.cs`，所有 TFM 共用。
 
 **為何 `net48` 也不用 `[ComImport]`**：.NET Framework 的 RCW 會綁定建立時的 COM context，只有實作 `IAgileObject` 或聚合 FTM 的物件才能跨 apartment；GameInput 兩者皆無、也沒有 proxy/stub，所以在 STA（WinForms/WPF UI 執行緒）建立的物件從 MTA 呼叫會 `E_NOINTERFACE`（`InvalidCastException`），反向使用甚至會讓處理序結束。GameInput 官方文件說明 API「100% thread-safe」，且自 1.1 版起不需 `CoInitialize`，直接呼叫 vtable 最符合其設計。`net48` 可使用 `delegate* unmanaged[Stdcall]`：C# 規格說明單一具名呼叫慣例編碼為 `CallKind` `unmanaged stdcall`（不加 modopt），只有 `unmanaged ext` 才需要 `RuntimeFeature.UnmanagedCallKind`；Microsoft Learn 也說明 .NET Framework 支援 `CallingConvention` 列舉可描述的呼叫慣例（含 `StdCall`）。已以實機 GameInput 3.5.274 驗證 STA 建立、MTA 呼叫與反向使用皆正常（`GameInputLifetimeTests.ClientCreatedOnStaThreadIsUsableFromMtaThreadsAndBack`）。
 

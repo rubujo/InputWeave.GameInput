@@ -1,6 +1,6 @@
 # InputWeave.GameInput
 
-`InputWeave.GameInput` 是 Microsoft GameInput 的 C# 分層包裝程式庫，支援 .NET Framework `net48` 與 `.NET 10` Windows 應用程式。專案提供由 `GameInput.h` 產生的低階互通層、高階 C# API、執行階段載入診斷與發佈前驗證流程。
+`InputWeave.GameInput` 是 Microsoft GameInput 的 C# 分層包裝程式庫，支援 .NET Framework `net48` 與 .NET 8／.NET 10 Windows 應用程式，也能在以 .NET 8 以上執行、只在 Windows 上使用本套件的遊戲引擎或跨平台專案中引用。專案提供由 `GameInput.h` 產生的低階互通層、高階 C# API、執行階段載入診斷與發佈前驗證流程。
 
 ## AI 生成與維護聲明
 
@@ -14,7 +14,7 @@
 
 - 套件版本：`0.0.1`
 - 發佈標籤：`v0.0.1`
-- 目標框架：`net48;net10.0-windows`
+- 目標框架：`net48;net8.0;net10.0`
 - GameInput 基準：`Microsoft.GameInput` `3.5.274`，API 版本 `3`
 - GameInput 版本異動：[docs/gameinput-version-report.md](docs/gameinput-version-report.md)
 - 授權中繼資料：`CC0-1.0`
@@ -28,10 +28,24 @@
 dotnet add package InputWeave.GameInput --version 0.0.1
 ```
 
-應用程式專案需以 Windows 目標框架建置；目前支援 `net48` 與 `net10.0-windows`。一般 .NET 10 Windows 應用程式可使用下列目標框架：
+套件提供 `net48`、`net8.0` 與 `net10.0` 三個組件；.NET 8 以上的組件不綁定 `-windows` 目標框架，所以 `net8.0`、`net10.0`、`net10.0-windows` 等應用程式都能引用。一般 .NET 10 Windows 應用程式可使用下列目標框架：
 
 ```xml
 <TargetFramework>net10.0-windows</TargetFramework>
+```
+
+GameInput 只存在於 Windows，.NET 8 以上的組件因此標註 `[SupportedOSPlatform("windows")]`。若應用程式使用不含 `-windows` 的目標框架（例如跨平台遊戲引擎專案），平台相容性分析器會對未受保護的呼叫發出 CA1416；請在呼叫前以 `OperatingSystem.IsWindows()` 檢查，或把呼叫端標註為 Windows 專用：
+
+```csharp tfm=net8.0;net10.0
+using System;
+using InputWeave.GameInput;
+
+if (OperatingSystem.IsWindows())
+{
+    using GameInputDeviceManager manager = GameInputDeviceManager.Create();
+    manager.RefreshDevices();
+    Console.WriteLine($"裝置數：{manager.DeviceSnapshots.Count}");
+}
 ```
 
 本套件只提供 C# wrapper、受控 runtime loader 與 GameInput interop 型別，不會把 Microsoft 的 `GameInputRedist.msi`、`GameInputRedist.dll` 或原生橋接 DLL 複製到你的應用程式輸出。發佈 Windows PC 應用程式時，安裝程式仍需安裝 Microsoft 支援的 GameInput 可轉散發套件；執行期載入與診斷細節請參考 [GameInput 可轉散發套件](docs/gameinput-redist.md) 與 [常見錯誤與排查](docs/gameinput-troubleshooting.md)。
@@ -40,9 +54,9 @@ dotnet add package InputWeave.GameInput --version 0.0.1
 
 ## 支援範圍
 
-本套件支援一般 .NET Framework 與 .NET Windows 應用程式。`net48` 與 `net10.0-windows` 共用同一套不依賴 CLR 內建 COM 封送的裸 vtable 投影（`delegate* unmanaged[Stdcall]` 函式指標 + 手動 `AddRef`/`Release`），巢狀 COM 物件也能確定性釋放。因為不使用 COM Interop 的 RCW，GameInput 物件不會綁定建立時的 COM apartment，在 WinForms、WPF 的 UI 執行緒（STA）建立後，也能在背景執行緒使用。
+本套件支援一般 .NET Framework 與 .NET Windows 應用程式。`net48`、`net8.0` 與 `net10.0` 共用同一套不依賴 CLR 內建 COM 封送的裸 vtable 投影（`delegate* unmanaged[Stdcall]` 函式指標 + 手動 `AddRef`/`Release`），巢狀 COM 物件也能確定性釋放。因為不使用 COM Interop 的 RCW，GameInput 物件不會綁定建立時的 COM apartment，在 WinForms、WPF 的 UI 執行緒（STA）建立後，也能在背景執行緒使用。
 
-`net10.0-windows` 路徑已實際跑過 `dotnet publish -p:PublishAot=true` 端對端驗證：用一個獨立探測專案引用本函式庫，實測裝置列舉、非同步 API、Snapshot 相等性／雜湊、事件、依賴注入解析等主要路徑，`ilc` 原生程式碼產生與連結皆順利完成，產生的原生執行檔在真實 GameInput 執行階段（含實體 Xbox 控制器）下行為正常，過程中發現並修正了 3 處 trim/AOT 分析錯誤（泛型 `Marshal.PtrToStructure<T>`／`Marshal.SizeOf(Type)` 呼叫缺少必要標注，詳見 `GameInputDeviceInfoSnapshot.cs`／`GameInputMapper.cs`）。本套件不包含原生橋接 DLL；發佈前仍建議在目標環境自行跑一輪驗證，尤其是還沒被涵蓋到的低階 Interop 逃生口路徑。
+`net8.0` 與 `net10.0` 路徑都已實際跑過 `dotnet publish -p:PublishAot=true` 端對端驗證：用一個獨立探測專案引用本函式庫，實測裝置列舉、非同步 API、Snapshot 相等性／雜湊、事件、依賴注入解析等主要路徑，`ilc` 原生程式碼產生與連結皆順利完成，產生的原生執行檔在真實 GameInput 執行階段（含實體 Xbox 控制器）下行為正常，過程中發現並修正了 3 處 trim/AOT 分析錯誤（泛型 `Marshal.PtrToStructure<T>`／`Marshal.SizeOf(Type)` 呼叫缺少必要標注，詳見 `GameInputDeviceInfoSnapshot.cs`／`GameInputMapper.cs`）。本套件不包含原生橋接 DLL；發佈前仍建議在目標環境自行跑一輪驗證，尤其是還沒被涵蓋到的低階 Interop 逃生口路徑。
 
 ## 基本使用
 

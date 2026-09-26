@@ -221,7 +221,7 @@ public sealed class GameInputInteropTests
     public void SourceNativeImportsConstrainSearchPaths()
     {
         AssertNativeImportDeclarationsUseSystem32SearchPath(
-            "src/InputWeave.GameInput/Win32NativeMethods.Net10.cs",
+            "src/InputWeave.GameInput/Win32NativeMethods.Net.cs",
             "[LibraryImport(");
 
         AssertNativeImportDeclarationsUseSystem32SearchPath(
@@ -232,7 +232,7 @@ public sealed class GameInputInteropTests
     [TestMethod]
     public void GameInputInitializeUsesManagedRuntimeLoader()
     {
-        AssertGameInputInitializeDelegatesToRuntimeLoader("src/InputWeave.GameInput/Interop/GameInputNativeMethods.Net10.cs");
+        AssertGameInputInitializeDelegatesToRuntimeLoader("src/InputWeave.GameInput/Interop/GameInputNativeMethods.Net.cs");
         AssertGameInputInitializeDelegatesToRuntimeLoader("src/InputWeave.GameInput/Interop/GameInputNativeMethods.NetFramework.cs");
     }
 

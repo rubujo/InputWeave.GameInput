@@ -39,7 +39,7 @@ public sealed class XmlDocumentationTests
         string xmlPath = Path.ChangeExtension(assembly.Location, ".xml");
         if (!File.Exists(xmlPath))
         {
-            xmlPath = FindRepoFile("src/InputWeave.GameInput/bin/Release/net10.0-windows/InputWeave.GameInput.xml");
+            xmlPath = FindRepoFile("src/InputWeave.GameInput/bin/Release/net10.0/InputWeave.GameInput.xml");
         }
 
         XDocument document = XDocument.Load(xmlPath);

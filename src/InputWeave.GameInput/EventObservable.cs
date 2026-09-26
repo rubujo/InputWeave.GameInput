@@ -10,7 +10,7 @@ internal sealed class EventObservable<T>(Action? onFirstSubscribe = null, Action
 {
     // 以訂閱物件（而非 observer）為單位記錄，同一個 observer 訂閱多次時，取消其中一筆不會誤刪其他筆。
     private readonly List<Subscription> _subscriptions = [];
-#if NET10_0_OR_GREATER
+#if NET9_0_OR_GREATER
     private readonly System.Threading.Lock _lock = new();
     private readonly System.Threading.Lock _lifecycleLock = new();
 #else
@@ -21,7 +21,7 @@ internal sealed class EventObservable<T>(Action? onFirstSubscribe = null, Action
 
     public IDisposable Subscribe(IObserver<T> observer)
     {
-#if NET10_0_OR_GREATER
+#if NET8_0_OR_GREATER
         ArgumentNullException.ThrowIfNull(observer);
 #else
         if (observer is null)

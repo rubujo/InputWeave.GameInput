@@ -77,11 +77,11 @@ dotnet test InputWeave.GameInput.slnx -c Release --filter Hardware
 
 ## NativeAOT、trimming 與 single-file
 
-目前 `net10.0-windows` 路徑已實際跑過 `dotnet publish -p:PublishAot=true` 端對端驗證，涵蓋裝置列舉、非同步 API、事件、依賴注入與主要 snapshot 路徑。
+目前 `net8.0` 與 `net10.0` 路徑都已實際跑過 `dotnet publish -p:PublishAot=true` 端對端驗證，涵蓋裝置列舉、非同步 API、事件、依賴注入與主要 snapshot 路徑。
 
 仍需注意：
 
-- `.csproj` 只對 `net10.0-windows` 宣告 `IsAotCompatible`，建置時會以 trim／AOT 分析器檢查相容性；`net48` 不適用。
+- `.csproj` 只對 `net8.0` 與 `net10.0` 宣告 `IsAotCompatible`，建置時會以 trim／AOT 分析器檢查相容性；`net48` 不適用。
 - 本專案不宣告 single-file 發佈相容性。
 - 低階 `InputWeave.GameInput.Interop` 逃生口若被應用程式直接使用，仍應在目標發佈形狀下自行驗證。
 

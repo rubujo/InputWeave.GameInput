@@ -13,7 +13,7 @@ public sealed class GameInputDevice : IDisposable
     private readonly GameInputComHandle _handle;
     private GameInputDeviceInfoSnapshot? _cachedInfoSnapshot;
 
-#if NET10_0_OR_GREATER
+#if NET9_0_OR_GREATER
     private readonly System.Threading.Lock _cacheSyncRoot = new();
 #else
     private readonly object _cacheSyncRoot = new();
@@ -398,7 +398,7 @@ public sealed class GameInputDevice : IDisposable
     /// <returns>The number of bytes actually written to the output buffer. 實際寫入輸出緩衝區的位元組數。</returns>
     public int DirectInputEscape(uint command, byte[] input, byte[] output)
     {
-#if NET10_0_OR_GREATER
+#if NET8_0_OR_GREATER
         ArgumentNullException.ThrowIfNull(input);
         ArgumentNullException.ThrowIfNull(output);
 #else
@@ -529,7 +529,7 @@ public sealed class GameInputDevice : IDisposable
     /// <param name="report">The raw device report to send or operate on. 要傳送或操作的 raw device report。</param>
     public void SendRawDeviceOutput(GameInputRawDeviceReport report)
     {
-#if NET10_0_OR_GREATER
+#if NET8_0_OR_GREATER
         ArgumentNullException.ThrowIfNull(report);
 #else
         if (report is null)

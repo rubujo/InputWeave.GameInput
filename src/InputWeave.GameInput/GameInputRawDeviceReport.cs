@@ -77,7 +77,7 @@ public sealed class GameInputRawDeviceReport : IDisposable
     /// <returns>The number of bytes actually copied. 實際複製的位元組數。</returns>
     public int CopyRawData(byte[] buffer)
     {
-#if NET10_0_OR_GREATER
+#if NET8_0_OR_GREATER
         ArgumentNullException.ThrowIfNull(buffer);
 #else
         if (buffer is null)
@@ -99,7 +99,7 @@ public sealed class GameInputRawDeviceReport : IDisposable
     /// <returns>The number of bytes actually copied. 實際複製的位元組數。</returns>
     public unsafe int CopyRawData(byte[] buffer, int offset, int count)
     {
-#if NET10_0_OR_GREATER
+#if NET8_0_OR_GREATER
         ArgumentNullException.ThrowIfNull(buffer);
 #else
         if (buffer is null)
@@ -152,7 +152,7 @@ public sealed class GameInputRawDeviceReport : IDisposable
     /// <returns>Returns true when the raw data was applied; otherwise returns false. Raw data 設定成功時傳回 true；否則傳回 false。</returns>
     public bool SetRawData(byte[] data)
     {
-#if NET10_0_OR_GREATER
+#if NET8_0_OR_GREATER
         ArgumentNullException.ThrowIfNull(data);
 #else
         if (data is null)
@@ -174,7 +174,7 @@ public sealed class GameInputRawDeviceReport : IDisposable
     /// <returns>Returns true when the raw data was applied; otherwise returns false. Raw data 設定成功時傳回 true；否則傳回 false。</returns>
     public unsafe bool SetRawData(byte[] data, int offset, int count)
     {
-#if NET10_0_OR_GREATER
+#if NET8_0_OR_GREATER
         ArgumentNullException.ThrowIfNull(data);
 #else
         if (data is null)
@@ -197,7 +197,7 @@ public sealed class GameInputRawDeviceReport : IDisposable
         }
     }
 
-#if NET10_0_OR_GREATER
+#if NET8_0_OR_GREATER
         /// <summary>
         /// Copies the raw data into the specified span.
         /// 複製 raw data 到指定 span。

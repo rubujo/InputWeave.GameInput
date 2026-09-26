@@ -2,7 +2,7 @@
 
 ## 專案定位
 
-`InputWeave.GameInput` 是 Microsoft GameInput 的 C# 分層包裝程式庫。主要目標是同時支援 .NET Framework `net48` 與最新版 `.NET 10` 的 Windows 應用程式，並讓 GameInput API 追版、低階繫結與發佈驗證可維護。
+`InputWeave.GameInput` 是 Microsoft GameInput 的 C# 分層包裝程式庫。主要目標是同時支援 .NET Framework `net48` 與 .NET 8／最新版 .NET 10 的 Windows 應用程式（目標框架 `net48;net8.0;net10.0`，現代 TFM 以 `[SupportedOSPlatform("windows")]` 標註平台），並讓 GameInput API 追版、低階繫結與發佈驗證可維護。
 
 ## 建置與測試
 
@@ -31,7 +31,7 @@
 - C# 程式碼必須遵循 VS2026 / `dotnet format` 的 Code Style 與 Analyzer 建議，並配合 `LangVersion latest` 使用 C# 最新穩定語法。
 - 若 VS2026 Lint 要求可安全套用的新語法，例如 Collection Expression `[]`、更精準的 Overload 或更具體的回傳型別，應更新程式碼而不是壓制規則。
 - 不得新增 `#pragma warning disable` 來壓制 C# Analyzer 或 VS2026 Lint；若出現警告，應修正程式碼、產生器或 `.editorconfig` 規則來源。
-- P/Invoke 在 `net10.0-windows` 等現代 TFM 必須使用 `LibraryImport` 來源產生器；`DllImport` 只可存在於 `NETFRAMEWORK` 專用相容檔。
+- P/Invoke 在 `net8.0`、`net10.0` 等現代 TFM 必須使用 `LibraryImport` 來源產生器；`DllImport` 只可存在於 `NETFRAMEWORK` 專用相容檔。
 - 本專案預設維持純受控包裝程式庫；GameInput 執行階段選擇與載入診斷由受控載入器實作，不導入原生 API 橋接 DLL，除非另有單檔發佈或原生診斷需求並先另行規劃。
 - Public API 名稱維持英文技術命名；XML 文件註解採美式英文與正體中文（台灣）雙語並行，同一個標籤內先寫英文、再寫中文，兩種語言都必須傳達相同內容。
 - 所有 public/protected type、member、enum member、delegate、方法參數與非 void 回傳值都必須有 XML 文件註解；不得忽略 `CS1591`。

@@ -22,9 +22,9 @@ dotnet pack src/InputWeave.GameInput/InputWeave.GameInput.csproj -c Release -o .
 
 - `.nupkg` 檔名應為 `InputWeave.GameInput.0.0.1.nupkg`。
 - `.nupkg` 不得包含 `GameInputRedist.msi`、`GameInputRedist.dll` 或 `InputWeave.GameInput.Native.dll`。
-- `.csproj` 只對 `net8.0` 以上相容的 TFM（目前為 `net10.0-windows`）宣告 `IsAotCompatible`，讓 trim／AOT 分析器在建置期強制檢查；`net48` 不宣告，也不另外宣告 `IsTrimmable`。release workflow 不得新增 NativeAOT、trimming 或 single-file 發佈矩陣。
+- `.csproj` 只對 `net8.0` 以上相容的 TFM（目前為 `net8.0` 與 `net10.0`）宣告 `IsAotCompatible`，讓 trim／AOT 分析器在建置期強制檢查；`net48` 不宣告，也不另外宣告 `IsTrimmable`。release workflow 不得新增 NativeAOT、trimming 或 single-file 發佈矩陣。
 - `README.md` 必須包含 GameInput 可轉散發套件的安裝責任說明。
-- `README.md` 必須如實描述 NativeAOT 驗證狀態（`net10.0-windows` 已實測 `dotnet publish -p:PublishAot=true` 端對端驗證），且不得宣告 single-file 發佈相容性。
+- `README.md` 必須如實描述 NativeAOT 驗證狀態（`net8.0` 與 `net10.0` 已實測 `dotnet publish -p:PublishAot=true` 端對端驗證），且不得宣告 single-file 發佈相容性。
 - `README.md` 必須連到 `docs/gameinput-cookbook.md`。
 - 常見情境指南不得暗示包裝套件會散佈 `GameInputRedist.msi`、`GameInputRedist.dll` 或原生橋接 DLL。
 - 常見情境指南的 NativeAOT 敘述必須與 README 一致（已實測驗證），且不得暗示支援 single-file。

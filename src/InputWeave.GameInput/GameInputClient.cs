@@ -28,7 +28,7 @@ public sealed class GameInputClient : IDisposable
     /// </remarks>
     public const int MaxPlatformStringLength = 1024;
 
-#if NET10_0_OR_GREATER
+#if NET8_0_OR_GREATER
     private static unsafe IntPtr ReadingCallbackPointer => (IntPtr)(delegate* unmanaged[Stdcall]<ulong, IntPtr, IGameInputReading, void>)&OnReadingCallback;
 
     private static unsafe IntPtr DeviceCallbackPointer => (IntPtr)(delegate* unmanaged[Stdcall]<ulong, IntPtr, IGameInputDevice, ulong, GameInputDeviceStatus, GameInputDeviceStatus, void>)&OnDeviceCallback;
@@ -54,7 +54,7 @@ public sealed class GameInputClient : IDisposable
     private static IntPtr KeyboardLayoutCallbackPointer { get; } = Marshal.GetFunctionPointerForDelegate(s_keyboardLayoutCallback);
 #endif
 
-#if NET10_0_OR_GREATER
+#if NET9_0_OR_GREATER
     private readonly System.Threading.Lock _syncRoot = new();
 #else
     private readonly object _syncRoot = new();
@@ -497,7 +497,7 @@ public sealed class GameInputClient : IDisposable
     /// <returns>The reading after the reference reading, or null when none exists. 參考 reading 之後的 reading；不存在時為 null。</returns>
     public GameInputReading? GetNextReading(GameInputReading referenceReading, GameInputKind inputKind, GameInputDevice? device = null)
     {
-#if NET10_0_OR_GREATER
+#if NET8_0_OR_GREATER
         ArgumentNullException.ThrowIfNull(referenceReading);
 #else
         if (referenceReading is null)
@@ -529,7 +529,7 @@ public sealed class GameInputClient : IDisposable
     /// <returns>The reading before the reference reading, or null when none exists. 參考 reading 之前的 reading；不存在時為 null。</returns>
     public GameInputReading? GetPreviousReading(GameInputReading referenceReading, GameInputKind inputKind, GameInputDevice? device = null)
     {
-#if NET10_0_OR_GREATER
+#if NET8_0_OR_GREATER
         ArgumentNullException.ThrowIfNull(referenceReading);
 #else
         if (referenceReading is null)
@@ -638,13 +638,13 @@ public sealed class GameInputClient : IDisposable
                 out token);
 
             GameInputException.ThrowIfFailed(hResult);
-            return context.Devices.ToArray();
+            return context.Detach();
         }
         catch
         {
             // 列舉失敗時，回呼可能已收集部分裝置；這些包裝各自持有 COM 參考，不能等終結器才釋放。
             context.Deactivate();
-            foreach (GameInputDevice device in context.Devices)
+            foreach (GameInputDevice device in context.Detach())
             {
                 device.Dispose();
             }
@@ -654,6 +654,10 @@ public sealed class GameInputClient : IDisposable
         finally
         {
             context.Deactivate();
+
+            // 實測約 4% 的阻塞式列舉 UnregisterCallback 會傳回 false，此時 GCHandle 必須保留；
+            // 先分離裝置清單，避免保留的內容讓回傳的裝置包裝永遠無法被終結而洩漏 COM 參考。
+            context.Detach();
             bool unregistered = true;
             if (token != 0)
             {
@@ -731,7 +735,7 @@ public sealed class GameInputClient : IDisposable
     /// <returns>The callback registration used to unregister the callback. 用來解除註冊的 callback 註冊。</returns>
     public GameInputCallbackRegistration RegisterReadingCallback(GameInputDevice? device, GameInputKind inputKind, GameInputReadingHandler handler)
     {
-#if NET10_0_OR_GREATER
+#if NET8_0_OR_GREATER
         ArgumentNullException.ThrowIfNull(handler);
 #else
         if (handler is null)
@@ -797,7 +801,7 @@ public sealed class GameInputClient : IDisposable
         Func<GameInputReading, TResult> selector,
         CancellationToken cancellationToken = default)
     {
-#if NET10_0_OR_GREATER
+#if NET8_0_OR_GREATER
         ArgumentNullException.ThrowIfNull(selector);
 #else
         if (selector is null)
@@ -903,7 +907,7 @@ public sealed class GameInputClient : IDisposable
         GameInputEnumerationKind enumerationKind,
         GameInputDeviceHandler handler)
     {
-#if NET10_0_OR_GREATER
+#if NET8_0_OR_GREATER
         ArgumentNullException.ThrowIfNull(handler);
 #else
         if (handler is null)
@@ -951,7 +955,7 @@ public sealed class GameInputClient : IDisposable
     /// <returns>The callback registration used to unregister the callback. 用來解除註冊的 callback 註冊。</returns>
     public GameInputCallbackRegistration RegisterSystemButtonCallback(GameInputDevice? device, GameInputSystemButtons buttonFilter, GameInputSystemButtonHandler handler)
     {
-#if NET10_0_OR_GREATER
+#if NET8_0_OR_GREATER
         ArgumentNullException.ThrowIfNull(handler);
 #else
         if (handler is null)
@@ -996,7 +1000,7 @@ public sealed class GameInputClient : IDisposable
     /// <returns>The callback registration used to unregister the callback. 用來解除註冊的 callback 註冊。</returns>
     public GameInputCallbackRegistration RegisterKeyboardLayoutCallback(GameInputDevice? device, GameInputKeyboardLayoutHandler handler)
     {
-#if NET10_0_OR_GREATER
+#if NET8_0_OR_GREATER
         ArgumentNullException.ThrowIfNull(handler);
 #else
         if (handler is null)
@@ -1276,7 +1280,7 @@ public sealed class GameInputClient : IDisposable
     private delegate bool TryCreateReadingSnapshot<TSnapshot>(GameInputReading reading, out TSnapshot snapshot)
         where TSnapshot : struct;
 
-#if NET10_0_OR_GREATER
+#if NET8_0_OR_GREATER
     [UnmanagedCallersOnly(CallConvs = [typeof(CallConvStdcall)])]
 #endif
     private static void OnReadingCallback(ulong callbackToken, IntPtr context, IGameInputReading reading)
@@ -1300,7 +1304,7 @@ public sealed class GameInputClient : IDisposable
         }
     }
 
-#if NET10_0_OR_GREATER
+#if NET8_0_OR_GREATER
     [UnmanagedCallersOnly(CallConvs = [typeof(CallConvStdcall)])]
 #endif
     private static void OnDeviceCallback(ulong callbackToken, IntPtr context, IGameInputDevice device, ulong timestamp, GameInputDeviceStatus currentStatus, GameInputDeviceStatus previousStatus)
@@ -1310,7 +1314,13 @@ public sealed class GameInputClient : IDisposable
         {
             if (TryGetContext(context, out DeviceEnumerationContext? enumerationContext))
             {
-                enumerationContext!.Devices.Add(WrapBorrowedDevice(device));
+                GameInputDevice managedDevice = WrapBorrowedDevice(device);
+                if (!enumerationContext!.TryAdd(managedDevice))
+                {
+                    // 列舉已結束並分離內容；遲到的回呼不能把 COM 參考留給終結器。
+                    managedDevice.Dispose();
+                }
+
                 return;
             }
 
@@ -1330,7 +1340,7 @@ public sealed class GameInputClient : IDisposable
         }
     }
 
-#if NET10_0_OR_GREATER
+#if NET8_0_OR_GREATER
     [UnmanagedCallersOnly(CallConvs = [typeof(CallConvStdcall)])]
 #endif
     private static void OnSystemButtonCallback(ulong callbackToken, IntPtr context, IGameInputDevice device, ulong timestamp, GameInputSystemButtons currentButtons, GameInputSystemButtons previousButtons)
@@ -1354,7 +1364,7 @@ public sealed class GameInputClient : IDisposable
         }
     }
 
-#if NET10_0_OR_GREATER
+#if NET8_0_OR_GREATER
     [UnmanagedCallersOnly(CallConvs = [typeof(CallConvStdcall)])]
 #endif
     private static void OnKeyboardLayoutCallback(ulong callbackToken, IntPtr context, IGameInputDevice device, ulong timestamp, uint currentLayout, uint previousLayout)
@@ -1493,6 +1503,43 @@ public sealed class GameInputClient : IDisposable
 
     private sealed class DeviceEnumerationContext : CallbackContext
     {
-        public List<GameInputDevice> Devices { get; } = [];
+#if NET9_0_OR_GREATER
+        private readonly System.Threading.Lock _syncRoot = new();
+#else
+        private readonly object _syncRoot = new();
+#endif
+        private List<GameInputDevice>? _devices = [];
+
+        /// <summary>
+        /// Adds a device collected by the callback; returns false after the context has been detached.
+        /// 加入回呼收集到的裝置；內容已分離後傳回 false。
+        /// </summary>
+        public bool TryAdd(GameInputDevice device)
+        {
+            lock (_syncRoot)
+            {
+                if (_devices is null)
+                {
+                    return false;
+                }
+
+                _devices.Add(device);
+                return true;
+            }
+        }
+
+        /// <summary>
+        /// Detaches and returns the collected devices; later calls return an empty array.
+        /// 分離並傳回已收集的裝置；之後的呼叫傳回空陣列。
+        /// </summary>
+        public GameInputDevice[] Detach()
+        {
+            lock (_syncRoot)
+            {
+                GameInputDevice[] devices = _devices?.ToArray() ?? [];
+                _devices = null;
+                return devices;
+            }
+        }
     }
 }

@@ -16,7 +16,7 @@ public sealed class GameInputReading : IDisposable
     private GameInputKind? _cachedInputKind;
     private ulong? _cachedTimestamp;
 
-#if NET10_0_OR_GREATER
+#if NET9_0_OR_GREATER
     private readonly System.Threading.Lock _cacheSyncRoot = new();
 #else
     private readonly object _cacheSyncRoot = new();
@@ -167,7 +167,7 @@ public sealed class GameInputReading : IDisposable
     /// <returns>The number of elements written by the native API. 原生 API 寫入的元素數。</returns>
     public uint GetControllerAxisState(float[] stateArray)
     {
-#if NET10_0_OR_GREATER
+#if NET8_0_OR_GREATER
         ArgumentNullException.ThrowIfNull(stateArray);
 #else
         if (stateArray is null)
@@ -227,7 +227,7 @@ public sealed class GameInputReading : IDisposable
     /// <returns>The number of elements written by the native API. 原生 API 寫入的元素數。</returns>
     public uint GetControllerButtonState(byte[] stateArray)
     {
-#if NET10_0_OR_GREATER
+#if NET8_0_OR_GREATER
         ArgumentNullException.ThrowIfNull(stateArray);
 #else
         if (stateArray is null)
@@ -287,7 +287,7 @@ public sealed class GameInputReading : IDisposable
     /// <returns>The number of elements written by the native API. 原生 API 寫入的元素數。</returns>
     public uint GetControllerSwitchState(GameInputSwitchPosition[] stateArray)
     {
-#if NET10_0_OR_GREATER
+#if NET8_0_OR_GREATER
         ArgumentNullException.ThrowIfNull(stateArray);
 #else
         if (stateArray is null)
@@ -347,7 +347,7 @@ public sealed class GameInputReading : IDisposable
     /// <returns>The number of elements written by the native API. 原生 API 寫入的元素數。</returns>
     public uint GetKeyState(GameInputKeyState[] stateArray)
     {
-#if NET10_0_OR_GREATER
+#if NET8_0_OR_GREATER
         ArgumentNullException.ThrowIfNull(stateArray);
 #else
         if (stateArray is null)

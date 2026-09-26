@@ -351,7 +351,7 @@ public readonly record struct GameInputDeviceInfoSnapshot : IEquatable<GameInput
             ReadArray<GameInputRawDeviceReportInfo>(native.OutputReportInfo, native.OutputReportCount));
     }
 
-#if NET10_0_OR_GREATER
+#if NET8_0_OR_GREATER
     private static T? PtrToNullableStructure<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors | DynamicallyAccessedMemberTypes.NonPublicConstructors)] T>(IntPtr pointer)
         where T : struct
 #else
@@ -362,7 +362,7 @@ public readonly record struct GameInputDeviceInfoSnapshot : IEquatable<GameInput
         return pointer == IntPtr.Zero ? null : Marshal.PtrToStructure<T>(pointer);
     }
 
-#if NET10_0_OR_GREATER
+#if NET8_0_OR_GREATER
     internal static IReadOnlyList<T> ReadArray<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors | DynamicallyAccessedMemberTypes.NonPublicConstructors)] T>(IntPtr pointer, uint count)
         where T : struct
 #else
