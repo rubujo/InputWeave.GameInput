@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using InputWeave.GameInput.Interop;
@@ -1288,10 +1289,10 @@ public sealed class GameInputClient : IDisposable
         GameInputCallbackThread.Enter();
         try
         {
-            if (TryGetContext(context, out ReadingCallbackContext? callbackContext))
+            if (TryGetContext(context, out ReadingCallbackContext? callbackContext) && callbackContext!.TryGetHandler(out GameInputReadingHandler? handler))
             {
                 using GameInputReading managedReading = WrapBorrowedReading(reading);
-                callbackContext!.Handler(managedReading);
+                handler(managedReading);
             }
         }
         catch (Exception ex)
@@ -1324,10 +1325,10 @@ public sealed class GameInputClient : IDisposable
                 return;
             }
 
-            if (TryGetContext(context, out DeviceCallbackContext? callbackContext))
+            if (TryGetContext(context, out DeviceCallbackContext? callbackContext) && callbackContext!.TryGetHandler(out GameInputDeviceHandler? handler))
             {
                 using GameInputDevice managedDevice = WrapBorrowedDevice(device);
-                callbackContext!.Handler(managedDevice, timestamp, currentStatus, previousStatus);
+                handler(managedDevice, timestamp, currentStatus, previousStatus);
             }
         }
         catch (Exception ex)
@@ -1348,10 +1349,10 @@ public sealed class GameInputClient : IDisposable
         GameInputCallbackThread.Enter();
         try
         {
-            if (TryGetContext(context, out SystemButtonCallbackContext? callbackContext))
+            if (TryGetContext(context, out SystemButtonCallbackContext? callbackContext) && callbackContext!.TryGetHandler(out GameInputSystemButtonHandler? handler))
             {
                 using GameInputDevice managedDevice = WrapBorrowedDevice(device);
-                callbackContext!.Handler(managedDevice, timestamp, currentButtons, previousButtons);
+                handler(managedDevice, timestamp, currentButtons, previousButtons);
             }
         }
         catch (Exception ex)
@@ -1372,10 +1373,10 @@ public sealed class GameInputClient : IDisposable
         GameInputCallbackThread.Enter();
         try
         {
-            if (TryGetContext(context, out KeyboardLayoutCallbackContext? callbackContext))
+            if (TryGetContext(context, out KeyboardLayoutCallbackContext? callbackContext) && callbackContext!.TryGetHandler(out GameInputKeyboardLayoutHandler? handler))
             {
                 using GameInputDevice managedDevice = WrapBorrowedDevice(device);
-                callbackContext!.Handler(managedDevice, timestamp, currentLayout, previousLayout);
+                handler(managedDevice, timestamp, currentLayout, previousLayout);
             }
         }
         catch (Exception ex)
@@ -1467,41 +1468,70 @@ public sealed class GameInputClient : IDisposable
         return false;
     }
 
-    private abstract class CallbackContext
+    internal abstract class CallbackContext
     {
-        public bool IsActive { get; private set; } = true;
+        private volatile bool _isActive = true;
+
+        public bool IsActive
+        {
+            get
+            {
+                return _isActive;
+            }
+        }
 
         /// <summary>
-        /// Provides the public Deactivate API.
-        /// 提供 Deactivate 公開 API。
+        /// Stops dispatching to this context. Derived contexts also drop their handler references here.
+        /// 停止分派到此內容；衍生內容也會在此放掉處理常式參考。
         /// </summary>
-        public void Deactivate()
+        public virtual void Deactivate()
         {
-            IsActive = false;
+            _isActive = false;
         }
     }
 
-    private sealed class ReadingCallbackContext(GameInputReadingHandler handler) : CallbackContext
+    /// <summary>
+    /// A callback context that owns a user handler until it is deactivated.
+    /// 在停用前持有使用者處理常式的回呼內容。
+    /// </summary>
+    /// <remarks>
+    /// When <c>UnregisterCallback</c> returns false the GCHandle must stay allocated, which keeps this context alive for the rest
+    /// of the process; dropping the handler on deactivation keeps whatever the handler captured from leaking with it.
+    /// <c>UnregisterCallback</c> 傳回 false 時 GCHandle 必須保留，此內容會存活到處理序結束；停用時放掉處理常式，
+    /// 可避免處理常式捕捉的物件一起洩漏。
+    /// </remarks>
+    internal abstract class HandlerCallbackContext<THandler>(THandler handler) : CallbackContext
+        where THandler : Delegate
     {
-        public GameInputReadingHandler Handler { get; } = handler;
+        private THandler? _handler = handler;
+
+        /// <summary>
+        /// Gets the handler while the context is active; an in-flight callback keeps its own copy after deactivation.
+        /// 內容仍啟用時取得處理常式；停用後進行中的回呼仍保有自己取得的副本。
+        /// </summary>
+        public bool TryGetHandler([NotNullWhen(true)] out THandler? handler)
+        {
+            handler = Volatile.Read(ref _handler);
+            return handler is not null;
+        }
+
+        /// <inheritdoc />
+        public override void Deactivate()
+        {
+            base.Deactivate();
+            Volatile.Write(ref _handler, null);
+        }
     }
 
-    private sealed class DeviceCallbackContext(GameInputDeviceHandler handler) : CallbackContext
-    {
-        public GameInputDeviceHandler Handler { get; } = handler;
-    }
+    internal sealed class ReadingCallbackContext(GameInputReadingHandler handler) : HandlerCallbackContext<GameInputReadingHandler>(handler);
 
-    private sealed class SystemButtonCallbackContext(GameInputSystemButtonHandler handler) : CallbackContext
-    {
-        public GameInputSystemButtonHandler Handler { get; } = handler;
-    }
+    internal sealed class DeviceCallbackContext(GameInputDeviceHandler handler) : HandlerCallbackContext<GameInputDeviceHandler>(handler);
 
-    private sealed class KeyboardLayoutCallbackContext(GameInputKeyboardLayoutHandler handler) : CallbackContext
-    {
-        public GameInputKeyboardLayoutHandler Handler { get; } = handler;
-    }
+    internal sealed class SystemButtonCallbackContext(GameInputSystemButtonHandler handler) : HandlerCallbackContext<GameInputSystemButtonHandler>(handler);
 
-    private sealed class DeviceEnumerationContext : CallbackContext
+    internal sealed class KeyboardLayoutCallbackContext(GameInputKeyboardLayoutHandler handler) : HandlerCallbackContext<GameInputKeyboardLayoutHandler>(handler);
+
+    internal sealed class DeviceEnumerationContext : CallbackContext
     {
 #if NET9_0_OR_GREATER
         private readonly System.Threading.Lock _syncRoot = new();
