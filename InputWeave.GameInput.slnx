@@ -54,6 +54,7 @@
     <Project Path="benchmarks/InputWeave.GameInput.Benchmarks/InputWeave.GameInput.Benchmarks.csproj" />
   </Folder>
   <Folder Name="/tests/">
+    <Project Path="tests/InputWeave.GameInput.AotSmoke/InputWeave.GameInput.AotSmoke.csproj" />
     <Project Path="tests/InputWeave.GameInput.Tests/InputWeave.GameInput.Tests.csproj" />
   </Folder>
   <Folder Name="/tools/">

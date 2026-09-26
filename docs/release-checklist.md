@@ -23,7 +23,7 @@ dotnet pack src/InputWeave.GameInput/InputWeave.GameInput.csproj -c Release -o .
 - `.nupkg` 檔名應為 `InputWeave.GameInput.0.0.1.nupkg`。
 - `.nupkg` 必須只包含 `lib/net48`、`lib/net8.0`、`lib/net10.0` 三組 `InputWeave.GameInput.dll` 與 `.xml`；pack 時由 `EnablePackageValidation` 檢查相容目標框架的公開 API 一致，CI 與 release workflow 都會執行。
 - `.nupkg` 不得包含 `GameInputRedist.msi`、`GameInputRedist.dll` 或 `InputWeave.GameInput.Native.dll`。
-- `.csproj` 只對 `net8.0` 以上相容的 TFM（目前為 `net8.0` 與 `net10.0`）宣告 `IsAotCompatible`，讓 trim／AOT 分析器在建置期強制檢查；`net48` 不宣告，也不另外宣告 `IsTrimmable`。release workflow 不得新增 NativeAOT、trimming 或 single-file 發佈矩陣。
+- `.csproj` 只對 `net8.0` 以上相容的 TFM（目前為 `net8.0` 與 `net10.0`）宣告 `IsAotCompatible`，讓 trim／AOT 分析器在建置期強制檢查；`net48` 不宣告，也不另外宣告 `IsTrimmable`。CI 以 `tests/InputWeave.GameInput.AotSmoke` 對 `net8.0` 與 `net10.0` 實際執行 NativeAOT 發佈與煙霧測試；release workflow 不得新增 NativeAOT、trimming 或 single-file 發佈矩陣。
 - `README.md` 必須包含 GameInput 可轉散發套件的安裝責任說明。
 - `README.md` 必須如實描述 NativeAOT 驗證狀態（`net8.0` 與 `net10.0` 已實測 `dotnet publish -p:PublishAot=true` 端對端驗證），且不得宣告 single-file 發佈相容性。
 - `README.md` 必須連到 `docs/gameinput-cookbook.md`。

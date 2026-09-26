@@ -86,7 +86,7 @@ dotnet test InputWeave.GameInput.slnx -c Release --filter Hardware
 
 ## NativeAOT、trimming 與 single-file
 
-目前 `net8.0` 與 `net10.0` 路徑都已實際跑過 `dotnet publish -p:PublishAot=true` 端對端驗證，涵蓋裝置列舉、非同步 API、事件、依賴注入與主要 snapshot 路徑。
+目前 `net8.0` 與 `net10.0` 路徑都已實際跑過 `dotnet publish -p:PublishAot=true` 端對端驗證，涵蓋裝置列舉、非同步 API、事件、依賴注入與主要 snapshot 路徑。CI 也會以 `tests/InputWeave.GameInput.AotSmoke` 對兩個目標框架執行 NativeAOT 發佈並執行產生的原生檔；CI 代理程式沒有 GameInput 執行階段時，只驗證受控載入器與探測路徑。
 
 仍需注意：
 

@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFrameworks>net8.0;net10.0</TargetFrameworks>
+    <AssemblyName>InputWeave.GameInput.AotSmoke</AssemblyName>
+    <RootNamespace>InputWeave.GameInput.AotSmoke</RootNamespace>
+    <IsPackable>false</IsPackable>
+    <!-- 只影響 dotnet publish：CI 以 NativeAOT 發佈並執行，trim／AOT 警告依 TreatWarningsAsErrors 視為錯誤。 -->
+    <PublishAot>true</PublishAot>
+    <!-- 逐條列出函式庫的 trim／AOT 警告，而不是每個組件只彙總成一條。 -->
+    <TrimmerSingleWarn>false</TrimmerSingleWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\InputWeave.GameInput\InputWeave.GameInput.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- 本專案只在 Windows 執行；宣告後呼叫標註為 Windows 專用的 InputWeave.GameInput API 不會觸發 CA1416。 -->
+    <AssemblyAttribute Include="System.Runtime.Versioning.SupportedOSPlatformAttribute">
+      <_Parameter1>windows</_Parameter1>
+    </AssemblyAttribute>
+  </ItemGroup>
+</Project>

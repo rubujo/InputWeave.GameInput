@@ -50,6 +50,23 @@ jobs:
       - name: Pack with package validation
         run: dotnet pack src/InputWeave.GameInput/InputWeave.GameInput.csproj -c Release --no-build -o .tmp/packages
 
+      # 以 NativeAOT 實際發佈並執行煙霧測試；trim／AOT 警告依 TreatWarningsAsErrors 視為錯誤。
+      # 代理程式沒有 GameInput 執行階段時，煙霧測試只驗證受控載入器與探測路徑。
+      - name: Publish and run NativeAOT smoke test
+        run: |
+          foreach ($framework in @('net8.0', 'net10.0')) {
+              $output = ".tmp/aot/$framework"
+              dotnet publish tests/InputWeave.GameInput.AotSmoke/InputWeave.GameInput.AotSmoke.csproj -c Release -f $framework -r win-x64 -o $output
+              if ($LASTEXITCODE -ne 0) {
+                  throw "NativeAOT 發佈失敗：$framework"
+              }
+
+              & "$output/InputWeave.GameInput.AotSmoke.exe"
+              if ($LASTEXITCODE -ne 0) {
+                  throw "NativeAOT 煙霧測試執行失敗：$framework（結束代碼 $LASTEXITCODE）"
+              }
+          }
+
       - name: Verify formatting
         run: dotnet format InputWeave.GameInput.slnx --verify-no-changes
 
