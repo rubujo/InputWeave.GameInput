@@ -87,7 +87,6 @@ public sealed class DeferredCallbackCompletionTests
             token: 1,
             contextHandle: handle,
             deactivateContext: static () => { },
-            stopCallback: static _ => { },
             unregisterCallback: static _ => true,
             removeRegistration: static _ => { });
     }

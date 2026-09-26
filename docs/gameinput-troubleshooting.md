@@ -31,6 +31,15 @@
 2. 呼叫 `RefreshDevices(GameInputKind, GameInputDeviceStatus)` 時確認 `inputKind` 與 `statusFilter` 沒有篩掉目標裝置。
 3. `GetCurrent*` API 回傳 `null` 不一定是錯誤，可能只是目前沒有該輸入種類的 reading；輪詢迴圈應把 `null` 視為正常暫態。
 
+## 裝置列舉很慢
+
+`EnumerateDevices`、`RefreshDevices` 使用 GameInput 的阻塞式列舉（`GameInputBlockingEnumeration`），時間幾乎都花在原生 `RegisterDeviceCallback` 等待初始回呼完成。實測 GameInput 3.5.274 每次約 960 毫秒，與輸入種類、裝置數量無關。
+
+處理方式：
+
+1. 不要在 UI 執行緒或每一幀的遊戲迴圈中呼叫；UI 程式請改用 `EnumerateDevicesAsync`／`RefreshDevicesAsync`。
+2. 需要持續追蹤裝置時，建立一次 `GameInputDeviceManager` 並訂閱 `DeviceChanged`（內部使用非同步列舉，不會卡住呼叫端），只在收到連線／斷線事件時才重新整理，而不是定期重新列舉。
+
 ## 物件生命週期與執行緒
 
 常見症狀：

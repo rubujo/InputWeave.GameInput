@@ -73,6 +73,33 @@ public sealed class GameInputLifetimeTests
     }
 
     [TestMethod]
+    public void DisposedRegistrationsAlwaysReleaseCallbackContext()
+    {
+        RunWithClient(client =>
+        {
+            // 先 StopCallback 再 UnregisterCallback 時，實機約 5% 會因 Stop 已非同步移除註冊而傳回 false，使 GCHandle 無法釋放；
+            // 200 次都沒有漏網的機率低於 10^-5，足以抓出回歸。
+            int leaked = 0;
+            for (int i = 0; i < 200; i++)
+            {
+                GameInputCallbackRegistration registration = client.RegisterDeviceCallback(
+                    null,
+                    AnyCommonKind,
+                    GameInputDeviceStatus.GameInputDeviceConnected,
+                    GameInputEnumerationKind.GameInputNoEnumeration,
+                    static (_, _, _, _) => { });
+                registration.Dispose();
+                if (!registration.IsContextHandleReleased)
+                {
+                    leaked++;
+                }
+            }
+
+            Assert.AreEqual(0, leaked, "每個已釋放的回呼註冊都應成功解除註冊並釋放 GCHandle。");
+        });
+    }
+
+    [TestMethod]
     public void UndisposedDeviceReleasesNativeReferenceWhenFinalized()
     {
         RunWithFirstDevice((client, observer) =>

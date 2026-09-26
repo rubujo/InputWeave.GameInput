@@ -56,7 +56,6 @@ public sealed class GameInputCallbackContextTests
             token: 1,
             contextHandle: handle,
             deactivateContext: context.Deactivate,
-            stopCallback: static _ => { },
             // 不可捕捉區域變數：C# 會讓同一範圍的 lambda 共用閉包類別，連帶讓 captured 一直存活。
             unregisterCallback: unregistered ? static _ => true : static _ => false,
             removeRegistration: static _ => { });

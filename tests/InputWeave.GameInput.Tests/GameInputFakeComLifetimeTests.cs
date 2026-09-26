@@ -259,7 +259,6 @@ public sealed class GameInputFakeComLifetimeTests
             token: 1,
             GCHandle.Alloc(new object()),
             deactivateContext: () => deactivated = true,
-            stopCallback: static _ => { },
             unregisterCallback: _ =>
             {
                 callbackReturned.Wait();
@@ -493,7 +492,6 @@ public sealed class GameInputFakeComLifetimeTests
             token: 1,
             GCHandle.Alloc(context),
             deactivateContext: () => deactivated = true,
-            stopCallback: static _ => { },
             unregisterCallback: unregister,
             removeRegistration: static _ => { });
         return (registration, new WeakReference(context), () => deactivated);

@@ -8,7 +8,6 @@ namespace InputWeave.GameInput;
 /// </summary>
 public sealed class GameInputCallbackRegistration : IDisposable
 {
-    private readonly Action<ulong> _stopCallback;
     private readonly Func<ulong, bool> _unregisterCallback;
     private readonly Action<GameInputCallbackRegistration> _removeRegistration;
     private readonly Action _deactivateContext;
@@ -20,7 +19,6 @@ public sealed class GameInputCallbackRegistration : IDisposable
         ulong token,
         GCHandle contextHandle,
         Action deactivateContext,
-        Action<ulong> stopCallback,
         Func<ulong, bool> unregisterCallback,
         Action<GameInputCallbackRegistration> removeRegistration,
         Func<Action?>? acquireOwnerLease = null)
@@ -28,7 +26,6 @@ public sealed class GameInputCallbackRegistration : IDisposable
         Token = token;
         _contextHandle = contextHandle;
         _deactivateContext = deactivateContext;
-        _stopCallback = stopCallback;
         _unregisterCallback = unregisterCallback;
         _removeRegistration = removeRegistration;
         _acquireOwnerLease = acquireOwnerLease ?? (static () => null);
@@ -49,6 +46,18 @@ public sealed class GameInputCallbackRegistration : IDisposable
         get
         {
             return Volatile.Read(ref _disposed) != 0;
+        }
+    }
+
+    /// <summary>
+    /// Whether the callback context handle has been freed; stays false when <c>UnregisterCallback</c> did not succeed.
+    /// 回呼內容的 GCHandle 是否已釋放；<c>UnregisterCallback</c> 未成功時維持 false。
+    /// </summary>
+    internal bool IsContextHandleReleased
+    {
+        get
+        {
+            return !_contextHandle.IsAllocated;
         }
     }
 
@@ -82,14 +91,15 @@ public sealed class GameInputCallbackRegistration : IDisposable
         {
             if (Token != 0)
             {
-                _stopCallback(Token);
+                // 刻意不先呼叫 StopCallback：它會非同步移除註冊，讓隨後的 UnregisterCallback 找不到 token 而傳回 false，
+                // 導致 GCHandle 無法釋放。UnregisterCallback 本身就保證不再派送，並等待進行中的回呼結束。
                 unregistered = _unregisterCallback(Token);
             }
         }
         finally
         {
             // 官方文件：UnregisterCallback 成功返回前，釋放回呼相關資源並不安全。解除註冊失敗或拋出例外時，
-            // 保留已停用的 context（只洩漏一個小物件），避免原生端仍在進行的回呼存取已釋放的 GCHandle。
+            // 保留已停用的 context（處理常式已放掉，只洩漏一個小物件），避免原生端仍在進行的回呼存取已釋放的 GCHandle。
             if (unregistered && _contextHandle.IsAllocated)
             {
                 _contextHandle.Free();

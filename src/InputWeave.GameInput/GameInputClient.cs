@@ -656,13 +656,15 @@ public sealed class GameInputClient : IDisposable
         {
             context.Deactivate();
 
-            // 實測約 4% 的阻塞式列舉 UnregisterCallback 會傳回 false，此時 GCHandle 必須保留；
-            // 先分離裝置清單，避免保留的內容讓回傳的裝置包裝永遠無法被終結而洩漏 COM 參考。
+            // 先分離裝置清單：萬一 UnregisterCallback 傳回 false 而必須保留 GCHandle，保留的內容也不會讓回傳的裝置包裝
+            // 無法被終結而洩漏 COM 參考。
             context.Detach();
             bool unregistered = true;
             if (token != 0)
             {
-                call.Native.StopCallback(token);
+                // 不要先呼叫 StopCallback：它會在背景非同步移除註冊，移除完成後 UnregisterCallback 找不到 token 而傳回 false
+                // （實機量測：先 Stop 約 5% 為 false，Stop 後等 50ms 則 100%；只呼叫 Unregister 為 0%）。
+                // UnregisterCallback 本身就保證不再派送，並會等待進行中的回呼結束。
                 unregistered = call.Native.UnregisterCallback(token);
             }
 
@@ -1107,7 +1109,6 @@ public sealed class GameInputClient : IDisposable
             token,
             contextHandle,
             deactivateContext,
-            StopCallback,
             UnregisterCallback,
             RemoveRegistration,
             AcquireCleanupLease);
@@ -1148,12 +1149,6 @@ public sealed class GameInputClient : IDisposable
         }
 
         return success ? _handle.DangerousRelease : null;
-    }
-
-    private void StopCallback(ulong token)
-    {
-        using ComLease<IGameInput> call = EnterNativeForCleanup();
-        call.Native.StopCallback(token);
     }
 
     private bool UnregisterCallback(ulong token)
