@@ -60,6 +60,7 @@ public sealed class GameInputClient : IDisposable
 #else
     private readonly object _syncRoot = new();
 #endif
+    private static IntPtr s_anchoredRoot;
     private readonly List<GameInputCallbackRegistration> _registrations = [];
     private readonly List<Action> _pendingWaitCancellations = [];
     private readonly GameInputComHandle _handle;
@@ -91,6 +92,7 @@ public sealed class GameInputClient : IDisposable
 
         // GameInputInitialize 的輸出指標依 COM 慣例已 AddRef，擁有權直接轉交給 SafeHandle。
         GameInputComHandle handle = new(nativePointer);
+        AnchorRuntimeRoot(nativePointer);
         try
         {
             return new GameInputClient(handle);
@@ -1100,6 +1102,37 @@ public sealed class GameInputClient : IDisposable
         if (disposeFailures is not null)
         {
             throw new AggregateException("部分 callback 註冊無法釋放；其餘資源已完成釋放。", disposeFailures);
+        }
+    }
+
+    /// <summary>
+    /// Keeps one extra reference to the GameInput runtime's singleton root object for the rest of the process, so its reference
+    /// count never drops to zero.
+    /// 替 GameInput 執行階段的單例根物件保留一份額外參考直到處理序結束，讓參考計數永遠不會降到零。
+    /// </summary>
+    /// <remarks>
+    /// <c>GameInputInitialize</c> returns the same singleton root to every caller. Measured with GameInput 3.5.274 and 3.5.278,
+    /// the process crashes with an access violation when that root's last reference is released on one thread while another
+    /// thread calls <c>GameInputInitialize</c> (for example one client being disposed while another is created), whereas holding
+    /// an anchor reference survived more than 15,000 such overlaps. This matches the loader, which also keeps the runtime module
+    /// loaded until the process exits.
+    /// <c>GameInputInitialize</c> 對每個呼叫端都傳回同一個單例根物件。以 GameInput 3.5.274 與 3.5.278 實測，
+    /// 一條執行緒釋放該根物件最後一份參考、同時另一條執行緒呼叫 <c>GameInputInitialize</c>（例如一個 client 釋放時另一個正在建立）
+    /// 會讓處理序以存取違規崩潰；保留錨點參考後，超過 15,000 次同樣的重疊都正常。這與載入器讓執行階段模組常駐到處理序結束的做法一致。
+    /// </remarks>
+    /// <param name="root">The root object pointer returned by <c>GameInputInitialize</c>. <c>GameInputInitialize</c> 傳回的根物件指標。</param>
+    private static void AnchorRuntimeRoot(IntPtr root)
+    {
+        if (Volatile.Read(ref s_anchoredRoot) != IntPtr.Zero)
+        {
+            return;
+        }
+
+        Marshal.AddRef(root);
+        if (Interlocked.CompareExchange(ref s_anchoredRoot, root, IntPtr.Zero) != IntPtr.Zero)
+        {
+            // 其他執行緒已先保留錨點；歸還多取的參考。呼叫端的 SafeHandle 仍持有一份，這裡不會讓計數歸零。
+            Marshal.Release(root);
         }
     }
 
