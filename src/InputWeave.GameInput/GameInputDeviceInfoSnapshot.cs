@@ -134,6 +134,15 @@ public readonly record struct GameInputDeviceInfoSnapshot : IEquatable<GameInput
     /// The set of input kinds supported by the device.
     /// 裝置支援的輸入種類集合。
     /// </summary>
+    /// <remarks>
+    /// The value is passed through from the native runtime unchanged and may contain bits that <c>GameInput.h</c> does not define
+    /// (an Xbox One controller reports <c>0x01000000</c> in addition to its documented kinds), so <see cref="object.ToString"/> can
+    /// print a number. Test individual kinds with a bitwise check or <see cref="Enum.HasFlag(Enum)"/> instead of comparing the whole
+    /// value with <c>==</c>.
+    /// 此值原樣來自原生執行階段，可能含有 <c>GameInput.h</c> 未定義的位元（Xbox One 控制器除了已定義的種類外還會回報
+    /// <c>0x01000000</c>），因此 <see cref="object.ToString"/> 可能印出數字。請以位元檢查或 <see cref="Enum.HasFlag(Enum)"/>
+    /// 判斷個別種類，不要用 <c>==</c> 比對整個值。
+    /// </remarks>
     public GameInputKind SupportedInput
     {
         get

@@ -40,6 +40,20 @@
 1. 不要在 UI 執行緒或每一幀的遊戲迴圈中呼叫；UI 程式請改用 `EnumerateDevicesAsync`／`RefreshDevicesAsync`。
 2. 需要持續追蹤裝置時，建立一次 `GameInputDeviceManager` 並訂閱 `DeviceChanged`（內部使用非同步列舉，不會卡住呼叫端），只在收到連線／斷線事件時才重新整理，而不是定期重新列舉。
 
+## `SupportedInput` 顯示成數字或比對不成立
+
+常見症狀：
+
+- 印出 `GameInputDeviceInfoSnapshot.SupportedInput` 時得到數字（例如 Xbox 控制器顯示 `17039367`），而不是 `GameInputKindGamepad, ...` 這類名稱。
+- `info.SupportedInput == GameInputKind.GameInputKindGamepad` 對遊戲控制器不成立。
+
+原因：GameInput 執行階段回報的值可能含有 `GameInput.h` 沒有定義的位元。實測 Xbox One 控制器回報 `0x01040007`，其中 `0x01000000` 不屬於 API 版本 3 的 `GameInputKind`（舊版 v0 API 曾把此位元定義為 `GameInputKindUiNavigation`）。`GameInputKind` 是旗標列舉，只要有任何一個位元沒有名稱，`ToString()` 就會改印數字。本套件依標頭產生列舉並原樣保留原生值，不會自行補上或清除未定義的位元。
+
+處理方式：
+
+1. 以位元檢查判斷支援的輸入種類，例如 `(info.SupportedInput & GameInputKind.GameInputKindGamepad) != 0` 或 `info.SupportedInput.HasFlag(GameInputKind.GameInputKindGamepad)`，不要用 `==` 比對整個值。
+2. 需要顯示名稱時，先以已知種類遮罩再轉字串，例如 `(info.SupportedInput & ~(GameInputKind)0x01000000).ToString()`，或只列出關心的種類。
+
 ## 物件生命週期與執行緒
 
 常見症狀：
