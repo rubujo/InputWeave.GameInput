@@ -65,7 +65,7 @@
 1. 所有包裝型別的 `Dispose()` 都可重複、並行呼叫，只有第一次會釋放原生參考。在 `DeviceChanged` 等原生回呼中 Dispose `GameInputClient` 或 `GameInputDeviceManager` 是安全的：解除註冊會在背景完成，不會卡住回呼執行緒。`GameInputClient.Dispose()` 會等其他執行緒上已在進行中的原生呼叫返回後，才釋放原生物件。
 2. 沒有呼叫 `Dispose()` 的包裝會在 GC 回收時由 `SafeHandle` 終結器釋放原生參考，但回收時機不確定，仍應以 `using` 或 `Dispose()` 明確釋放。GameInput 根物件釋放後，從它取得的裝置、reading 等子物件都會失效。請先釋放子物件，最後才釋放 `GameInputClient` 或 `GameInputDeviceManager`；需要保留的資料請先轉成 snapshot。
 3. 所有目標框架都透過 vtable 函式指標呼叫 GameInput，不使用 COM Interop 的 RCW，所以 GameInput 物件不受 COM apartment 限制：在 STA（WinForms、WPF 的 UI 執行緒）建立的物件可以在背景執行緒使用，反之亦然。
-4. 背景程式或主控台程式收不到輸入時，請確認焦點政策：GameInput 預設只把輸入交給前景應用程式，需要背景輸入時請呼叫 `SetFocusPolicy(GameInputFocusPolicy.GameInputEnableBackgroundInput)`。另外，實測 GameInput 3.5.274 收不到以 `SendInput` 模擬的鍵盤輸入，自動化測試請改用實體裝置。
+4. 背景程式或主控台程式收不到輸入時，請確認焦點政策：GameInput 預設只把輸入交給前景應用程式，需要背景輸入時請呼叫 `SetFocusPolicy(GameInputFocusPolicy.GameInputEnableBackgroundInput)`。另外，實測 GameInput 3.5.274 與 3.5.278 都收不到以 `SendInput` 模擬的鍵盤輸入（虛擬鍵與掃描碼兩種方式皆然），自動化測試請改用實體裝置。
 
 ## Callback 例外沒有直接拋出
 

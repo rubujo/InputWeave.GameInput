@@ -374,11 +374,11 @@ public sealed class GameInputDevice : IDisposable
     /// </summary>
     /// <remarks>
     /// The native GameInput API documentation marks the <c>SetRumbleState</c> parameter as <c>_In_opt_</c>, but with GameInput
-    /// runtime 3.5.274 and an Xbox One controller, passing <c>nullptr</c> reproducibly triggers a native access violation
+    /// runtimes 3.5.274 and 3.5.278 and an Xbox One controller, passing <c>nullptr</c> reproducibly triggers a native access violation
     /// (<c>0xC0000005</c>) that crashes the whole process and cannot be caught by managed exception handling. This method
     /// therefore passes an all-zero <see cref="GameInputRumbleParams"/> instead, which is semantically equivalent to stopping
     /// rumble and always gives the native call a valid pointer.
-    /// GameInput 原生 API 文件把 <c>SetRumbleState</c> 的參數標為 <c>_In_opt_</c>，但在 GameInput 執行階段 3.5.274 搭配
+    /// GameInput 原生 API 文件把 <c>SetRumbleState</c> 的參數標為 <c>_In_opt_</c>，但在 GameInput 執行階段 3.5.274 與 3.5.278 搭配
     /// Xbox One 控制器實測，傳入 <c>nullptr</c> 會穩定觸發原生存取違規（<c>0xC0000005</c>），直接讓整個處理序結束，
     /// 無法用 managed 例外處理攔截。因此這個方法改傳入全欄位為零的 <see cref="GameInputRumbleParams"/>，
     /// 語意等同停止震動，並讓原生呼叫一律收到有效的指標。
