@@ -1,19 +1,19 @@
 # GameInput 版本報告
 
-目前基準版本：`Microsoft.GameInput` `3.5.278`
+目前基準版本：`Microsoft.GameInput` `3.5.283`
 
 目前包裝程式庫版本：`InputWeave.GameInput v0.0.1`，NuGet / MSBuild 版本為 `0.0.1`。
 
 - API 版本：`3`
-- NuGet 套件 SHA256：`52837899F671D195DF04E27F349365B98637C6CD040F4CECD69598EF7889FF03`
+- NuGet 套件 SHA256：`B5988CB8FF9D7009B6DDF6AD4E3FF87E91B00CC17FFCD5D628DABC21C208F100`
 - `native/include/GameInput.h` SHA256：`FBB769BEF01B133DBB62E3622A7137482CB52B642EA21DE080CB98279EF9610F`
-- `redist/GameInputRedist.msi` SHA256：`25300B9B4DA0BE4260DF8F84539DA068483804B0871FE5C701A81312CF4E0FFE`
+- `redist/GameInputRedist.msi` SHA256：`F8FCEB2D75E8DBB080088930A673C43B86D3E602329BD54309611E2EB78BF575`
 
 低階互通層來源：`src/InputWeave.GameInput/Interop/Generated/` 下的列舉、常數、HRESULT、IID、回呼委派、結構配置、COM 介面與 `gameinput-abi-manifest.json` 均由目前基準的 `GameInput.h` 產生。
 
 ## Microsoft 官方 3.5 版本異動摘要
 
-Microsoft 的套件 README 以 `3.5` 系列彙整版本說明，未提供 `3.5.278` 的逐 build Changelog。以下為本專案依官方內容整理的正體中文摘要：
+Microsoft 的套件 README 以 `3.5` 系列彙整版本說明，未提供 `3.5.283` 的逐 build Changelog。以下為本專案依官方內容整理的正體中文摘要：
 
 - 新增 Agility SDK 樣式的並存部署支援。
 - 新增 XInput 與背景 GIP 原始裝置報告支援。
@@ -24,7 +24,7 @@ Microsoft 的套件 README 以 `3.5` 系列彙整版本說明，未提供 `3.5.2
 - 修正部分 Windows.Gaming.Input 遊戲收到重複 DualSense Edge 輸入的問題。
 - 包含其他穩定性與效能改善。
 
-來源：[Microsoft.GameInput 3.5.278](https://www.nuget.org/packages/Microsoft.GameInput/3.5.278)
+來源：[Microsoft.GameInput 3.5.283](https://www.nuget.org/packages/Microsoft.GameInput/3.5.283)
 
 ## 追版流程
 
