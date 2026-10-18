@@ -29,7 +29,7 @@ public sealed class GameInputEventReliabilityTests
     }
 
     [TestMethod]
-    public async Task WaitForDeviceEventIgnoresAlreadyConnectedDevices()
+    public async Task WaitForDeviceEventIncludesInitialConnectedDevices()
     {
         GameInputDeviceManager manager = CreateManagerWithDevices();
         using (manager)
@@ -37,8 +37,10 @@ public sealed class GameInputEventReliabilityTests
             using CancellationTokenSource timeout = new(TimeSpan.FromSeconds(1.5));
             Task<GameInputDeviceManagerEvent> wait = manager.WaitForDeviceEventAsync(timeout.Token);
 
-            // 已連線的裝置不是「下一筆狀態變化」；測試期間沒有插拔時，工作應因逾時而取消。
-            await Assert.ThrowsAsync<OperationCanceledException>(() => wait);
+            // API 4 的新註冊包含既有裝置的初始連線通知。
+            GameInputDeviceManagerEvent initial = await wait;
+            Assert.AreEqual(InputWeave.GameInput.Interop.GameInputDeviceEvent.GameInputDeviceEventConnected, initial.DeviceEvent);
+            Assert.IsFalse(string.IsNullOrEmpty(initial.Device.DisplayName));
         }
     }
 

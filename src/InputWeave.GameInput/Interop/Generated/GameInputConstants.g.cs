@@ -12,17 +12,12 @@ public static class GameInputConstants
     /// <summary>
     /// Represents the native GameInput field or constant corresponding to GameInputConstants.ApiVersion. 表示 GameInputConstants.ApiVersion 對應的 GameInput 原生欄位或常數。
     /// </summary>
-    public const int ApiVersion = 3;
+    public const int ApiVersion = 4;
 
     /// <summary>
     /// Represents the native GameInput field or constant corresponding to GameInputConstants.DllName. 表示 GameInputConstants.DllName 對應的 GameInput 原生欄位或常數。
     /// </summary>
     public const string DllName = "GameInput.dll";
-
-    /// <summary>
-    /// Represents the native GameInput field or constant corresponding to GameInputConstants.CurrentCallbackTokenValue. 表示 GameInputConstants.CurrentCallbackTokenValue 對應的 GameInput 原生欄位或常數。
-    /// </summary>
-    public const ulong CurrentCallbackTokenValue = 0;
 
     /// <summary>
     /// Represents the native GameInput field or constant corresponding to GameInputConstants.HapticMaxLocations. 表示 GameInputConstants.HapticMaxLocations 對應的 GameInput 原生欄位或常數。
@@ -38,4 +33,109 @@ public static class GameInputConstants
     /// Represents the native GameInput field or constant corresponding to GameInputConstants.MaxSwitchStates. 表示 GameInputConstants.MaxSwitchStates 對應的 GameInput 原生欄位或常數。
     /// </summary>
     public const int MaxSwitchStates = 8;
+
+    /// <summary>
+    /// The native GameInputGamepadModuleSystemDuo constant. 原生 GameInputGamepadModuleSystemDuo 常數。
+    /// </summary>
+    public const GameInputGamepadButtons GameInputGamepadModuleSystemDuo = GameInputGamepadButtons.GameInputGamepadMenu | GameInputGamepadButtons.GameInputGamepadView;
+
+    /// <summary>
+    /// The native GameInputGamepadModuleDpad constant. 原生 GameInputGamepadModuleDpad 常數。
+    /// </summary>
+    public const GameInputGamepadButtons GameInputGamepadModuleDpad = GameInputGamepadButtons.GameInputGamepadDPadUp | GameInputGamepadButtons.GameInputGamepadDPadDown | GameInputGamepadButtons.GameInputGamepadDPadLeft | GameInputGamepadButtons.GameInputGamepadDPadRight;
+
+    /// <summary>
+    /// The native GameInputGamepadModuleShoulders constant. 原生 GameInputGamepadModuleShoulders 常數。
+    /// </summary>
+    public const GameInputGamepadButtons GameInputGamepadModuleShoulders = GameInputGamepadButtons.GameInputGamepadLeftShoulder | GameInputGamepadButtons.GameInputGamepadRightShoulder;
+
+    /// <summary>
+    /// The native GameInputGamepadModuleTriggers constant. 原生 GameInputGamepadModuleTriggers 常數。
+    /// </summary>
+    public const GameInputGamepadButtons GameInputGamepadModuleTriggers = GameInputGamepadButtons.GameInputGamepadLeftTriggerButton | GameInputGamepadButtons.GameInputGamepadRightTriggerButton;
+
+    /// <summary>
+    /// The native GameInputGamepadModuleThumbsticks constant. 原生 GameInputGamepadModuleThumbsticks 常數。
+    /// </summary>
+    public const GameInputGamepadButtons GameInputGamepadModuleThumbsticks = GameInputGamepadButtons.GameInputGamepadLeftThumbstickUp | GameInputGamepadButtons.GameInputGamepadLeftThumbstickDown | GameInputGamepadButtons.GameInputGamepadLeftThumbstickLeft | GameInputGamepadButtons.GameInputGamepadLeftThumbstickRight | GameInputGamepadButtons.GameInputGamepadRightThumbstickUp | GameInputGamepadButtons.GameInputGamepadRightThumbstickDown | GameInputGamepadButtons.GameInputGamepadRightThumbstickLeft | GameInputGamepadButtons.GameInputGamepadRightThumbstickRight;
+
+    /// <summary>
+    /// The native GameInputGamepadModulePaddles2 constant. 原生 GameInputGamepadModulePaddles2 常數。
+    /// </summary>
+    public const GameInputGamepadButtons GameInputGamepadModulePaddles2 = GameInputGamepadButtons.GameInputGamepadPaddleLeft1 | GameInputGamepadButtons.GameInputGamepadPaddleRight1;
+
+    /// <summary>
+    /// The native GameInputGamepadModulePaddles4 constant. 原生 GameInputGamepadModulePaddles4 常數。
+    /// </summary>
+    public const GameInputGamepadButtons GameInputGamepadModulePaddles4 = GameInputGamepadButtons.GameInputGamepadPaddleLeft1 | GameInputGamepadButtons.GameInputGamepadPaddleLeft2 | GameInputGamepadButtons.GameInputGamepadPaddleRight1 | GameInputGamepadButtons.GameInputGamepadPaddleRight2;
+
+    /// <summary>
+    /// The native GameInputGamepadLayoutBasic constant. 原生 GameInputGamepadLayoutBasic 常數。
+    /// </summary>
+    public const GameInputGamepadButtons GameInputGamepadLayoutBasic = GameInputGamepadModuleSystemDuo | GameInputGamepadModuleDpad | GameInputGamepadButtons.GameInputGamepadA | GameInputGamepadButtons.GameInputGamepadB;
+
+    /// <summary>
+    /// The native GameInputGamepadLayoutButtons constant. 原生 GameInputGamepadLayoutButtons 常數。
+    /// </summary>
+    public const GameInputGamepadButtons GameInputGamepadLayoutButtons = GameInputGamepadLayoutBasic | GameInputGamepadButtons.GameInputGamepadX | GameInputGamepadButtons.GameInputGamepadY | GameInputGamepadModuleShoulders;
+
+    /// <summary>
+    /// The native GameInputGamepadLayoutStandard constant. 原生 GameInputGamepadLayoutStandard 常數。
+    /// </summary>
+    public const GameInputGamepadButtons GameInputGamepadLayoutStandard = GameInputGamepadLayoutButtons | GameInputGamepadModuleTriggers | GameInputGamepadModuleThumbsticks | GameInputGamepadButtons.GameInputGamepadLeftThumbstick | GameInputGamepadButtons.GameInputGamepadRightThumbstick;
+
+    /// <summary>
+    /// The native GameInputGamepadLayoutElite constant. 原生 GameInputGamepadLayoutElite 常數。
+    /// </summary>
+    public const GameInputGamepadButtons GameInputGamepadLayoutElite = GameInputGamepadLayoutStandard | GameInputGamepadModulePaddles4;
+
+    /// <summary>
+    /// The native GAMEINPUT_HAPTIC_MAX_LOCATIONS constant. 原生 GAMEINPUT_HAPTIC_MAX_LOCATIONS 常數。
+    /// </summary>
+    public const uint GAMEINPUT_HAPTIC_MAX_LOCATIONS = 8;
+
+    /// <summary>
+    /// The native GAMEINPUT_HAPTIC_MAX_AUDIO_ENDPOINT_ID_SIZE constant. 原生 GAMEINPUT_HAPTIC_MAX_AUDIO_ENDPOINT_ID_SIZE 常數。
+    /// </summary>
+    public const uint GAMEINPUT_HAPTIC_MAX_AUDIO_ENDPOINT_ID_SIZE = 256;
+
+    /// <summary>
+    /// The native GAMEINPUT_LIGHTING_GROUP_ORDER_INDEX_ALL constant. 原生 GAMEINPUT_LIGHTING_GROUP_ORDER_INDEX_ALL 常數。
+    /// </summary>
+    public const uint GAMEINPUT_LIGHTING_GROUP_ORDER_INDEX_ALL = 0xFFFFFFFF;
+
+    /// <summary>
+    /// The native GAMEINPUT_MAX_SWITCH_STATES constant. 原生 GAMEINPUT_MAX_SWITCH_STATES 常數。
+    /// </summary>
+    public const uint GAMEINPUT_MAX_SWITCH_STATES = 8;
+
+    /// <summary>
+    /// The native GAMEINPUT_FACILITY constant. 原生 GAMEINPUT_FACILITY 常數。
+    /// </summary>
+    public const int GAMEINPUT_FACILITY = 0x38A;
+
+    /// <summary>
+    /// The native GAMEINPUT_HAPTIC_LOCATION_NONE constant. 原生 GAMEINPUT_HAPTIC_LOCATION_NONE 常數。
+    /// </summary>
+    public static readonly System.Guid GAMEINPUT_HAPTIC_LOCATION_NONE = new("00000000-0000-0000-0000-000000000000");
+
+    /// <summary>
+    /// The native GAMEINPUT_HAPTIC_LOCATION_GRIP_LEFT constant. 原生 GAMEINPUT_HAPTIC_LOCATION_GRIP_LEFT 常數。
+    /// </summary>
+    public static readonly System.Guid GAMEINPUT_HAPTIC_LOCATION_GRIP_LEFT = new("08c707c2-66bb-406c-a84a-dfe085120a92");
+
+    /// <summary>
+    /// The native GAMEINPUT_HAPTIC_LOCATION_GRIP_RIGHT constant. 原生 GAMEINPUT_HAPTIC_LOCATION_GRIP_RIGHT 常數。
+    /// </summary>
+    public static readonly System.Guid GAMEINPUT_HAPTIC_LOCATION_GRIP_RIGHT = new("155a0b77-8bb2-40db-8690-b6d41126dfc1");
+
+    /// <summary>
+    /// The native GAMEINPUT_HAPTIC_LOCATION_TRIGGER_LEFT constant. 原生 GAMEINPUT_HAPTIC_LOCATION_TRIGGER_LEFT 常數。
+    /// </summary>
+    public static readonly System.Guid GAMEINPUT_HAPTIC_LOCATION_TRIGGER_LEFT = new("8de4d896-5559-4081-86e5-1724cc07c6bc");
+
+    /// <summary>
+    /// The native GAMEINPUT_HAPTIC_LOCATION_TRIGGER_RIGHT constant. 原生 GAMEINPUT_HAPTIC_LOCATION_TRIGGER_RIGHT 常數。
+    /// </summary>
+    public static readonly System.Guid GAMEINPUT_HAPTIC_LOCATION_TRIGGER_RIGHT = new("ff0cb557-3af5-406b-8b0f-555a2d92a220");
 }

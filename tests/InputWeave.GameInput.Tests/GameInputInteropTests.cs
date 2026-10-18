@@ -9,18 +9,18 @@ namespace InputWeave.GameInput.Tests;
 public sealed class GameInputInteropTests
 {
     [TestMethod]
-    public void GeneratedEnumsIncludeGameInputV3Members()
+    public void GeneratedEnumsIncludeGameInputV4Members()
     {
         object? apiVersion = typeof(GameInputConstants).GetField(nameof(GameInputConstants.ApiVersion))?.GetRawConstantValue();
         GameInputKind gamepad = (GameInputKind)Enum.Parse(typeof(GameInputKind), "GameInputKindGamepad");
         GameInputKind controller = (GameInputKind)Enum.Parse(typeof(GameInputKind), "GameInputKindController");
         GameInputRawDeviceReportKind rawOutput = (GameInputRawDeviceReportKind)Enum.Parse(typeof(GameInputRawDeviceReportKind), "GameInputRawOutputReport");
-        GameInputDeviceStatus anyStatus = (GameInputDeviceStatus)Enum.Parse(typeof(GameInputDeviceStatus), "GameInputDeviceAnyStatus");
+        GameInputDeviceEvent deviceEvent = GameInputDeviceEvent.GameInputDeviceEventXInputIndexUpdated;
 
-        Assert.AreEqual(3, apiVersion);
+        Assert.AreEqual(4, apiVersion);
         Assert.AreEqual(GameInputKind.GameInputKindUnknown, gamepad & controller);
         Assert.AreEqual(1, (int)rawOutput);
-        Assert.AreEqual(unchecked((int)0xFFFFFFFF), (int)anyStatus);
+        Assert.AreEqual(4, (int)deviceEvent);
     }
 
     [TestMethod]
@@ -72,74 +72,12 @@ public sealed class GameInputInteropTests
     }
 
     [TestMethod]
-    public void DeviceInfoSnapshotDecodesUtf8DeviceStrings()
-    {
-        IntPtr displayName = AllocUtf8String("控制器 Ω");
-        IntPtr pnpPath = AllocUtf8String(@"USB\裝置\測試");
-        try
-        {
-            GameInputDeviceInfo native = new()
-            {
-                DisplayName = displayName,
-                PnpPath = pnpPath
-            };
-
-            GameInputDeviceInfoSnapshot snapshot = GameInputDeviceInfoSnapshot.FromNative(native);
-
-            Assert.AreEqual("控制器 Ω", snapshot.DisplayName);
-            Assert.AreEqual(@"USB\裝置\測試", snapshot.PnpPath);
-        }
-        finally
-        {
-            Marshal.FreeHGlobal(displayName);
-            Marshal.FreeHGlobal(pnpPath);
-        }
-    }
-
-    [TestMethod]
-    public void DeviceInfoSnapshotKeepsNullDeviceStringsAsNull()
-    {
-        GameInputDeviceInfoSnapshot snapshot = GameInputDeviceInfoSnapshot.FromNative(default);
-
-        Assert.IsNull(snapshot.DisplayName);
-        Assert.IsNull(snapshot.PnpPath);
-    }
-
-    [TestMethod]
-    public void DeviceInfoSnapshotReadsEnumArrays()
-    {
-        GameInputLabel[] labels =
-        [
-            GameInputLabel.GameInputLabelXboxA,
-            GameInputLabel.GameInputLabelXboxB
-        ];
-        IntPtr pointer = Marshal.AllocHGlobal(sizeof(int) * labels.Length);
-        try
-        {
-            for (int index = 0; index < labels.Length; index++)
-            {
-                Marshal.WriteInt32(pointer, index * sizeof(int), (int)labels[index]);
-            }
-
-            IReadOnlyList<GameInputLabel> result = GameInputDeviceInfoSnapshot.ReadArray<GameInputLabel>(pointer, (uint)labels.Length);
-
-            CollectionAssert.AreEqual(labels, result.ToArray());
-        }
-        finally
-        {
-            Marshal.FreeHGlobal(pointer);
-        }
-    }
-
-    [TestMethod]
     public void GeneratedComCallbackParametersUseRawFunctionPointers()
     {
         (string MethodName, string ParameterName)[] callbackMethods =
         [
             (nameof(IGameInput.RegisterReadingCallback), "callbackFunc"),
-            (nameof(IGameInput.RegisterDeviceCallback), "callbackFunc"),
-            (nameof(IGameInput.RegisterSystemButtonCallback), "callbackFunc"),
-            (nameof(IGameInput.RegisterKeyboardLayoutCallback), "callbackFunc")
+            (nameof(IGameInput.RegisterDeviceCallback), "callbackFunc")
         ];
 
         foreach ((string methodName, string parameterName) in callbackMethods)

@@ -42,13 +42,11 @@ public sealed class GameInputLifetimeTests
             using (client.RegisterDeviceCallback(
                 null,
                 AnyCommonKind,
-                GameInputDeviceStatus.GameInputDeviceConnected,
-                GameInputEnumerationKind.GameInputBlockingEnumeration,
-                (_, _, _, _) => Interlocked.Increment(ref callbackCount)))
-            {
-            }
 
-            Assert.IsGreaterThan(0, callbackCount, "阻塞式列舉應同步觸發至少一次裝置回呼。");
+                (_, _) => Interlocked.Increment(ref callbackCount)))
+            {
+                Assert.IsTrue(SpinWait.SpinUntil(() => Volatile.Read(ref callbackCount) > 0, TimeSpan.FromSeconds(2)), "API 4 應非同步觸發初始裝置事件。");
+            }
             AssertReferenceCountSettles(observer.NativeInterface, before, $"裝置回呼結束後，原生參考計數應回到原值（before={before}）。");
         });
     }
@@ -77,17 +75,15 @@ public sealed class GameInputLifetimeTests
     {
         RunWithClient(client =>
         {
-            // 先 StopCallback 再 UnregisterCallback 時，實機約 5% 會因 Stop 已非同步移除註冊而傳回 false，使 GCHandle 無法釋放；
-            // 200 次都沒有漏網的機率低於 10^-5，足以抓出回歸。
+            // 每次成功解除註冊都必須釋放 GCHandle。
             int leaked = 0;
             for (int i = 0; i < 200; i++)
             {
                 GameInputCallbackRegistration registration = client.RegisterDeviceCallback(
                     null,
                     AnyCommonKind,
-                    GameInputDeviceStatus.GameInputDeviceConnected,
-                    GameInputEnumerationKind.GameInputNoEnumeration,
-                    static (_, _, _, _) => { });
+
+                    static (_, _) => { });
                 registration.Dispose();
                 if (!registration.IsContextHandleReleased)
                 {

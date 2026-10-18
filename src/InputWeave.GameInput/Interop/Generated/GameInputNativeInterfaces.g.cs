@@ -18,15 +18,12 @@ internal unsafe struct IGameInputVtbl
     public delegate* unmanaged[Stdcall]<IntPtr, IntPtr, GameInputKind, IntPtr, void**, int> GetNextReading;
     public delegate* unmanaged[Stdcall]<IntPtr, IntPtr, GameInputKind, IntPtr, void**, int> GetPreviousReading;
     public delegate* unmanaged[Stdcall]<IntPtr, IntPtr, GameInputKind, IntPtr, IntPtr, ulong*, int> RegisterReadingCallback;
-    public delegate* unmanaged[Stdcall]<IntPtr, IntPtr, GameInputKind, GameInputDeviceStatus, GameInputEnumerationKind, IntPtr, IntPtr, ulong*, int> RegisterDeviceCallback;
-    public delegate* unmanaged[Stdcall]<IntPtr, IntPtr, GameInputSystemButtons, IntPtr, IntPtr, ulong*, int> RegisterSystemButtonCallback;
-    public delegate* unmanaged[Stdcall]<IntPtr, IntPtr, IntPtr, IntPtr, ulong*, int> RegisterKeyboardLayoutCallback;
-    public delegate* unmanaged[Stdcall]<IntPtr, ulong, void> StopCallback;
+    public delegate* unmanaged[Stdcall]<IntPtr, IntPtr, GameInputKind, IntPtr, IntPtr, ulong*, int> RegisterDeviceCallback;
     public delegate* unmanaged[Stdcall]<IntPtr, ulong, byte> UnregisterCallback;
     public delegate* unmanaged[Stdcall]<IntPtr, void**, int> CreateDispatcher;
     public delegate* unmanaged[Stdcall]<IntPtr, AppLocalDeviceId*, void**, int> FindDeviceFromId;
     public delegate* unmanaged[Stdcall]<IntPtr, IntPtr, void**, int> FindDeviceFromPlatformString;
-    public delegate* unmanaged[Stdcall]<IntPtr, GameInputFocusPolicy, void> SetFocusPolicy;
+    public delegate* unmanaged[Stdcall]<IntPtr, byte, void> EnableBackgroundInput;
     public delegate* unmanaged[Stdcall]<IntPtr, GameInputKind, AppLocalDeviceId*, int> CreateAggregateDevice;
     public delegate* unmanaged[Stdcall]<IntPtr, AppLocalDeviceId*, int> DisableAggregateDevice;
 }
@@ -165,60 +162,16 @@ internal readonly unsafe struct IGameInput(IntPtr pointer) : IEquatable<IGameInp
     /// </summary>
     /// <param name="device">The target GameInput device, or the device provided by the callback. 目標或回呼提供的 GameInput device。</param>
     /// <param name="inputKind">The GameInput input kind to query or filter. 要查詢或篩選的 GameInput 輸入種類。</param>
-    /// <param name="statusFilter">The device status to filter. 要篩選的裝置狀態。</param>
-    /// <param name="enumerationKind">The device enumeration mode. 裝置列舉模式。</param>
     /// <param name="context">The user context pointer supplied when the callback was registered. 註冊 callback 時傳入的使用者內容指標。</param>
     /// <param name="callbackFunc">The native callback delegate to register. 要註冊的原生 callback delegate。</param>
     /// <param name="callbackToken">The callback token assigned by GameInput. GameInput 指派的 callback token。</param>
     /// <returns>The native HRESULT value. 原生 HRESULT 值。</returns>
-    public unsafe int RegisterDeviceCallback(IGameInputDevice? device, GameInputKind inputKind, GameInputDeviceStatus statusFilter, GameInputEnumerationKind enumerationKind, IntPtr context, IntPtr callbackFunc, out ulong callbackToken)
+    public unsafe int RegisterDeviceCallback(IGameInputDevice? device, GameInputKind inputKind, IntPtr context, IntPtr callbackFunc, out ulong callbackToken)
     {
         fixed (ulong* callbackTokenPtr = &callbackToken)
         {
-            return Vtbl->RegisterDeviceCallback(Pointer, device?.Pointer ?? IntPtr.Zero, inputKind, statusFilter, enumerationKind, context, callbackFunc, callbackTokenPtr);
+            return Vtbl->RegisterDeviceCallback(Pointer, device?.Pointer ?? IntPtr.Zero, inputKind, context, callbackFunc, callbackTokenPtr);
         }
-    }
-
-    /// <summary>
-    /// Calls the native GameInput COM method corresponding to IGameInput.RegisterSystemButtonCallback. 呼叫 IGameInput.RegisterSystemButtonCallback 對應的 GameInput 原生 COM 方法。
-    /// </summary>
-    /// <param name="device">The target GameInput device, or the device provided by the callback. 目標或回呼提供的 GameInput device。</param>
-    /// <param name="buttonFilter">The system buttons to filter. 要篩選的 system button。</param>
-    /// <param name="context">The user context pointer supplied when the callback was registered. 註冊 callback 時傳入的使用者內容指標。</param>
-    /// <param name="callbackFunc">The native callback delegate to register. 要註冊的原生 callback delegate。</param>
-    /// <param name="callbackToken">The callback token assigned by GameInput. GameInput 指派的 callback token。</param>
-    /// <returns>The native HRESULT value. 原生 HRESULT 值。</returns>
-    public unsafe int RegisterSystemButtonCallback(IGameInputDevice? device, GameInputSystemButtons buttonFilter, IntPtr context, IntPtr callbackFunc, out ulong callbackToken)
-    {
-        fixed (ulong* callbackTokenPtr = &callbackToken)
-        {
-            return Vtbl->RegisterSystemButtonCallback(Pointer, device?.Pointer ?? IntPtr.Zero, buttonFilter, context, callbackFunc, callbackTokenPtr);
-        }
-    }
-
-    /// <summary>
-    /// Calls the native GameInput COM method corresponding to IGameInput.RegisterKeyboardLayoutCallback. 呼叫 IGameInput.RegisterKeyboardLayoutCallback 對應的 GameInput 原生 COM 方法。
-    /// </summary>
-    /// <param name="device">The target GameInput device, or the device provided by the callback. 目標或回呼提供的 GameInput device。</param>
-    /// <param name="context">The user context pointer supplied when the callback was registered. 註冊 callback 時傳入的使用者內容指標。</param>
-    /// <param name="callbackFunc">The native callback delegate to register. 要註冊的原生 callback delegate。</param>
-    /// <param name="callbackToken">The callback token assigned by GameInput. GameInput 指派的 callback token。</param>
-    /// <returns>The native HRESULT value. 原生 HRESULT 值。</returns>
-    public unsafe int RegisterKeyboardLayoutCallback(IGameInputDevice? device, IntPtr context, IntPtr callbackFunc, out ulong callbackToken)
-    {
-        fixed (ulong* callbackTokenPtr = &callbackToken)
-        {
-            return Vtbl->RegisterKeyboardLayoutCallback(Pointer, device?.Pointer ?? IntPtr.Zero, context, callbackFunc, callbackTokenPtr);
-        }
-    }
-
-    /// <summary>
-    /// Calls the native GameInput COM method corresponding to IGameInput.StopCallback. 呼叫 IGameInput.StopCallback 對應的 GameInput 原生 COM 方法。
-    /// </summary>
-    /// <param name="callbackToken">The callback token assigned by GameInput. GameInput 指派的 callback token。</param>
-    public unsafe void StopCallback(ulong callbackToken)
-    {
-        Vtbl->StopCallback(Pointer, callbackToken);
     }
 
     /// <summary>
@@ -281,12 +234,12 @@ internal readonly unsafe struct IGameInput(IntPtr pointer) : IEquatable<IGameInp
     }
 
     /// <summary>
-    /// Calls the native GameInput COM method corresponding to IGameInput.SetFocusPolicy. 呼叫 IGameInput.SetFocusPolicy 對應的 GameInput 原生 COM 方法。
+    /// EnableBackgroundInput using GameInput API 4. 以 GameInput API 4 執行 EnableBackgroundInput。
     /// </summary>
-    /// <param name="policy">The focus policy to apply. 參數 policy。</param>
-    public unsafe void SetFocusPolicy(GameInputFocusPolicy policy)
+    /// <param name="enable">The enable argument. enable 引數。</param>
+    public unsafe void EnableBackgroundInput(byte enable)
     {
-        Vtbl->SetFocusPolicy(Pointer, policy);
+        Vtbl->EnableBackgroundInput(Pointer, enable);
     }
 
     /// <summary>
@@ -465,6 +418,9 @@ internal unsafe struct IGameInputReadingVtbl
     public delegate* unmanaged[Stdcall]<IntPtr, GameInputGamepadState*, byte> GetGamepadState;
     public delegate* unmanaged[Stdcall]<IntPtr, GameInputRacingWheelState*, byte> GetRacingWheelState;
     public delegate* unmanaged[Stdcall]<IntPtr, void**, byte> GetRawReport;
+    public delegate* unmanaged[Stdcall]<IntPtr, GameInputSystemButtons*, byte> GetSystemButtonState;
+    public delegate* unmanaged[Stdcall]<IntPtr, uint, uint> GetTouchContactCount;
+    public delegate* unmanaged[Stdcall]<IntPtr, uint, uint, IntPtr, uint> GetTouchSurfaceState;
 }
 
 /// <summary>
@@ -722,6 +678,41 @@ internal readonly unsafe struct IGameInputReading(IntPtr pointer) : IEquatable<I
         report = reportRaw == null ? null : new IGameInputRawDeviceReport((IntPtr)reportRaw);
         return result;
     }
+
+    /// <summary>
+    /// GetSystemButtonState using GameInput API 4. 以 GameInput API 4 執行 GetSystemButtonState。
+    /// </summary>
+    /// <param name="buttons">The buttons argument. buttons 引數。</param>
+    /// <returns>True on success; otherwise false. 成功時為 true，否則為 false。</returns>
+    public unsafe bool GetSystemButtonState(out GameInputSystemButtons buttons)
+    {
+        fixed (GameInputSystemButtons* buttonsPtr = &buttons)
+        {
+            return Vtbl->GetSystemButtonState(Pointer, buttonsPtr) != 0;
+        }
+    }
+
+    /// <summary>
+    /// GetTouchContactCount using GameInput API 4. 以 GameInput API 4 執行 GetTouchContactCount。
+    /// </summary>
+    /// <param name="surfaceIndex">The surfaceIndex argument. surfaceIndex 引數。</param>
+    /// <returns>The queried value or number of elements. 查詢值或元素數量。</returns>
+    public unsafe uint GetTouchContactCount(uint surfaceIndex)
+    {
+        return Vtbl->GetTouchContactCount(Pointer, surfaceIndex);
+    }
+
+    /// <summary>
+    /// GetTouchSurfaceState using GameInput API 4. 以 GameInput API 4 執行 GetTouchSurfaceState。
+    /// </summary>
+    /// <param name="surfaceIndex">The surfaceIndex argument. surfaceIndex 引數。</param>
+    /// <param name="contactArrayCount">The contactArrayCount argument. contactArrayCount 引數。</param>
+    /// <param name="contactArray">The contactArray argument. contactArray 引數。</param>
+    /// <returns>The queried value or number of elements. 查詢值或元素數量。</returns>
+    public unsafe uint GetTouchSurfaceState(uint surfaceIndex, uint contactArrayCount, IntPtr contactArray)
+    {
+        return Vtbl->GetTouchSurfaceState(Pointer, surfaceIndex, contactArrayCount, contactArray);
+    }
 }
 
 [StructLayout(LayoutKind.Sequential)]
@@ -730,9 +721,47 @@ internal unsafe struct IGameInputDeviceVtbl
     public delegate* unmanaged[Stdcall]<IntPtr, Guid*, void**, int> QueryInterface;
     public delegate* unmanaged[Stdcall]<IntPtr, uint> AddRef;
     public delegate* unmanaged[Stdcall]<IntPtr, uint> Release;
-    public delegate* unmanaged[Stdcall]<IntPtr, IntPtr*, int> GetDeviceInfo;
+    public delegate* unmanaged[Stdcall]<IntPtr, ushort> GetVendorId;
+    public delegate* unmanaged[Stdcall]<IntPtr, ushort> GetProductId;
+    public delegate* unmanaged[Stdcall]<IntPtr, ushort> GetRevisionNumber;
+    public delegate* unmanaged[Stdcall]<IntPtr, GameInputUsage*, void> GetUsage;
+    public delegate* unmanaged[Stdcall]<IntPtr, GameInputVersion*, void> GetHardwareVersion;
+    public delegate* unmanaged[Stdcall]<IntPtr, GameInputVersion*, void> GetFirmwareVersion;
+    public delegate* unmanaged[Stdcall]<IntPtr, AppLocalDeviceId*, void> GetDeviceId;
+    public delegate* unmanaged[Stdcall]<IntPtr, AppLocalDeviceId*, void> GetDeviceRootId;
+    public delegate* unmanaged[Stdcall]<IntPtr, GameInputDeviceFamily> GetDeviceFamily;
+    public delegate* unmanaged[Stdcall]<IntPtr, GameInputKind> GetSupportedInput;
+    public delegate* unmanaged[Stdcall]<IntPtr, GameInputRumbleMotors> GetSupportedRumbleMotors;
+    public delegate* unmanaged[Stdcall]<IntPtr, GameInputSystemButtons> GetSupportedSystemButtons;
+    public delegate* unmanaged[Stdcall]<IntPtr, GameInputLightingGroups> GetSupportedLightingGroups;
+    public delegate* unmanaged[Stdcall]<IntPtr, GameInputLightingGroups, uint> GetSupportedLightingGroupSize;
+    public delegate* unmanaged[Stdcall]<IntPtr, Guid*, void> GetContainerId;
+    public delegate* unmanaged[Stdcall]<IntPtr, uint, IntPtr, uint> GetDisplayName;
+    public delegate* unmanaged[Stdcall]<IntPtr, uint, IntPtr, uint> GetPnpPath;
+    public delegate* unmanaged[Stdcall]<IntPtr, uint*, byte> GetXInputDeviceIndex;
+    public delegate* unmanaged[Stdcall]<IntPtr, GameInputKeyboardInfo*, byte> GetKeyboardInfo;
+    public delegate* unmanaged[Stdcall]<IntPtr, GameInputMouseInfo*, byte> GetMouseInfo;
+    public delegate* unmanaged[Stdcall]<IntPtr, GameInputSensorsInfo*, byte> GetSensorsInfo;
+    public delegate* unmanaged[Stdcall]<IntPtr, uint> GetControllerAxisCount;
+    public delegate* unmanaged[Stdcall]<IntPtr, uint, IntPtr, uint> GetControllerAxisLabels;
+    public delegate* unmanaged[Stdcall]<IntPtr, uint> GetControllerButtonCount;
+    public delegate* unmanaged[Stdcall]<IntPtr, uint, IntPtr, uint> GetControllerButtonLabels;
+    public delegate* unmanaged[Stdcall]<IntPtr, uint> GetControllerSwitchCount;
+    public delegate* unmanaged[Stdcall]<IntPtr, uint, IntPtr, uint> GetControllerSwitchInfo;
+    public delegate* unmanaged[Stdcall]<IntPtr, GameInputArcadeStickInfo*, byte> GetArcadeStickInfo;
+    public delegate* unmanaged[Stdcall]<IntPtr, GameInputFlightStickInfo*, byte> GetFlightStickInfo;
+    public delegate* unmanaged[Stdcall]<IntPtr, GameInputGamepadInfo*, byte> GetGamepadInfo;
+    public delegate* unmanaged[Stdcall]<IntPtr, GameInputRacingWheelInfo*, byte> GetRacingWheelInfo;
+    public delegate* unmanaged[Stdcall]<IntPtr, uint> GetForceFeedbackMotorCount;
+    public delegate* unmanaged[Stdcall]<IntPtr, uint, IntPtr, uint> GetForceFeedbackMotorInfo;
+    public delegate* unmanaged[Stdcall]<IntPtr, uint> GetInputReportCount;
+    public delegate* unmanaged[Stdcall]<IntPtr, uint, IntPtr, uint> GetInputReportInfo;
+    public delegate* unmanaged[Stdcall]<IntPtr, uint> GetOutputReportCount;
+    public delegate* unmanaged[Stdcall]<IntPtr, uint, IntPtr, uint> GetOutputReportInfo;
+    public delegate* unmanaged[Stdcall]<IntPtr, uint> GetFeatureReportCount;
+    public delegate* unmanaged[Stdcall]<IntPtr, uint, IntPtr, uint> GetFeatureReportInfo;
     public delegate* unmanaged[Stdcall]<IntPtr, IntPtr, int> GetHapticInfo;
-    public delegate* unmanaged[Stdcall]<IntPtr, GameInputDeviceStatus> GetDeviceStatus;
+    public delegate* unmanaged[Stdcall]<IntPtr, byte> IsConnected;
     public delegate* unmanaged[Stdcall]<IntPtr, uint, IntPtr, void**, int> CreateForceFeedbackEffect;
     public delegate* unmanaged[Stdcall]<IntPtr, uint, byte> IsForceFeedbackMotorPoweredOn;
     public delegate* unmanaged[Stdcall]<IntPtr, uint, float, void> SetForceFeedbackMotorGain;
@@ -744,7 +773,14 @@ internal unsafe struct IGameInputDeviceVtbl
     public delegate* unmanaged[Stdcall]<IntPtr, GameInputKind, uint, IntPtr, int> GetExtraAxisIndexes;
     public delegate* unmanaged[Stdcall]<IntPtr, GameInputKind, uint, IntPtr, int> GetExtraButtonIndexes;
     public delegate* unmanaged[Stdcall]<IntPtr, uint, GameInputRawDeviceReportKind, void**, int> CreateRawDeviceReport;
+    public delegate* unmanaged[Stdcall]<IntPtr, uint, void**, int> GetRawDeviceFeature;
+    public delegate* unmanaged[Stdcall]<IntPtr, IntPtr, int> SetRawDeviceFeature;
     public delegate* unmanaged[Stdcall]<IntPtr, IntPtr, int> SendRawDeviceOutput;
+    public delegate* unmanaged[Stdcall]<IntPtr, GameInputColor, GameInputLightingGroups, uint, void> SetLightingColor;
+    public delegate* unmanaged[Stdcall]<IntPtr, void> ApplyLightingColors;
+    public delegate* unmanaged[Stdcall]<IntPtr, void> ApplyLightingSystemDefault;
+    public delegate* unmanaged[Stdcall]<IntPtr, uint> GetTouchSurfaceCount;
+    public delegate* unmanaged[Stdcall]<IntPtr, uint, GameInputTouchSurfaceInfo*, int> GetTouchSurfaceInfo;
 }
 
 /// <summary>
@@ -804,16 +840,423 @@ internal readonly unsafe struct IGameInputDevice(IntPtr pointer) : IEquatable<IG
     }
 
     /// <summary>
-    /// Calls the native GameInput COM method corresponding to IGameInputDevice.GetDeviceInfo. 呼叫 IGameInputDevice.GetDeviceInfo 對應的 GameInput 原生 COM 方法。
+    /// GetVendorId using GameInput API 4. 以 GameInput API 4 執行 GetVendorId。
     /// </summary>
-    /// <param name="info">The pointer to the native information buffer used for input or output. 接收或傳入原生資訊緩衝區的指標。</param>
-    /// <returns>The native HRESULT value. 原生 HRESULT 值。</returns>
-    public unsafe int GetDeviceInfo(out IntPtr info)
+    /// <returns>The queried value or number of elements. 查詢值或元素數量。</returns>
+    public unsafe ushort GetVendorId()
     {
-        fixed (IntPtr* infoPtr = &info)
+        return Vtbl->GetVendorId(Pointer);
+    }
+
+    /// <summary>
+    /// GetProductId using GameInput API 4. 以 GameInput API 4 執行 GetProductId。
+    /// </summary>
+    /// <returns>The queried value or number of elements. 查詢值或元素數量。</returns>
+    public unsafe ushort GetProductId()
+    {
+        return Vtbl->GetProductId(Pointer);
+    }
+
+    /// <summary>
+    /// GetRevisionNumber using GameInput API 4. 以 GameInput API 4 執行 GetRevisionNumber。
+    /// </summary>
+    /// <returns>The queried value or number of elements. 查詢值或元素數量。</returns>
+    public unsafe ushort GetRevisionNumber()
+    {
+        return Vtbl->GetRevisionNumber(Pointer);
+    }
+
+    /// <summary>
+    /// GetUsage using GameInput API 4. 以 GameInput API 4 執行 GetUsage。
+    /// </summary>
+    /// <param name="usage">The usage argument. usage 引數。</param>
+    public unsafe void GetUsage(out GameInputUsage usage)
+    {
+        fixed (GameInputUsage* usagePtr = &usage)
         {
-            return Vtbl->GetDeviceInfo(Pointer, infoPtr);
+            Vtbl->GetUsage(Pointer, usagePtr);
         }
+    }
+
+    /// <summary>
+    /// GetHardwareVersion using GameInput API 4. 以 GameInput API 4 執行 GetHardwareVersion。
+    /// </summary>
+    /// <param name="version">The version argument. version 引數。</param>
+    public unsafe void GetHardwareVersion(out GameInputVersion version)
+    {
+        fixed (GameInputVersion* versionPtr = &version)
+        {
+            Vtbl->GetHardwareVersion(Pointer, versionPtr);
+        }
+    }
+
+    /// <summary>
+    /// GetFirmwareVersion using GameInput API 4. 以 GameInput API 4 執行 GetFirmwareVersion。
+    /// </summary>
+    /// <param name="version">The version argument. version 引數。</param>
+    public unsafe void GetFirmwareVersion(out GameInputVersion version)
+    {
+        fixed (GameInputVersion* versionPtr = &version)
+        {
+            Vtbl->GetFirmwareVersion(Pointer, versionPtr);
+        }
+    }
+
+    /// <summary>
+    /// GetDeviceId using GameInput API 4. 以 GameInput API 4 執行 GetDeviceId。
+    /// </summary>
+    /// <param name="deviceId">The deviceId argument. deviceId 引數。</param>
+    public unsafe void GetDeviceId(out AppLocalDeviceId deviceId)
+    {
+        fixed (AppLocalDeviceId* deviceIdPtr = &deviceId)
+        {
+            Vtbl->GetDeviceId(Pointer, deviceIdPtr);
+        }
+    }
+
+    /// <summary>
+    /// GetDeviceRootId using GameInput API 4. 以 GameInput API 4 執行 GetDeviceRootId。
+    /// </summary>
+    /// <param name="deviceRootId">The deviceRootId argument. deviceRootId 引數。</param>
+    public unsafe void GetDeviceRootId(out AppLocalDeviceId deviceRootId)
+    {
+        fixed (AppLocalDeviceId* deviceRootIdPtr = &deviceRootId)
+        {
+            Vtbl->GetDeviceRootId(Pointer, deviceRootIdPtr);
+        }
+    }
+
+    /// <summary>
+    /// GetDeviceFamily using GameInput API 4. 以 GameInput API 4 執行 GetDeviceFamily。
+    /// </summary>
+    /// <returns>The queried value or number of elements. 查詢值或元素數量。</returns>
+    public unsafe GameInputDeviceFamily GetDeviceFamily()
+    {
+        return Vtbl->GetDeviceFamily(Pointer);
+    }
+
+    /// <summary>
+    /// GetSupportedInput using GameInput API 4. 以 GameInput API 4 執行 GetSupportedInput。
+    /// </summary>
+    /// <returns>The queried value or number of elements. 查詢值或元素數量。</returns>
+    public unsafe GameInputKind GetSupportedInput()
+    {
+        return Vtbl->GetSupportedInput(Pointer);
+    }
+
+    /// <summary>
+    /// GetSupportedRumbleMotors using GameInput API 4. 以 GameInput API 4 執行 GetSupportedRumbleMotors。
+    /// </summary>
+    /// <returns>The queried value or number of elements. 查詢值或元素數量。</returns>
+    public unsafe GameInputRumbleMotors GetSupportedRumbleMotors()
+    {
+        return Vtbl->GetSupportedRumbleMotors(Pointer);
+    }
+
+    /// <summary>
+    /// GetSupportedSystemButtons using GameInput API 4. 以 GameInput API 4 執行 GetSupportedSystemButtons。
+    /// </summary>
+    /// <returns>The queried value or number of elements. 查詢值或元素數量。</returns>
+    public unsafe GameInputSystemButtons GetSupportedSystemButtons()
+    {
+        return Vtbl->GetSupportedSystemButtons(Pointer);
+    }
+
+    /// <summary>
+    /// GetSupportedLightingGroups using GameInput API 4. 以 GameInput API 4 執行 GetSupportedLightingGroups。
+    /// </summary>
+    /// <returns>The queried value or number of elements. 查詢值或元素數量。</returns>
+    public unsafe GameInputLightingGroups GetSupportedLightingGroups()
+    {
+        return Vtbl->GetSupportedLightingGroups(Pointer);
+    }
+
+    /// <summary>
+    /// GetSupportedLightingGroupSize using GameInput API 4. 以 GameInput API 4 執行 GetSupportedLightingGroupSize。
+    /// </summary>
+    /// <param name="group">The group argument. group 引數。</param>
+    /// <returns>The queried value or number of elements. 查詢值或元素數量。</returns>
+    public unsafe uint GetSupportedLightingGroupSize(GameInputLightingGroups group)
+    {
+        return Vtbl->GetSupportedLightingGroupSize(Pointer, group);
+    }
+
+    /// <summary>
+    /// GetContainerId using GameInput API 4. 以 GameInput API 4 執行 GetContainerId。
+    /// </summary>
+    /// <param name="containerId">The containerId argument. containerId 引數。</param>
+    public unsafe void GetContainerId(out Guid containerId)
+    {
+        fixed (Guid* containerIdPtr = &containerId)
+        {
+            Vtbl->GetContainerId(Pointer, containerIdPtr);
+        }
+    }
+
+    /// <summary>
+    /// GetDisplayName using GameInput API 4. 以 GameInput API 4 執行 GetDisplayName。
+    /// </summary>
+    /// <param name="bufferByteCount">The bufferByteCount argument. bufferByteCount 引數。</param>
+    /// <param name="buffer">The buffer argument. buffer 引數。</param>
+    /// <returns>The queried value or number of elements. 查詢值或元素數量。</returns>
+    public unsafe uint GetDisplayName(uint bufferByteCount, IntPtr buffer)
+    {
+        return Vtbl->GetDisplayName(Pointer, bufferByteCount, buffer);
+    }
+
+    /// <summary>
+    /// GetPnpPath using GameInput API 4. 以 GameInput API 4 執行 GetPnpPath。
+    /// </summary>
+    /// <param name="bufferByteCount">The bufferByteCount argument. bufferByteCount 引數。</param>
+    /// <param name="buffer">The buffer argument. buffer 引數。</param>
+    /// <returns>The queried value or number of elements. 查詢值或元素數量。</returns>
+    public unsafe uint GetPnpPath(uint bufferByteCount, IntPtr buffer)
+    {
+        return Vtbl->GetPnpPath(Pointer, bufferByteCount, buffer);
+    }
+
+    /// <summary>
+    /// GetXInputDeviceIndex using GameInput API 4. 以 GameInput API 4 執行 GetXInputDeviceIndex。
+    /// </summary>
+    /// <param name="index">The index argument. index 引數。</param>
+    /// <returns>True on success; otherwise false. 成功時為 true，否則為 false。</returns>
+    public unsafe bool GetXInputDeviceIndex(out uint index)
+    {
+        fixed (uint* indexPtr = &index)
+        {
+            return Vtbl->GetXInputDeviceIndex(Pointer, indexPtr) != 0;
+        }
+    }
+
+    /// <summary>
+    /// GetKeyboardInfo using GameInput API 4. 以 GameInput API 4 執行 GetKeyboardInfo。
+    /// </summary>
+    /// <param name="info">The info argument. info 引數。</param>
+    /// <returns>True on success; otherwise false. 成功時為 true，否則為 false。</returns>
+    public unsafe bool GetKeyboardInfo(out GameInputKeyboardInfo info)
+    {
+        fixed (GameInputKeyboardInfo* infoPtr = &info)
+        {
+            return Vtbl->GetKeyboardInfo(Pointer, infoPtr) != 0;
+        }
+    }
+
+    /// <summary>
+    /// GetMouseInfo using GameInput API 4. 以 GameInput API 4 執行 GetMouseInfo。
+    /// </summary>
+    /// <param name="info">The info argument. info 引數。</param>
+    /// <returns>True on success; otherwise false. 成功時為 true，否則為 false。</returns>
+    public unsafe bool GetMouseInfo(out GameInputMouseInfo info)
+    {
+        fixed (GameInputMouseInfo* infoPtr = &info)
+        {
+            return Vtbl->GetMouseInfo(Pointer, infoPtr) != 0;
+        }
+    }
+
+    /// <summary>
+    /// GetSensorsInfo using GameInput API 4. 以 GameInput API 4 執行 GetSensorsInfo。
+    /// </summary>
+    /// <param name="info">The info argument. info 引數。</param>
+    /// <returns>True on success; otherwise false. 成功時為 true，否則為 false。</returns>
+    public unsafe bool GetSensorsInfo(out GameInputSensorsInfo info)
+    {
+        fixed (GameInputSensorsInfo* infoPtr = &info)
+        {
+            return Vtbl->GetSensorsInfo(Pointer, infoPtr) != 0;
+        }
+    }
+
+    /// <summary>
+    /// GetControllerAxisCount using GameInput API 4. 以 GameInput API 4 執行 GetControllerAxisCount。
+    /// </summary>
+    /// <returns>The queried value or number of elements. 查詢值或元素數量。</returns>
+    public unsafe uint GetControllerAxisCount()
+    {
+        return Vtbl->GetControllerAxisCount(Pointer);
+    }
+
+    /// <summary>
+    /// GetControllerAxisLabels using GameInput API 4. 以 GameInput API 4 執行 GetControllerAxisLabels。
+    /// </summary>
+    /// <param name="count">The count argument. count 引數。</param>
+    /// <param name="buffer">The buffer argument. buffer 引數。</param>
+    /// <returns>The queried value or number of elements. 查詢值或元素數量。</returns>
+    public unsafe uint GetControllerAxisLabels(uint count, IntPtr buffer)
+    {
+        return Vtbl->GetControllerAxisLabels(Pointer, count, buffer);
+    }
+
+    /// <summary>
+    /// GetControllerButtonCount using GameInput API 4. 以 GameInput API 4 執行 GetControllerButtonCount。
+    /// </summary>
+    /// <returns>The queried value or number of elements. 查詢值或元素數量。</returns>
+    public unsafe uint GetControllerButtonCount()
+    {
+        return Vtbl->GetControllerButtonCount(Pointer);
+    }
+
+    /// <summary>
+    /// GetControllerButtonLabels using GameInput API 4. 以 GameInput API 4 執行 GetControllerButtonLabels。
+    /// </summary>
+    /// <param name="count">The count argument. count 引數。</param>
+    /// <param name="buffer">The buffer argument. buffer 引數。</param>
+    /// <returns>The queried value or number of elements. 查詢值或元素數量。</returns>
+    public unsafe uint GetControllerButtonLabels(uint count, IntPtr buffer)
+    {
+        return Vtbl->GetControllerButtonLabels(Pointer, count, buffer);
+    }
+
+    /// <summary>
+    /// GetControllerSwitchCount using GameInput API 4. 以 GameInput API 4 執行 GetControllerSwitchCount。
+    /// </summary>
+    /// <returns>The queried value or number of elements. 查詢值或元素數量。</returns>
+    public unsafe uint GetControllerSwitchCount()
+    {
+        return Vtbl->GetControllerSwitchCount(Pointer);
+    }
+
+    /// <summary>
+    /// GetControllerSwitchInfo using GameInput API 4. 以 GameInput API 4 執行 GetControllerSwitchInfo。
+    /// </summary>
+    /// <param name="count">The count argument. count 引數。</param>
+    /// <param name="buffer">The buffer argument. buffer 引數。</param>
+    /// <returns>The queried value or number of elements. 查詢值或元素數量。</returns>
+    public unsafe uint GetControllerSwitchInfo(uint count, IntPtr buffer)
+    {
+        return Vtbl->GetControllerSwitchInfo(Pointer, count, buffer);
+    }
+
+    /// <summary>
+    /// GetArcadeStickInfo using GameInput API 4. 以 GameInput API 4 執行 GetArcadeStickInfo。
+    /// </summary>
+    /// <param name="info">The info argument. info 引數。</param>
+    /// <returns>True on success; otherwise false. 成功時為 true，否則為 false。</returns>
+    public unsafe bool GetArcadeStickInfo(out GameInputArcadeStickInfo info)
+    {
+        fixed (GameInputArcadeStickInfo* infoPtr = &info)
+        {
+            return Vtbl->GetArcadeStickInfo(Pointer, infoPtr) != 0;
+        }
+    }
+
+    /// <summary>
+    /// GetFlightStickInfo using GameInput API 4. 以 GameInput API 4 執行 GetFlightStickInfo。
+    /// </summary>
+    /// <param name="info">The info argument. info 引數。</param>
+    /// <returns>True on success; otherwise false. 成功時為 true，否則為 false。</returns>
+    public unsafe bool GetFlightStickInfo(out GameInputFlightStickInfo info)
+    {
+        fixed (GameInputFlightStickInfo* infoPtr = &info)
+        {
+            return Vtbl->GetFlightStickInfo(Pointer, infoPtr) != 0;
+        }
+    }
+
+    /// <summary>
+    /// GetGamepadInfo using GameInput API 4. 以 GameInput API 4 執行 GetGamepadInfo。
+    /// </summary>
+    /// <param name="info">The info argument. info 引數。</param>
+    /// <returns>True on success; otherwise false. 成功時為 true，否則為 false。</returns>
+    public unsafe bool GetGamepadInfo(out GameInputGamepadInfo info)
+    {
+        fixed (GameInputGamepadInfo* infoPtr = &info)
+        {
+            return Vtbl->GetGamepadInfo(Pointer, infoPtr) != 0;
+        }
+    }
+
+    /// <summary>
+    /// GetRacingWheelInfo using GameInput API 4. 以 GameInput API 4 執行 GetRacingWheelInfo。
+    /// </summary>
+    /// <param name="info">The info argument. info 引數。</param>
+    /// <returns>True on success; otherwise false. 成功時為 true，否則為 false。</returns>
+    public unsafe bool GetRacingWheelInfo(out GameInputRacingWheelInfo info)
+    {
+        fixed (GameInputRacingWheelInfo* infoPtr = &info)
+        {
+            return Vtbl->GetRacingWheelInfo(Pointer, infoPtr) != 0;
+        }
+    }
+
+    /// <summary>
+    /// GetForceFeedbackMotorCount using GameInput API 4. 以 GameInput API 4 執行 GetForceFeedbackMotorCount。
+    /// </summary>
+    /// <returns>The queried value or number of elements. 查詢值或元素數量。</returns>
+    public unsafe uint GetForceFeedbackMotorCount()
+    {
+        return Vtbl->GetForceFeedbackMotorCount(Pointer);
+    }
+
+    /// <summary>
+    /// GetForceFeedbackMotorInfo using GameInput API 4. 以 GameInput API 4 執行 GetForceFeedbackMotorInfo。
+    /// </summary>
+    /// <param name="count">The count argument. count 引數。</param>
+    /// <param name="buffer">The buffer argument. buffer 引數。</param>
+    /// <returns>The queried value or number of elements. 查詢值或元素數量。</returns>
+    public unsafe uint GetForceFeedbackMotorInfo(uint count, IntPtr buffer)
+    {
+        return Vtbl->GetForceFeedbackMotorInfo(Pointer, count, buffer);
+    }
+
+    /// <summary>
+    /// GetInputReportCount using GameInput API 4. 以 GameInput API 4 執行 GetInputReportCount。
+    /// </summary>
+    /// <returns>The queried value or number of elements. 查詢值或元素數量。</returns>
+    public unsafe uint GetInputReportCount()
+    {
+        return Vtbl->GetInputReportCount(Pointer);
+    }
+
+    /// <summary>
+    /// GetInputReportInfo using GameInput API 4. 以 GameInput API 4 執行 GetInputReportInfo。
+    /// </summary>
+    /// <param name="count">The count argument. count 引數。</param>
+    /// <param name="buffer">The buffer argument. buffer 引數。</param>
+    /// <returns>The queried value or number of elements. 查詢值或元素數量。</returns>
+    public unsafe uint GetInputReportInfo(uint count, IntPtr buffer)
+    {
+        return Vtbl->GetInputReportInfo(Pointer, count, buffer);
+    }
+
+    /// <summary>
+    /// GetOutputReportCount using GameInput API 4. 以 GameInput API 4 執行 GetOutputReportCount。
+    /// </summary>
+    /// <returns>The queried value or number of elements. 查詢值或元素數量。</returns>
+    public unsafe uint GetOutputReportCount()
+    {
+        return Vtbl->GetOutputReportCount(Pointer);
+    }
+
+    /// <summary>
+    /// GetOutputReportInfo using GameInput API 4. 以 GameInput API 4 執行 GetOutputReportInfo。
+    /// </summary>
+    /// <param name="count">The count argument. count 引數。</param>
+    /// <param name="buffer">The buffer argument. buffer 引數。</param>
+    /// <returns>The queried value or number of elements. 查詢值或元素數量。</returns>
+    public unsafe uint GetOutputReportInfo(uint count, IntPtr buffer)
+    {
+        return Vtbl->GetOutputReportInfo(Pointer, count, buffer);
+    }
+
+    /// <summary>
+    /// GetFeatureReportCount using GameInput API 4. 以 GameInput API 4 執行 GetFeatureReportCount。
+    /// </summary>
+    /// <returns>The queried value or number of elements. 查詢值或元素數量。</returns>
+    public unsafe uint GetFeatureReportCount()
+    {
+        return Vtbl->GetFeatureReportCount(Pointer);
+    }
+
+    /// <summary>
+    /// GetFeatureReportInfo using GameInput API 4. 以 GameInput API 4 執行 GetFeatureReportInfo。
+    /// </summary>
+    /// <param name="count">The count argument. count 引數。</param>
+    /// <param name="buffer">The buffer argument. buffer 引數。</param>
+    /// <returns>The queried value or number of elements. 查詢值或元素數量。</returns>
+    public unsafe uint GetFeatureReportInfo(uint count, IntPtr buffer)
+    {
+        return Vtbl->GetFeatureReportInfo(Pointer, count, buffer);
     }
 
     /// <summary>
@@ -827,12 +1270,12 @@ internal readonly unsafe struct IGameInputDevice(IntPtr pointer) : IEquatable<IG
     }
 
     /// <summary>
-    /// Calls the native GameInput COM method corresponding to IGameInputDevice.GetDeviceStatus. 呼叫 IGameInputDevice.GetDeviceStatus 對應的 GameInput 原生 COM 方法。
+    /// IsConnected using GameInput API 4. 以 GameInput API 4 執行 IsConnected。
     /// </summary>
-    /// <returns>The GameInputDeviceStatus value returned by the native API. 原生 API 回傳的 GameInputDeviceStatus 值。</returns>
-    public unsafe GameInputDeviceStatus GetDeviceStatus()
+    /// <returns>True on success; otherwise false. 成功時為 true，否則為 false。</returns>
+    public unsafe bool IsConnected()
     {
-        return Vtbl->GetDeviceStatus(Pointer);
+        return Vtbl->IsConnected(Pointer) != 0;
     }
 
     /// <summary>
@@ -978,6 +1421,30 @@ internal readonly unsafe struct IGameInputDevice(IntPtr pointer) : IEquatable<IG
     }
 
     /// <summary>
+    /// GetRawDeviceFeature using GameInput API 4. 以 GameInput API 4 執行 GetRawDeviceFeature。
+    /// </summary>
+    /// <param name="reportId">The reportId argument. reportId 引數。</param>
+    /// <param name="report">The report argument. report 引數。</param>
+    /// <returns>The HRESULT result. HRESULT 結果。</returns>
+    public unsafe int GetRawDeviceFeature(uint reportId, out IGameInputRawDeviceReport? report)
+    {
+        void* reportRaw = null;
+        int result = Vtbl->GetRawDeviceFeature(Pointer, reportId, &reportRaw);
+        report = reportRaw == null ? null : new IGameInputRawDeviceReport((IntPtr)reportRaw);
+        return result;
+    }
+
+    /// <summary>
+    /// SetRawDeviceFeature using GameInput API 4. 以 GameInput API 4 執行 SetRawDeviceFeature。
+    /// </summary>
+    /// <param name="report">The report argument. report 引數。</param>
+    /// <returns>The HRESULT result. HRESULT 結果。</returns>
+    public unsafe int SetRawDeviceFeature(IGameInputRawDeviceReport report)
+    {
+        return Vtbl->SetRawDeviceFeature(Pointer, report.Pointer);
+    }
+
+    /// <summary>
     /// Calls the native GameInput COM method corresponding to IGameInputDevice.SendRawDeviceOutput. 呼叫 IGameInputDevice.SendRawDeviceOutput 對應的 GameInput 原生 COM 方法。
     /// </summary>
     /// <param name="report">The output field that receives the raw device report. 接收 raw device report 的輸出欄位。</param>
@@ -985,6 +1452,56 @@ internal readonly unsafe struct IGameInputDevice(IntPtr pointer) : IEquatable<IG
     public unsafe int SendRawDeviceOutput(IGameInputRawDeviceReport report)
     {
         return Vtbl->SendRawDeviceOutput(Pointer, report.Pointer);
+    }
+
+    /// <summary>
+    /// SetLightingColor using GameInput API 4. 以 GameInput API 4 執行 SetLightingColor。
+    /// </summary>
+    /// <param name="color">The color argument. color 引數。</param>
+    /// <param name="group">The group argument. group 引數。</param>
+    /// <param name="groupOrderIndex">The groupOrderIndex argument. groupOrderIndex 引數。</param>
+    public unsafe void SetLightingColor(GameInputColor color, GameInputLightingGroups group, uint groupOrderIndex)
+    {
+        Vtbl->SetLightingColor(Pointer, color, group, groupOrderIndex);
+    }
+
+    /// <summary>
+    /// ApplyLightingColors using GameInput API 4. 以 GameInput API 4 執行 ApplyLightingColors。
+    /// </summary>
+    public unsafe void ApplyLightingColors()
+    {
+        Vtbl->ApplyLightingColors(Pointer);
+    }
+
+    /// <summary>
+    /// ApplyLightingSystemDefault using GameInput API 4. 以 GameInput API 4 執行 ApplyLightingSystemDefault。
+    /// </summary>
+    public unsafe void ApplyLightingSystemDefault()
+    {
+        Vtbl->ApplyLightingSystemDefault(Pointer);
+    }
+
+    /// <summary>
+    /// GetTouchSurfaceCount using GameInput API 4. 以 GameInput API 4 執行 GetTouchSurfaceCount。
+    /// </summary>
+    /// <returns>The queried value or number of elements. 查詢值或元素數量。</returns>
+    public unsafe uint GetTouchSurfaceCount()
+    {
+        return Vtbl->GetTouchSurfaceCount(Pointer);
+    }
+
+    /// <summary>
+    /// GetTouchSurfaceInfo using GameInput API 4. 以 GameInput API 4 執行 GetTouchSurfaceInfo。
+    /// </summary>
+    /// <param name="surfaceIndex">The surfaceIndex argument. surfaceIndex 引數。</param>
+    /// <param name="info">The info argument. info 引數。</param>
+    /// <returns>The HRESULT result. HRESULT 結果。</returns>
+    public unsafe int GetTouchSurfaceInfo(uint surfaceIndex, out GameInputTouchSurfaceInfo info)
+    {
+        fixed (GameInputTouchSurfaceInfo* infoPtr = &info)
+        {
+            return Vtbl->GetTouchSurfaceInfo(Pointer, surfaceIndex, infoPtr);
+        }
     }
 }
 

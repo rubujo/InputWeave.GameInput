@@ -68,9 +68,8 @@ public sealed class GameInputClientAsyncTests
             GameInputCallbackRegistration registration = client.RegisterDeviceCallback(
                 null,
                 GameInputKind.GameInputKindGamepad,
-                GameInputDeviceStatus.GameInputDeviceAnyStatus,
-                GameInputEnumerationKind.GameInputAsyncEnumeration,
-                static (_, _, _, _) => { });
+
+                static (_, _) => { });
 
             GameInputCallbackThread.Enter();
             try

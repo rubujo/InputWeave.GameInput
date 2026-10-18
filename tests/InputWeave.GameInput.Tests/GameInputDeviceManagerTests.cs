@@ -75,13 +75,9 @@ public sealed class GameInputDeviceManagerTests
         await RunWithManagerAsync(async manager =>
         {
             IReadOnlyList<GameInputDeviceInfoSnapshot> expected = manager.RefreshDevices();
+            CollectionAssert.AreEqual(expected.ToList(), manager.DeviceSnapshots.ToList(), "同步探索結果必須等於當次管理器快照。");
             IReadOnlyList<GameInputDeviceInfoSnapshot> actual = await manager.RefreshDevicesAsync();
-
-            Assert.IsTrue(expected.Count >= 0, "第一次列舉應回傳有效裝置清單。");
-            Assert.IsTrue(actual.Count >= 0, "第二次列舉應回傳有效裝置清單。");
-            Assert.IsTrue(expected.Count <= 1 || actual.Count <= 1 || expected.Count == actual.Count || expected.Count + 1 >= actual.Count || actual.Count + 1 >= expected.Count,
-                "兩次列舉在原生裝置狀態瞬時變化下可有少量差異，但應保持可比較的裝置集合。");
-            CollectionAssert.AreEquivalent(expected.ToList(), actual.ToList(), "兩次獨立原生列舉呼叫不保證裝置順序一致，只比較內容。");
+            CollectionAssert.AreEqual(actual.ToList(), manager.DeviceSnapshots.ToList(), "非同步探索結果必須等於當次管理器快照；獨立探索時間窗不保證得到相同裝置集合。");
         });
     }
 

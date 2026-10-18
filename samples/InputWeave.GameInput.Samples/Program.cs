@@ -96,7 +96,7 @@ catch (DllNotFoundException ex)
 }
 catch (EntryPointNotFoundException ex)
 {
-    Console.WriteLine("目前載入的 GameInput.dll 不含必要進入點。請確認 GameInput runtime 版本符合 Microsoft.GameInput 3.5.283。");
+    Console.WriteLine("目前載入的 GameInput.dll 不含必要進入點。請確認 GameInput runtime 版本符合 Microsoft.GameInput 4.0.300。");
     Console.WriteLine(ex.Message);
 }
 catch (GameInputException ex) when (ex.IsNotFound)
@@ -155,7 +155,8 @@ static void PrintDevices(GameInputDeviceManager manager, IReadOnlyList<GameInput
     for (int index = 0; index < snapshots.Count; index++)
     {
         GameInputDeviceInfoSnapshot snapshot = snapshots[index];
-        GameInputDeviceStatus status = index < manager.Devices.Count ? manager.Devices[index].Status : 0;
+        bool status = index < manager.Devices.Count && manager.Devices[index].IsConnected();
+        Console.WriteLine($"API 4：XInput={snapshot.XInputDeviceIndex?.ToString() ?? "無"}；燈光={snapshot.SupportedLightingGroups}；觸控表面={snapshot.TouchSurfaces.Count}；Feature Reports={snapshot.FeatureReports.Count}");
         Console.WriteLine(
             $"{index + 1}. {GetDisplayName(snapshot)} / {status} / {snapshot.SupportedInput} / Rumble:{snapshot.SupportedRumbleMotors} / VID:{snapshot.VendorId:X4} PID:{snapshot.ProductId:X4}");
     }
@@ -174,7 +175,7 @@ static void PrintGamepadSnapshot(GameInputDeviceManager manager)
     if (manager.GetCurrentGamepad(device) is not { } gamepad)
     {
         Console.WriteLine($"已找到 gamepad 裝置「{GetDisplayName(snapshot)}」，但目前沒有可讀取的 gamepad snapshot。");
-        Console.WriteLine("如果應用程式需要背景輸入，請在實際程式中設定合適的 focus policy。");
+        Console.WriteLine("如果應用程式需要背景輸入，請在實際程式中呼叫 EnableBackgroundInput(true)。");
         return;
     }
 
@@ -228,12 +229,11 @@ static void DemonstrateDispatcherAndCallback()
     using GameInputCallbackRegistration deviceRegistration = client.RegisterDeviceCallback(
         null,
         GameInputKind.GameInputKindGamepad,
-        GameInputDeviceStatus.GameInputDeviceAnyStatus,
-        GameInputEnumerationKind.GameInputAsyncEnumeration,
-        (device, timestamp, current, previous) =>
+
+        (deviceEvent, device) =>
         {
             _ = Interlocked.Increment(ref deviceCallbackCount);
-            Console.WriteLine($"Device callback：{timestamp} {previous} -> {current} {device.GetDisplayName() ?? "(未命名裝置)"}");
+            Console.WriteLine($"Device callback：{deviceEvent} {device.GetDisplayName() ?? "(未命名裝置)"}");
         });
     using GameInputCallbackRegistration readingRegistration = client.RegisterReadingCallback(
         null,
@@ -434,7 +434,7 @@ static void DemonstrateEventsAndObservable(GameInputDeviceManager manager)
     EventHandler<GameInputDeviceManagerEvent> handler = (_, e) =>
     {
         _ = Interlocked.Increment(ref eventCount);
-        Console.WriteLine($"DeviceChanged：{e.Timestamp} {e.PreviousStatus} -> {e.CurrentStatus}");
+        Console.WriteLine($"DeviceChanged：{e.Timestamp} {e.DeviceEvent}");
     };
 
     manager.DeviceChanged += handler;

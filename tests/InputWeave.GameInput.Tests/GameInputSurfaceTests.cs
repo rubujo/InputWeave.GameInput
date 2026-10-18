@@ -70,8 +70,8 @@ public sealed class GameInputSurfaceTests
                 nameof(GameInputClient.DisableAggregateDevice),
                 nameof(GameInputClient.RegisterReadingCallback),
                 nameof(GameInputClient.RegisterDeviceCallback),
-                nameof(GameInputClient.RegisterSystemButtonCallback),
-                nameof(GameInputClient.RegisterKeyboardLayoutCallback)
+                nameof(GameInputClient.EnableBackgroundInput),
+                nameof(GameInputClient.RegisterDeviceCallback)
             ];
 
         AssertPublicMethods(typeof(GameInputClient), methodNames);
@@ -84,7 +84,7 @@ public sealed class GameInputSurfaceTests
             typeof(GameInputDevice),
             new[]
             {
-                    nameof(GameInputDevice.GetDeviceInfo),
+                    nameof(GameInputDevice.GetVendorId),
                     nameof(GameInputDevice.GetDeviceInfoSnapshot),
                     nameof(GameInputDevice.GetHapticInfo),
                     nameof(GameInputDevice.GetHapticInfoSnapshot),
@@ -261,10 +261,10 @@ public sealed class GameInputSurfaceTests
         using JsonDocument document = JsonDocument.Parse(File.ReadAllText(FindRepoFile("src/InputWeave.GameInput/Interop/Generated/gameinput-abi-manifest.json")));
         JsonElement root = document.RootElement;
 
-        Assert.AreEqual(3, root.GetProperty("apiVersion").GetInt32());
+        Assert.AreEqual(4, root.GetProperty("apiVersion").GetInt32());
         Assert.AreEqual(27, root.GetProperty("enums").GetArrayLength());
-        Assert.AreEqual(32, root.GetProperty("structs").GetArrayLength());
-        Assert.AreEqual(4, root.GetProperty("callbacks").GetArrayLength());
+        Assert.AreEqual(33, root.GetProperty("structs").GetArrayLength());
+        Assert.AreEqual(2, root.GetProperty("callbacks").GetArrayLength());
         Assert.AreEqual(7, root.GetProperty("interfaces").GetArrayLength());
         Assert.AreEqual(10, root.GetProperty("hResults").GetArrayLength());
 
@@ -276,7 +276,7 @@ public sealed class GameInputSurfaceTests
         AssertJsonArrayContains(root.GetProperty("structs"), "name", "GameInputForceFeedbackParams");
 
         JsonElement gameInputInterface = FindJsonArrayItem(root.GetProperty("interfaces"), "name", "IGameInput");
-        Assert.AreEqual(16, gameInputInterface.GetProperty("methods").GetArrayLength());
+        Assert.AreEqual(13, gameInputInterface.GetProperty("methods").GetArrayLength());
     }
 
     [TestMethod]
@@ -298,7 +298,7 @@ public sealed class GameInputSurfaceTests
         }
         catch (GameInputException ex)
         {
-            Assert.IsLessThan(ex.HResult, 0);
+            Assert.IsLessThan(0, ex.HResult);
         }
     }
 

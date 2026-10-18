@@ -11,6 +11,10 @@ try
     string headerText = File.ReadAllText(options.HeaderPath, Encoding.UTF8);
     IReadOnlyList<EnumDefinition> enums = GameInputHeaderParser.ParseEnums(headerText);
     AbiManifest manifest = GameInputHeaderParser.ParseAbiManifest(headerText, enums);
+    if (manifest.ApiVersion != 4)
+    {
+        throw new InvalidOperationException("目前繫結產生器僅支援 GameInput API 4；不得產生舊版介面或混用不同版本的 ABI。");
+    }
     GameInputXmlDocsCatalog docs = GameInputXmlDocsCatalog.Load(options.DocsPath);
 
     WriteUtf8NoBom(options.OutputPath, GameInputEnumWriter.Write(enums, options.Namespace, docs));
@@ -286,13 +290,17 @@ internal static partial class GameInputHeaderParser
     public static AbiManifest ParseAbiManifest(string headerText, IReadOnlyList<EnumDefinition> enums)
     {
         return new AbiManifest(
-            ApiVersion: 3,
+            ApiVersion: int.Parse(Regex.Match(headerText, @"#define GAMEINPUT_API_VERSION (\d+)").Groups[1].Value, CultureInfo.InvariantCulture),
             Enums: enums,
             Structs: ParseStructs(headerText),
             Callbacks: ParseCallbacks(headerText),
             Interfaces: ParseInterfaces(headerText),
             HResults: ParseHResults(headerText),
-            Constants: ParseConstants(headerText));
+            Constants: ParseConstants(headerText),
+            Functions: FunctionRegex().Matches(headerText).Select(match => new FunctionDefinition(
+                match.Groups["name"].Value,
+                NormalizeWhitespace(match.Groups["parameters"].Value),
+                match.Groups["kind"].Value.StartsWith("inline", StringComparison.Ordinal))).ToArray());
     }
 
     private static List<EnumMemberDefinition> ParseMembers(string body)
@@ -415,9 +423,19 @@ internal static partial class GameInputHeaderParser
         List<ConstantDefinition> constants = [];
         foreach (Match match in s_constantRegex.Matches(headerText))
         {
-            constants.Add(new ConstantDefinition(match.Groups["name"].Value, match.Groups["value"].Value));
+            constants.Add(new ConstantDefinition(match.Groups["name"].Value, NormalizeWhitespace(match.Groups["value"].Value), match.Groups["type"].Value));
         }
 
+        foreach (Match match in Regex.Matches(headerText, @"constexpr GUID (?<name>GAMEINPUT_\w+)\s*=\s*\{(?<value>.*?)\};"))
+        {
+            string[] parts = Regex.Matches(match.Groups["value"].Value, @"0x([0-9A-Fa-f]+)").Select(item => item.Groups[1].Value).ToArray();
+            if (parts.Length != 11)
+            {
+                throw new InvalidOperationException("GUID 常數格式不正確。");
+            }
+            string value = $"{parts[0].PadLeft(8, '0')}-{parts[1].PadLeft(4, '0')}-{parts[2].PadLeft(4, '0')}-{parts[3]}{parts[4]}-{string.Concat(parts.Skip(5))}";
+            constants.Add(new ConstantDefinition(match.Groups["name"].Value, value, "GUID"));
+        }
         return constants;
     }
 
@@ -457,6 +475,9 @@ internal static partial class GameInputHeaderParser
     [GeneratedRegex(@"enum\s+(?<name>GameInput\w+)\s*\{(?<body>.*?)\};", RegexOptions.Singleline)]
     private static partial Regex EnumRegex();
 
+    [GeneratedRegex(@"(?<kind>STDAPI|inline HRESULT)\s+(?<name>GameInput\w+)\s*\((?<parameters>.*?)\)\s*(?:;|\{)", RegexOptions.Singleline)]
+    private static partial Regex FunctionRegex();
+
     [GeneratedRegex(@"struct\s+(?<name>GameInput\w+)\s*\{(?<body>.*?)\};", RegexOptions.Singleline)]
     private static partial Regex StructRegex();
 
@@ -469,7 +490,7 @@ internal static partial class GameInputHeaderParser
     [GeneratedRegex(@"const\s+HRESULT\s+(?<name>GAMEINPUT_E_\w+)\s*=\s*_HRESULT_TYPEDEF_\(0x(?<value>[0-9A-Fa-f]+)L\);")]
     private static partial Regex HResultRegex();
 
-    [GeneratedRegex(@"const\s+uint32_t\s+(?<name>GAMEINPUT_\w+)\s*=\s*(?<value>\d+);")]
+    [GeneratedRegex(@"const\s+(?<type>uint32_t|LONG|GameInputGamepadButtons)\s+(?<name>\w+)\s*=\s*(?<value>[^;]+);", RegexOptions.Singleline)]
     private static partial Regex ConstantRegex();
 
     [GeneratedRegex(@"\s+")]
@@ -573,7 +594,7 @@ internal static partial class GameInputInteropWriter
         WriteFile(outputDir, "GameInputCallbacks.NetFramework.g.cs", WriteCallbacks(manifest, ns, docs));
         WriteFile(outputDir, "GameInputStructs.g.cs", WriteStructs(manifest, ns, docs));
 
-        // 兩個 TFM 共用裸 vtable 投影：.NET Framework 的 RCW 會綁定建立時的 COM apartment，
+        // 三個 TFM 共用裸 vtable 投影：.NET Framework 的 RCW 會綁定建立時的 COM apartment，
         // 而 GameInput 沒有跨 apartment 的 proxy，因此 net48 也不使用 [ComImport]。
         WriteFile(outputDir, "GameInputNativeInterfaces.g.cs", WriteVtableInterfaces(manifest, ns, docs));
         DeleteObsoleteFile(outputDir, "GameInputNativeInterfaces.NetFramework.g.cs");
@@ -613,13 +634,10 @@ internal static partial class GameInputInteropWriter
         builder.AppendLine("public static class GameInputConstants");
         builder.AppendLine("{");
         XmlDocWriter.AppendDocumentation(builder, docs, "GameInputConstants.ApiVersion", "    ");
-        builder.AppendLine("    public const int ApiVersion = 3;");
+        builder.AppendLine($"    public const int ApiVersion = {manifest.ApiVersion};");
         builder.AppendLine();
         XmlDocWriter.AppendDocumentation(builder, docs, "GameInputConstants.DllName", "    ");
         builder.AppendLine("    public const string DllName = \"GameInput.dll\";");
-        builder.AppendLine();
-        XmlDocWriter.AppendDocumentation(builder, docs, "GameInputConstants.CurrentCallbackTokenValue", "    ");
-        builder.AppendLine("    public const ulong CurrentCallbackTokenValue = 0;");
         builder.AppendLine();
         XmlDocWriter.AppendDocumentation(builder, docs, "GameInputConstants.HapticMaxLocations", "    ");
         builder.AppendLine($"    public const int HapticMaxLocations = {hapticLocations};");
@@ -629,6 +647,29 @@ internal static partial class GameInputInteropWriter
         builder.AppendLine();
         XmlDocWriter.AppendDocumentation(builder, docs, "GameInputConstants.MaxSwitchStates", "    ");
         builder.AppendLine($"    public const int MaxSwitchStates = {maxSwitchStates};");
+        builder.AppendLine();
+        foreach (ConstantDefinition constant in manifest.Constants)
+        {
+            XmlDocWriter.AppendDocumentation(builder, docs, $"GameInputConstants.{constant.Name}", "    ");
+            string declaration;
+            if (constant.Type == "GUID")
+            {
+                declaration = $"public static readonly System.Guid {constant.Name} = new(\"{constant.Value}\");";
+            }
+            else if (constant.Type == "GameInputGamepadButtons")
+            {
+                string expression = Regex.Replace(constant.Value, @"GameInput\w+", match => manifest.Constants.Any(item => item.Name == match.Value) ? match.Value : $"GameInputGamepadButtons.{match.Value}");
+                declaration = $"public const GameInputGamepadButtons {constant.Name} = {expression};";
+            }
+            else
+            {
+                string type = constant.Type == "LONG" ? "int" : "uint";
+                declaration = $"public const {type} {constant.Name} = {constant.Value};";
+            }
+            builder.AppendLine($"    {declaration}");
+            builder.AppendLine();
+        }
+        TrimLastBlankLine(builder);
         builder.AppendLine("}");
         return builder.ToString();
     }
@@ -871,9 +912,7 @@ internal static partial class GameInputInteropWriter
         return callbackName switch
         {
             "GameInputReadingCallback" => "internal delegate void GameInputReadingCallback(ulong callbackToken, IntPtr context, IGameInputReading reading);",
-            "GameInputDeviceCallback" => "internal delegate void GameInputDeviceCallback(ulong callbackToken, IntPtr context, IGameInputDevice device, ulong timestamp, GameInputDeviceStatus currentStatus, GameInputDeviceStatus previousStatus);",
-            "GameInputSystemButtonCallback" => "internal delegate void GameInputSystemButtonCallback(ulong callbackToken, IntPtr context, IGameInputDevice device, ulong timestamp, GameInputSystemButtons currentButtons, GameInputSystemButtons previousButtons);",
-            "GameInputKeyboardLayoutCallback" => "internal delegate void GameInputKeyboardLayoutCallback(ulong callbackToken, IntPtr context, IGameInputDevice device, ulong timestamp, uint currentLayout, uint previousLayout);",
+            "GameInputDeviceCallback" => "internal delegate void GameInputDeviceCallback(ulong callbackToken, IntPtr context, GameInputDeviceEvent deviceEvent, IGameInputDevice device);",
             _ => throw new InvalidOperationException($"未支援的 GameInput callback：{callbackName}。")
         };
     }
@@ -1085,15 +1124,11 @@ internal static partial class GameInputInteropWriter
             "IGameInput.GetNextReading" => Method("int GetNextReading(IGameInputReading referenceReading, GameInputKind inputKind, IGameInputDevice? device, out IGameInputReading? reading);"),
             "IGameInput.GetPreviousReading" => Method("int GetPreviousReading(IGameInputReading referenceReading, GameInputKind inputKind, IGameInputDevice? device, out IGameInputReading? reading);"),
             "IGameInput.RegisterReadingCallback" => Method("int RegisterReadingCallback(IGameInputDevice? device, GameInputKind inputKind, IntPtr context, [MarshalAs(UnmanagedType.FunctionPtr)] GameInputReadingCallback callbackFunc, out ulong callbackToken);"),
-            "IGameInput.RegisterDeviceCallback" => Method("int RegisterDeviceCallback(IGameInputDevice? device, GameInputKind inputKind, GameInputDeviceStatus statusFilter, GameInputEnumerationKind enumerationKind, IntPtr context, [MarshalAs(UnmanagedType.FunctionPtr)] GameInputDeviceCallback callbackFunc, out ulong callbackToken);"),
-            "IGameInput.RegisterSystemButtonCallback" => Method("int RegisterSystemButtonCallback(IGameInputDevice? device, GameInputSystemButtons buttonFilter, IntPtr context, [MarshalAs(UnmanagedType.FunctionPtr)] GameInputSystemButtonCallback callbackFunc, out ulong callbackToken);"),
-            "IGameInput.RegisterKeyboardLayoutCallback" => Method("int RegisterKeyboardLayoutCallback(IGameInputDevice? device, IntPtr context, [MarshalAs(UnmanagedType.FunctionPtr)] GameInputKeyboardLayoutCallback callbackFunc, out ulong callbackToken);"),
-            "IGameInput.StopCallback" => Method("void StopCallback(ulong callbackToken);"),
+            "IGameInput.RegisterDeviceCallback" => Method("int RegisterDeviceCallback(IGameInputDevice? device, GameInputKind inputKind, IntPtr context, [MarshalAs(UnmanagedType.FunctionPtr)] GameInputDeviceCallback callbackFunc, out ulong callbackToken);"),
             "IGameInput.UnregisterCallback" => BoolMethod("bool UnregisterCallback(ulong callbackToken);"),
             "IGameInput.CreateDispatcher" => Method("int CreateDispatcher(out IGameInputDispatcher? dispatcher);"),
             "IGameInput.FindDeviceFromId" => Method("int FindDeviceFromId(ref AppLocalDeviceId value, out IGameInputDevice? device);"),
             "IGameInput.FindDeviceFromPlatformString" => Method("int FindDeviceFromPlatformString([MarshalAs(UnmanagedType.LPWStr)] string value, out IGameInputDevice? device);"),
-            "IGameInput.SetFocusPolicy" => Method("void SetFocusPolicy(GameInputFocusPolicy policy);"),
             "IGameInput.CreateAggregateDevice" => Method("int CreateAggregateDevice(GameInputKind inputKind, out AppLocalDeviceId deviceId);"),
             "IGameInput.DisableAggregateDevice" => Method("int DisableAggregateDevice(ref AppLocalDeviceId deviceId);"),
             "IGameInputRawDeviceReport.GetDevice" => Method("void GetDevice(out IGameInputDevice? device);"),
@@ -1119,9 +1154,7 @@ internal static partial class GameInputInteropWriter
             "IGameInputReading.GetGamepadState" => BoolMethod("bool GetGamepadState(out GameInputGamepadState state);"),
             "IGameInputReading.GetRacingWheelState" => BoolMethod("bool GetRacingWheelState(out GameInputRacingWheelState state);"),
             "IGameInputReading.GetRawReport" => BoolMethod("bool GetRawReport(out IGameInputRawDeviceReport? report);"),
-            "IGameInputDevice.GetDeviceInfo" => Method("int GetDeviceInfo(out IntPtr info);"),
             "IGameInputDevice.GetHapticInfo" => Method("int GetHapticInfo(IntPtr info);"),
-            "IGameInputDevice.GetDeviceStatus" => Method("GameInputDeviceStatus GetDeviceStatus();"),
             "IGameInputDevice.CreateForceFeedbackEffect" => Method("int CreateForceFeedbackEffect(uint motorIndex, IntPtr parameters, out IGameInputForceFeedbackEffect? effect);"),
             "IGameInputDevice.IsForceFeedbackMotorPoweredOn" => BoolMethod("bool IsForceFeedbackMotorPoweredOn(uint motorIndex);"),
             "IGameInputDevice.SetForceFeedbackMotorGain" => Method("void SetForceFeedbackMotorGain(uint motorIndex, float masterGain);"),
@@ -1151,6 +1184,57 @@ internal static partial class GameInputInteropWriter
             "IGameInputMapper.GetGamepadButtonMappingInfo" => BoolMethod("bool GetGamepadButtonMappingInfo(GameInputGamepadButtons buttonElement, IntPtr mapping);"),
             "IGameInputMapper.GetRacingWheelAxisMappingInfo" => BoolMethod("bool GetRacingWheelAxisMappingInfo(GameInputRacingWheelAxes axisElement, IntPtr mapping);"),
             "IGameInputMapper.GetRacingWheelButtonMappingInfo" => BoolMethod("bool GetRacingWheelButtonMappingInfo(GameInputRacingWheelButtons buttonElement, IntPtr mapping);"),
+            "IGameInput.EnableBackgroundInput" => Method("void EnableBackgroundInput(byte enable);"),
+            "IGameInputReading.GetSystemButtonState" => BoolMethod("bool GetSystemButtonState(out GameInputSystemButtons buttons);"),
+            "IGameInputReading.GetTouchContactCount" => Method("uint GetTouchContactCount(uint surfaceIndex);"),
+            "IGameInputReading.GetTouchSurfaceState" => Method("uint GetTouchSurfaceState(uint surfaceIndex, uint contactArrayCount, IntPtr contactArray);"),
+            "IGameInputDevice.GetSupportedLightingGroupSize" => Method("uint GetSupportedLightingGroupSize(GameInputLightingGroups group);"),
+            "IGameInputDevice.GetDisplayName" => Method("uint GetDisplayName(uint bufferByteCount, IntPtr buffer);"),
+            "IGameInputDevice.GetPnpPath" => Method("uint GetPnpPath(uint bufferByteCount, IntPtr buffer);"),
+            "IGameInputDevice.GetXInputDeviceIndex" => BoolMethod("bool GetXInputDeviceIndex(out uint index);"),
+            "IGameInputDevice.IsConnected" => BoolMethod("bool IsConnected();"),
+            "IGameInputDevice.GetRawDeviceFeature" => Method("int GetRawDeviceFeature(uint reportId, out IGameInputRawDeviceReport? report);"),
+            "IGameInputDevice.SetRawDeviceFeature" => Method("int SetRawDeviceFeature(IGameInputRawDeviceReport report);"),
+            "IGameInputDevice.SetLightingColor" => Method("void SetLightingColor(GameInputColor color, GameInputLightingGroups group, uint groupOrderIndex);"),
+            "IGameInputDevice.ApplyLightingColors" => Method("void ApplyLightingColors();"),
+            "IGameInputDevice.ApplyLightingSystemDefault" => Method("void ApplyLightingSystemDefault();"),
+            "IGameInputDevice.GetTouchSurfaceCount" => Method("uint GetTouchSurfaceCount();"),
+            "IGameInputDevice.GetTouchSurfaceInfo" => Method("int GetTouchSurfaceInfo(uint surfaceIndex, out GameInputTouchSurfaceInfo info);"),
+            "IGameInputDevice.GetVendorId" => Method("ushort GetVendorId();"),
+            "IGameInputDevice.GetProductId" => Method("ushort GetProductId();"),
+            "IGameInputDevice.GetRevisionNumber" => Method("ushort GetRevisionNumber();"),
+            "IGameInputDevice.GetDeviceFamily" => Method("GameInputDeviceFamily GetDeviceFamily();"),
+            "IGameInputDevice.GetSupportedInput" => Method("GameInputKind GetSupportedInput();"),
+            "IGameInputDevice.GetSupportedRumbleMotors" => Method("GameInputRumbleMotors GetSupportedRumbleMotors();"),
+            "IGameInputDevice.GetSupportedSystemButtons" => Method("GameInputSystemButtons GetSupportedSystemButtons();"),
+            "IGameInputDevice.GetSupportedLightingGroups" => Method("GameInputLightingGroups GetSupportedLightingGroups();"),
+            "IGameInputDevice.GetUsage" => Method("void GetUsage(out GameInputUsage usage);"),
+            "IGameInputDevice.GetHardwareVersion" => Method("void GetHardwareVersion(out GameInputVersion version);"),
+            "IGameInputDevice.GetFirmwareVersion" => Method("void GetFirmwareVersion(out GameInputVersion version);"),
+            "IGameInputDevice.GetDeviceId" => Method("void GetDeviceId(out AppLocalDeviceId deviceId);"),
+            "IGameInputDevice.GetDeviceRootId" => Method("void GetDeviceRootId(out AppLocalDeviceId deviceRootId);"),
+            "IGameInputDevice.GetContainerId" => Method("void GetContainerId(out Guid containerId);"),
+            "IGameInputDevice.GetKeyboardInfo" => BoolMethod("bool GetKeyboardInfo(out GameInputKeyboardInfo info);"),
+            "IGameInputDevice.GetMouseInfo" => BoolMethod("bool GetMouseInfo(out GameInputMouseInfo info);"),
+            "IGameInputDevice.GetSensorsInfo" => BoolMethod("bool GetSensorsInfo(out GameInputSensorsInfo info);"),
+            "IGameInputDevice.GetArcadeStickInfo" => BoolMethod("bool GetArcadeStickInfo(out GameInputArcadeStickInfo info);"),
+            "IGameInputDevice.GetFlightStickInfo" => BoolMethod("bool GetFlightStickInfo(out GameInputFlightStickInfo info);"),
+            "IGameInputDevice.GetGamepadInfo" => BoolMethod("bool GetGamepadInfo(out GameInputGamepadInfo info);"),
+            "IGameInputDevice.GetRacingWheelInfo" => BoolMethod("bool GetRacingWheelInfo(out GameInputRacingWheelInfo info);"),
+            "IGameInputDevice.GetControllerAxisCount" => Method("uint GetControllerAxisCount();"),
+            "IGameInputDevice.GetControllerAxisLabels" => Method("uint GetControllerAxisLabels(uint count, IntPtr buffer);"),
+            "IGameInputDevice.GetControllerButtonCount" => Method("uint GetControllerButtonCount();"),
+            "IGameInputDevice.GetControllerButtonLabels" => Method("uint GetControllerButtonLabels(uint count, IntPtr buffer);"),
+            "IGameInputDevice.GetControllerSwitchCount" => Method("uint GetControllerSwitchCount();"),
+            "IGameInputDevice.GetControllerSwitchInfo" => Method("uint GetControllerSwitchInfo(uint count, IntPtr buffer);"),
+            "IGameInputDevice.GetForceFeedbackMotorCount" => Method("uint GetForceFeedbackMotorCount();"),
+            "IGameInputDevice.GetForceFeedbackMotorInfo" => Method("uint GetForceFeedbackMotorInfo(uint count, IntPtr buffer);"),
+            "IGameInputDevice.GetInputReportCount" => Method("uint GetInputReportCount();"),
+            "IGameInputDevice.GetInputReportInfo" => Method("uint GetInputReportInfo(uint count, IntPtr buffer);"),
+            "IGameInputDevice.GetOutputReportCount" => Method("uint GetOutputReportCount();"),
+            "IGameInputDevice.GetOutputReportInfo" => Method("uint GetOutputReportInfo(uint count, IntPtr buffer);"),
+            "IGameInputDevice.GetFeatureReportCount" => Method("uint GetFeatureReportCount();"),
+            "IGameInputDevice.GetFeatureReportInfo" => Method("uint GetFeatureReportInfo(uint count, IntPtr buffer);"),
             _ => throw new InvalidOperationException($"未支援的 COM 方法：{key}。")
         };
     }
@@ -1539,7 +1623,9 @@ internal sealed record InterfaceMethodDefinition(string Name, string Signature);
 
 internal sealed record HResultDefinition(string Name, string Value);
 
-internal sealed record ConstantDefinition(string Name, string Value);
+internal sealed record ConstantDefinition(string Name, string Value, string Type);
+
+internal sealed record FunctionDefinition(string Name, string Parameters, bool IsInline);
 
 internal sealed record AbiManifest(
     int ApiVersion,
@@ -1548,7 +1634,8 @@ internal sealed record AbiManifest(
     IReadOnlyList<CallbackDefinition> Callbacks,
     IReadOnlyList<InterfaceDefinition> Interfaces,
     IReadOnlyList<HResultDefinition> HResults,
-    IReadOnlyList<ConstantDefinition> Constants);
+    IReadOnlyList<ConstantDefinition> Constants,
+    IReadOnlyList<FunctionDefinition> Functions);
 
 [JsonSourceGenerationOptions(WriteIndented = true, PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase)]
 [JsonSerializable(typeof(AbiManifest))]

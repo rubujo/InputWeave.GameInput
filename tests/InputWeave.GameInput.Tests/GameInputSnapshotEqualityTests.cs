@@ -12,7 +12,7 @@ public sealed class GameInputSnapshotEqualityTests
         AssertDefaultIsSafe<KeyboardReadingSnapshot>(static snapshot => [snapshot.Keys]);
         AssertDefaultIsSafe<ControllerReadingSnapshot>(static snapshot => [snapshot.Axes, snapshot.Buttons, snapshot.Switches]);
         AssertDefaultIsSafe<RawDeviceReportSnapshot>(static snapshot => [snapshot.Data, snapshot.GetData()]);
-        AssertDefaultIsSafe<GameInputDeviceInfoSnapshot>(static snapshot => [snapshot.ForceFeedbackMotors, snapshot.InputReports, snapshot.OutputReports]);
+        AssertDefaultIsSafe<GameInputDeviceInfoSnapshot>(static snapshot => [snapshot.ForceFeedbackMotors, snapshot.InputReports, snapshot.OutputReports, snapshot.FeatureReports, snapshot.TouchSurfaces]);
         AssertDefaultIsSafe<GameInputControllerInfoSnapshot>(static snapshot => [snapshot.AxisLabels, snapshot.ButtonLabels, snapshot.Switches]);
         AssertDefaultIsSafe<GameInputControllerSwitchInfoSnapshot>(static snapshot => [snapshot.Labels]);
         AssertDefaultIsSafe<GameInputHapticInfoSnapshot>(static snapshot => [snapshot.Locations]);
@@ -130,44 +130,41 @@ public sealed class GameInputSnapshotEqualityTests
     }
 
     [TestMethod]
-    public void ControllerInfoSnapshotsWithDifferentNativePointersButEqualContentAreEqual()
+    public void ControllerInfoSnapshotsWithIndependentCopiesAndEqualContentAreEqual()
     {
-        GameInputControllerInfo nativeFirst = new() { ControllerAxisCount = 1, ControllerAxisLabels = (IntPtr)0x1111 };
-        GameInputControllerInfo nativeSecond = new() { ControllerAxisCount = 1, ControllerAxisLabels = (IntPtr)0x2222 };
 
-        GameInputControllerInfoSnapshot first = new(nativeFirst, [GameInputLabel.GameInputLabelUnknown], [], []);
-        GameInputControllerInfoSnapshot second = new(nativeSecond, [GameInputLabel.GameInputLabelUnknown], [], []);
+        GameInputControllerInfoSnapshot first = new([GameInputLabel.GameInputLabelUnknown], [], []);
+        GameInputControllerInfoSnapshot second = new([GameInputLabel.GameInputLabelUnknown], [], []);
 
-        Assert.AreEqual(first, second, "Native 只保留原生指標與 Count，指標值不同不應影響已投影內容的相等性。");
+        Assert.AreEqual(first, second, "獨立複製的標籤清單應依內容比較。");
         Assert.AreEqual(first.GetHashCode(), second.GetHashCode());
     }
 
     [TestMethod]
     public void ControllerInfoSnapshotsWithDifferentAxisLabelsAreNotEqual()
     {
-        GameInputControllerInfo native = new() { ControllerAxisCount = 1, ControllerAxisLabels = (IntPtr)0x1111 };
 
-        GameInputControllerInfoSnapshot first = new(native, [GameInputLabel.GameInputLabelUnknown], [], []);
-        GameInputControllerInfoSnapshot second = new(native, [GameInputLabel.GameInputLabelNone], [], []);
+        GameInputControllerInfoSnapshot first = new([GameInputLabel.GameInputLabelUnknown], [], []);
+        GameInputControllerInfoSnapshot second = new([GameInputLabel.GameInputLabelNone], [], []);
 
         Assert.AreNotEqual(first, second);
     }
 
     [TestMethod]
-    public void DeviceInfoSnapshotsWithDifferentNativePointersButEqualContentAreEqual()
+    public void DeviceInfoSnapshotsWithIndependentCopiesAndEqualContentAreEqual()
     {
-        GameInputDeviceInfoSnapshot first = CreateDeviceInfoSnapshot(vendorId: 1, displayNamePointer: (IntPtr)0x1111);
-        GameInputDeviceInfoSnapshot second = CreateDeviceInfoSnapshot(vendorId: 1, displayNamePointer: (IntPtr)0x2222);
+        GameInputDeviceInfoSnapshot first = CreateDeviceInfoSnapshot(vendorId: 1);
+        GameInputDeviceInfoSnapshot second = CreateDeviceInfoSnapshot(vendorId: 1);
 
-        Assert.AreEqual(first, second, "Native 的原生指標欄位不應參與相等性比較。");
+        Assert.AreEqual(first, second, "獨立複製的快照應依內容比較。");
         Assert.AreEqual(first.GetHashCode(), second.GetHashCode());
     }
 
     [TestMethod]
     public void DeviceInfoSnapshotsWithDifferentVendorIdAreNotEqual()
     {
-        GameInputDeviceInfoSnapshot first = CreateDeviceInfoSnapshot(vendorId: 1, displayNamePointer: (IntPtr)0x1111);
-        GameInputDeviceInfoSnapshot second = CreateDeviceInfoSnapshot(vendorId: 2, displayNamePointer: (IntPtr)0x1111);
+        GameInputDeviceInfoSnapshot first = CreateDeviceInfoSnapshot(vendorId: 1);
+        GameInputDeviceInfoSnapshot second = CreateDeviceInfoSnapshot(vendorId: 2);
 
         Assert.AreNotEqual(first, second);
     }
@@ -326,13 +323,11 @@ public sealed class GameInputSnapshotEqualityTests
         Assert.AreNotEqual(first, second);
     }
 
-    private static GameInputDeviceInfoSnapshot CreateDeviceInfoSnapshot(ushort vendorId, IntPtr displayNamePointer)
+    private static GameInputDeviceInfoSnapshot CreateDeviceInfoSnapshot(ushort vendorId)
     {
-        GameInputDeviceInfo native = new()
+        GameInputDeviceIdentity native = new()
         {
-            VendorId = vendorId,
-            DisplayName = displayNamePointer,
-            PnpPath = displayNamePointer
+            VendorId = vendorId
         };
 
         return new GameInputDeviceInfoSnapshot(

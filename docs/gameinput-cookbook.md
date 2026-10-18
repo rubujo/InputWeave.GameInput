@@ -97,8 +97,6 @@ using GameInputDispatcherWaitHandle waitHandle = dispatcher.OpenSafeWaitHandle()
 using GameInputCallbackRegistration registration = client.RegisterDeviceCallback(
     device: null,
     inputKind: GameInputKind.GameInputKindGamepad,
-    statusFilter: GameInputDeviceStatus.GameInputDeviceAnyStatus,
-    enumerationKind: GameInputEnumerationKind.GameInputAsyncEnumeration,
     handler: OnDeviceChanged);
 
 Console.WriteLine(waitHandle.IsInvalid
@@ -113,13 +111,11 @@ while (watch.Elapsed < TimeSpan.FromSeconds(10))
 }
 
 static void OnDeviceChanged(
-    GameInputDevice device,
-    ulong timestamp,
-    GameInputDeviceStatus currentStatus,
-    GameInputDeviceStatus previousStatus)
+    GameInputDeviceEvent deviceEvent,
+    GameInputDevice device)
 {
     Console.WriteLine(
-        $"{timestamp}: {previousStatus} -> {currentStatus} / {device.GetDisplayName() ?? "(未命名裝置)"}");
+        $"{deviceEvent} / {device.GetDisplayName() ?? "(未命名裝置)"}");
 }
 ```
 
@@ -246,7 +242,7 @@ Console.WriteLine($"Raw report {report.Info.Id}: {data.Length} bytes");
 
 ## 非同步 API
 
-`RefreshDevicesAsync`／`EnumerateDevicesAsync` 只是把阻塞式列舉包在 `Task.Run` 中執行，方便 UI 執行緒呼叫；`WaitForDeviceEventAsync`／`WaitForReadingAsync` 則是真正等待原生事件的非同步方法，內部註冊一次性回呼，完成或取消後會在背景執行緒解除註冊。`WaitForDeviceEventAsync` 只回報呼叫之後發生的插拔或連線狀態變化，已經連線的裝置不會讓它完成。
+`RefreshDevicesAsync`／`EnumerateDevicesAsync` 只是把有界探索時間窗包在 `Task.Run` 中執行，方便 UI 執行緒呼叫；`WaitForDeviceEventAsync`／`WaitForReadingAsync` 則是真正等待原生事件的非同步方法，內部註冊一次性回呼，完成或取消後會在背景執行緒解除註冊。`WaitForDeviceEventAsync` 遵循 API 4 語意，也會回傳新註冊對既有裝置派送的初始 Connected 通知。
 
 ```csharp
 using System;
@@ -263,7 +259,7 @@ using CancellationTokenSource timeout = new(TimeSpan.FromSeconds(5));
 try
 {
     GameInputDeviceManagerEvent changed = await manager.WaitForDeviceEventAsync(cancellationToken: timeout.Token);
-    Console.WriteLine($"裝置事件：{changed.PreviousStatus} -> {changed.CurrentStatus}");
+    Console.WriteLine($"裝置事件：{changed.DeviceEvent}");
 }
 catch (OperationCanceledException)
 {
@@ -283,7 +279,7 @@ using InputWeave.GameInput;
 
 using GameInputDeviceManager manager = GameInputDeviceManager.Create();
 
-manager.DeviceChanged += (_, e) => Console.WriteLine($"event：{e.PreviousStatus} -> {e.CurrentStatus}");
+manager.DeviceChanged += (_, e) => Console.WriteLine($"event：{e.DeviceEvent}");
 
 // DeviceChanges 是純 IObservable<T>（BCL 內建介面，未依賴 System.Reactive），
 // 訂閱時需要自行提供 IObserver<T> 實作或委派轉接器。
@@ -294,7 +290,7 @@ sealed class DeviceChangeObserver : IObserver<GameInputDeviceManagerEvent>
     public void OnCompleted() { }
     public void OnError(Exception error) { }
     public void OnNext(GameInputDeviceManagerEvent value) =>
-        Console.WriteLine($"observable：{value.PreviousStatus} -> {value.CurrentStatus}");
+        Console.WriteLine($"observable：{value.DeviceEvent}");
 }
 ```
 
@@ -331,10 +327,10 @@ manager.RefreshDevices();
 
 if (manager.TryGetFirstGamepad(out GameInputDevice? device, out GameInputDeviceInfoSnapshot info))
 {
-    // GameInputKind、GameInputDeviceStatus 等列舉與 GameInputDeviceInfo 結構都是公開型別，
+    // API 4 的 GameInputKind、GameInputDeviceEvent 等列舉與 GameInputTouchContact 結構都是公開型別，
     // 可以直接讀取原生固定欄位快照做進階診斷。
-    GameInputDeviceInfo native = info.Native;
-    Console.WriteLine($"SupportedInput（原生列舉值）：{(int)native.SupportedInput}");
+    GameInputDeviceIdentity identity = info.Identity;
+    Console.WriteLine($"SupportedInput（原生列舉值）：{(int)identity.SupportedInput}");
 }
 ```
 

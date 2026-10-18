@@ -1,28 +1,12 @@
-using System.Diagnostics.CodeAnalysis;
-using System.Runtime.InteropServices;
 using InputWeave.GameInput.Interop;
 
 namespace InputWeave.GameInput;
 
-/// <summary>
-/// A GameInput device information snapshot that holds no native pointers.
-/// 不持有原生指標的 GameInput 裝置資訊快照。
-/// </summary>
-/// <remarks>
-/// <see cref="ForceFeedbackMotors"/>, <see cref="InputReports"/>, and <see cref="OutputReports"/> are collection members;
-/// value equality compares their contents element by element instead of comparing the references of the copied arrays.
-/// The diagnostic-only native pointer fields inside <see cref="Native"/> (such as <see cref="GameInputDeviceInfo.DisplayName"/>
-/// and <see cref="GameInputDeviceInfo.PnpPath"/>) do not participate in equality comparison, because those pointer values
-/// are valid only within a single enumeration call and do not represent logical content differences.
-/// <see cref="ForceFeedbackMotors"/>、<see cref="InputReports"/>、<see cref="OutputReports"/> 是集合欄位，
-/// 值相等性採逐一比較內容，而不是比較複本陣列的參考。<see cref="Native"/> 內僅供診斷的原生指標欄位
-/// （<see cref="GameInputDeviceInfo.DisplayName"/>、<see cref="GameInputDeviceInfo.PnpPath"/> 等）不參與相等性比較，
-/// 因為這些指標值只在單次列舉呼叫內有效，不代表邏輯內容差異。
-/// </remarks>
+/// <summary>An independent API 4 device information snapshot. 獨立的 API 4 裝置資訊快照。</summary>
 public readonly record struct GameInputDeviceInfoSnapshot : IEquatable<GameInputDeviceInfoSnapshot>
 {
     internal GameInputDeviceInfoSnapshot(
-        GameInputDeviceInfo native,
+        GameInputDeviceIdentity native,
         string? displayName,
         string? pnpPath,
         GameInputKeyboardInfo? keyboard,
@@ -37,7 +21,7 @@ public readonly record struct GameInputDeviceInfoSnapshot : IEquatable<GameInput
         IReadOnlyList<GameInputRawDeviceReportInfo> inputReports,
         IReadOnlyList<GameInputRawDeviceReportInfo> outputReports)
     {
-        Native = native;
+        Identity = native;
         DisplayName = displayName;
         PnpPath = pnpPath;
         Keyboard = keyboard;
@@ -53,244 +37,107 @@ public readonly record struct GameInputDeviceInfoSnapshot : IEquatable<GameInput
         OutputReports = outputReports;
     }
 
-    /// <summary>
-    /// The snapshot of the native fixed fields; all pointer fields are for diagnostics only and must not be dereferenced outside the snapshot.
-    /// 原生固定欄位快照；所有指標欄位只供診斷，不應在快照外解參考。
-    /// </summary>
-    /// <remarks>
-    /// The string and array fields in this structure (such as <see cref="GameInputDeviceInfo.DisplayName"/> and
-    /// <see cref="GameInputDeviceInfo.PnpPath"/>) are pointers into native memory whose lifetime is bound to the underlying COM
-    /// object of the original device; dereferencing them after the device is released causes undefined behavior. In typical
-    /// scenarios, use the copied members provided by this type, such as <see cref="DisplayName"/> and <see cref="PnpPath"/>,
-    /// instead of reading the pointer fields of <see cref="Native"/> directly.
-    /// 這個結構中的字串與陣列欄位（例如 <see cref="GameInputDeviceInfo.DisplayName"/>、
-    /// <see cref="GameInputDeviceInfo.PnpPath"/>）是指向原生記憶體的指標，生命週期綁定於原始裝置的底層 COM
-    /// 物件；裝置釋放後解參考會導致未定義行為。一般情境應改用本類別提供的
-    /// <see cref="DisplayName"/>、<see cref="PnpPath"/> 等已複製欄位，而非直接讀取 <see cref="Native"/> 的指標欄位。
-    /// </remarks>
-    public GameInputDeviceInfo Native { get; }
+    /// <summary>The copied Identity data. 已複製的 Identity 資料。</summary>
+    public GameInputDeviceIdentity Identity { get; }
 
-    /// <summary>
-    /// The USB or HID vendor id.
-    /// USB 或 HID vendor id。
-    /// </summary>
-    public ushort VendorId
-    {
-        get
-        {
-            return Native.VendorId;
-        }
-    }
-
-    /// <summary>
-    /// The USB or HID product id.
-    /// USB 或 HID product id。
-    /// </summary>
-    public ushort ProductId
-    {
-        get
-        {
-            return Native.ProductId;
-        }
-    }
-
-    /// <summary>
-    /// The device revision number.
-    /// 裝置修訂版本號。
-    /// </summary>
-    public ushort RevisionNumber
-    {
-        get
-        {
-            return Native.RevisionNumber;
-        }
-    }
-
-    /// <summary>
-    /// The HID usage information of the device.
-    /// 裝置的 HID usage 資訊。
-    /// </summary>
-    public GameInputUsage Usage
-    {
-        get
-        {
-            return Native.Usage;
-        }
-    }
-
-    /// <summary>
-    /// The GameInput device family the device belongs to.
-    /// 裝置所屬的 GameInput device family。
-    /// </summary>
-    public GameInputDeviceFamily DeviceFamily
-    {
-        get
-        {
-            return Native.DeviceFamily;
-        }
-    }
-
-    /// <summary>
-    /// The set of input kinds supported by the device.
-    /// 裝置支援的輸入種類集合。
-    /// </summary>
-    /// <remarks>
-    /// The value is passed through from the native runtime unchanged and may contain bits that <c>GameInput.h</c> does not define
-    /// (an Xbox One controller reports <c>0x01000000</c> in addition to its documented kinds), so <see cref="object.ToString"/> can
-    /// print a number. Test individual kinds with a bitwise check or <see cref="Enum.HasFlag(Enum)"/> instead of comparing the whole
-    /// value with <c>==</c>.
-    /// 此值原樣來自原生執行階段，可能含有 <c>GameInput.h</c> 未定義的位元（Xbox One 控制器除了已定義的種類外還會回報
-    /// <c>0x01000000</c>），因此 <see cref="object.ToString"/> 可能印出數字。請以位元檢查或 <see cref="Enum.HasFlag(Enum)"/>
-    /// 判斷個別種類，不要用 <c>==</c> 比對整個值。
-    /// </remarks>
-    public GameInputKind SupportedInput
-    {
-        get
-        {
-            return Native.SupportedInput;
-        }
-    }
-
-    /// <summary>
-    /// The set of rumble motors supported by the device.
-    /// 裝置支援的 rumble motor 集合。
-    /// </summary>
-    public GameInputRumbleMotors SupportedRumbleMotors
-    {
-        get
-        {
-            return Native.SupportedRumbleMotors;
-        }
-    }
-
-    /// <summary>
-    /// The set of system buttons supported by the device.
-    /// 裝置支援的 system button 集合。
-    /// </summary>
-    public GameInputSystemButtons SupportedSystemButtons
-    {
-        get
-        {
-            return Native.SupportedSystemButtons;
-        }
-    }
-
-    /// <summary>
-    /// The device container identifier.
-    /// 裝置容器識別碼。
-    /// </summary>
-    public Guid ContainerId
-    {
-        get
-        {
-            return Native.ContainerId;
-        }
-    }
-
-    /// <summary>
-    /// The human-readable device display name.
-    /// 使用者可讀的裝置顯示名稱。
-    /// </summary>
+    /// <summary>The copied DisplayName data. 已複製的 DisplayName 資料。</summary>
     public string? DisplayName { get; }
 
-    /// <summary>
-    /// The Plug and Play path of the device.
-    /// 裝置的 Plug and Play 路徑。
-    /// </summary>
+    /// <summary>The copied PnpPath data. 已複製的 PnpPath 資料。</summary>
     public string? PnpPath { get; }
 
-    /// <summary>
-    /// The keyboard sub-information; null when the device does not support keyboard input.
-    /// 鍵盤子資訊；裝置不支援鍵盤時為 null。
-    /// </summary>
+    /// <summary>The copied Keyboard data. 已複製的 Keyboard 資料。</summary>
     public GameInputKeyboardInfo? Keyboard { get; }
 
-    /// <summary>
-    /// The mouse sub-information; null when the device does not support mouse input.
-    /// 滑鼠子資訊；裝置不支援滑鼠時為 null。
-    /// </summary>
+    /// <summary>The copied Mouse data. 已複製的 Mouse 資料。</summary>
     public GameInputMouseInfo? Mouse { get; }
 
-    /// <summary>
-    /// The sensors sub-information; null when the device does not support sensors.
-    /// 感測器子資訊；裝置不支援感測器時為 null。
-    /// </summary>
+    /// <summary>The copied Sensors data. 已複製的 Sensors 資料。</summary>
     public GameInputSensorsInfo? Sensors { get; }
 
-    /// <summary>
-    /// The controller sub-information; null when the device does not support controller input.
-    /// 一般 controller 子資訊；裝置不支援 controller 時為 null。
-    /// </summary>
+    /// <summary>The copied Controller data. 已複製的 Controller 資料。</summary>
     public GameInputControllerInfoSnapshot? Controller { get; }
 
-    /// <summary>
-    /// The arcade stick sub-information; null when the device does not support arcade stick input.
-    /// Arcade stick 子資訊；裝置不支援 arcade stick 時為 null。
-    /// </summary>
+    /// <summary>The copied ArcadeStick data. 已複製的 ArcadeStick 資料。</summary>
     public GameInputArcadeStickInfo? ArcadeStick { get; }
 
-    /// <summary>
-    /// The flight stick sub-information; null when the device does not support flight stick input.
-    /// Flight stick 子資訊；裝置不支援 flight stick 時為 null。
-    /// </summary>
+    /// <summary>The copied FlightStick data. 已複製的 FlightStick 資料。</summary>
     public GameInputFlightStickInfo? FlightStick { get; }
 
-    /// <summary>
-    /// The gamepad sub-information; null when the device does not support gamepad input.
-    /// Gamepad 子資訊；裝置不支援 gamepad 時為 null。
-    /// </summary>
+    /// <summary>The copied Gamepad data. 已複製的 Gamepad 資料。</summary>
     public GameInputGamepadInfo? Gamepad { get; }
 
-    /// <summary>
-    /// The racing wheel sub-information; null when the device does not support racing wheel input.
-    /// Racing wheel 子資訊；裝置不支援 racing wheel 時為 null。
-    /// </summary>
+    /// <summary>The copied RacingWheel data. 已複製的 RacingWheel 資料。</summary>
     public GameInputRacingWheelInfo? RacingWheel { get; }
 
-    /// <summary>
-    /// The force feedback motor capability information snapshots.
-    /// Force feedback motor 能力資訊快照。
-    /// </summary>
+    /// <summary>The copied ForceFeedbackMotors data. 已複製的 ForceFeedbackMotors 資料。</summary>
     public IReadOnlyList<GameInputForceFeedbackMotorInfo> ForceFeedbackMotors { get => field ?? Array.Empty<GameInputForceFeedbackMotorInfo>(); }
 
-    /// <summary>
-    /// The raw input report information the device can provide.
-    /// 裝置可提供的 raw input report 資訊。
-    /// </summary>
+    /// <summary>The copied InputReports data. 已複製的 InputReports 資料。</summary>
     public IReadOnlyList<GameInputRawDeviceReportInfo> InputReports { get => field ?? Array.Empty<GameInputRawDeviceReportInfo>(); }
 
-    /// <summary>
-    /// The raw output report information the device can accept.
-    /// 裝置可接受的 raw output report 資訊。
-    /// </summary>
+    /// <summary>The copied OutputReports data. 已複製的 OutputReports 資料。</summary>
     public IReadOnlyList<GameInputRawDeviceReportInfo> OutputReports { get => field ?? Array.Empty<GameInputRawDeviceReportInfo>(); }
 
-    /// <summary>
-    /// Compares all members for value equality, where <see cref="ForceFeedbackMotors"/>, <see cref="InputReports"/>, and
-    /// <see cref="OutputReports"/> are compared element by element; the diagnostics-only native pointer fields inside
-    /// <see cref="Native"/> do not participate in the comparison.
-    /// 比較所有欄位的值相等性，其中 <see cref="ForceFeedbackMotors"/>、<see cref="InputReports"/>、
-    /// <see cref="OutputReports"/> 採逐一比較內容；<see cref="Native"/> 內僅供診斷的原生指標欄位不參與比較。
-    /// </summary>
-    /// <param name="other">The other snapshot to compare. 要比較的另一個快照。</param>
-    /// <returns>Returns true when all members of the two snapshots are equal. 兩個快照的所有欄位皆相同時，傳回 true。</returns>
+    /// <summary>The VendorId value. 供應商識別碼。</summary>
+    public ushort VendorId => Identity.VendorId;
+
+    /// <summary>The ProductId value. 產品識別碼。</summary>
+    public ushort ProductId => Identity.ProductId;
+
+    /// <summary>The RevisionNumber value. 修訂編號。</summary>
+    public ushort RevisionNumber => Identity.RevisionNumber;
+
+    /// <summary>The Usage value. HID 使用方式。</summary>
+    public GameInputUsage Usage => Identity.Usage;
+
+    /// <summary>The HardwareVersion value. 硬體版本。</summary>
+    public GameInputVersion HardwareVersion => Identity.HardwareVersion;
+
+    /// <summary>The FirmwareVersion value. 韌體版本。</summary>
+    public GameInputVersion FirmwareVersion => Identity.FirmwareVersion;
+
+    /// <summary>The DeviceId value. 裝置識別碼。</summary>
+    public AppLocalDeviceId DeviceId => Identity.DeviceId;
+
+    /// <summary>The DeviceRootId value. 根裝置識別碼。</summary>
+    public AppLocalDeviceId DeviceRootId => Identity.DeviceRootId;
+
+    /// <summary>The DeviceFamily value. 裝置家族。</summary>
+    public GameInputDeviceFamily DeviceFamily => Identity.DeviceFamily;
+
+    /// <summary>The SupportedInput value. 支援的輸入種類。</summary>
+    public GameInputKind SupportedInput => Identity.SupportedInput;
+
+    /// <summary>The SupportedRumbleMotors value. 支援的震動馬達。</summary>
+    public GameInputRumbleMotors SupportedRumbleMotors => Identity.SupportedRumbleMotors;
+
+    /// <summary>The SupportedSystemButtons value. 支援的系統按鈕。</summary>
+    public GameInputSystemButtons SupportedSystemButtons => Identity.SupportedSystemButtons;
+
+    /// <summary>The ContainerId value. 容器識別碼。</summary>
+    public Guid ContainerId => Identity.ContainerId;
+
+    /// <summary>The copied SupportedLightingGroups data. 已複製的 SupportedLightingGroups 資料。</summary>
+    public GameInputLightingGroups SupportedLightingGroups { get; init; }
+
+    /// <summary>The copied XInputDeviceIndex data. 已複製的 XInputDeviceIndex 資料。</summary>
+    public uint? XInputDeviceIndex { get; init; }
+
+    /// <summary>The copied FeatureReports data. 已複製的 FeatureReports 資料。</summary>
+    public IReadOnlyList<GameInputRawDeviceReportInfo> FeatureReports { get => field ?? Array.Empty<GameInputRawDeviceReportInfo>(); init; }
+
+    /// <summary>The copied TouchSurfaces data. 已複製的 TouchSurfaces 資料。</summary>
+    public IReadOnlyList<GameInputTouchSurfaceInfo> TouchSurfaces { get => field ?? Array.Empty<GameInputTouchSurfaceInfo>(); init; }
+
+    /// <summary>Compares copied values and collection contents. 比較已複製的值與集合內容。</summary>
+    /// <param name="other">The other snapshot. 另一個快照。</param>
+    /// <returns>True when all contents are equal. 所有內容相等時為 true。</returns>
     public bool Equals(GameInputDeviceInfoSnapshot other)
     {
-        return VendorId == other.VendorId
-            && ProductId == other.ProductId
-            && RevisionNumber == other.RevisionNumber
-            && Usage.Equals(other.Usage)
-            && Native.HardwareVersion.Equals(other.Native.HardwareVersion)
-            && Native.FirmwareVersion.Equals(other.Native.FirmwareVersion)
-            && Native.DeviceId.Equals(other.Native.DeviceId)
-            && Native.DeviceRootId.Equals(other.Native.DeviceRootId)
-            && DeviceFamily == other.DeviceFamily
-            && SupportedInput == other.SupportedInput
-            && SupportedRumbleMotors == other.SupportedRumbleMotors
-            && SupportedSystemButtons == other.SupportedSystemButtons
-            && ContainerId == other.ContainerId
-            && DisplayName == other.DisplayName
-            && PnpPath == other.PnpPath
+        return EqualityComparer<GameInputDeviceIdentity>.Default.Equals(Identity, other.Identity)
+            && EqualityComparer<string?>.Default.Equals(DisplayName, other.DisplayName)
+            && EqualityComparer<string?>.Default.Equals(PnpPath, other.PnpPath)
             && EqualityComparer<GameInputKeyboardInfo?>.Default.Equals(Keyboard, other.Keyboard)
             && EqualityComparer<GameInputMouseInfo?>.Default.Equals(Mouse, other.Mouse)
             && EqualityComparer<GameInputSensorsInfo?>.Default.Equals(Sensors, other.Sensors)
@@ -301,176 +148,52 @@ public readonly record struct GameInputDeviceInfoSnapshot : IEquatable<GameInput
             && EqualityComparer<GameInputRacingWheelInfo?>.Default.Equals(RacingWheel, other.RacingWheel)
             && ForceFeedbackMotors.SequenceEqual(other.ForceFeedbackMotors)
             && InputReports.SequenceEqual(other.InputReports)
-            && OutputReports.SequenceEqual(other.OutputReports);
+            && OutputReports.SequenceEqual(other.OutputReports)
+            && EqualityComparer<GameInputLightingGroups>.Default.Equals(SupportedLightingGroups, other.SupportedLightingGroups)
+            && EqualityComparer<uint?>.Default.Equals(XInputDeviceIndex, other.XInputDeviceIndex)
+            && FeatureReports.SequenceEqual(other.FeatureReports)
+            && TouchSurfaces.SequenceEqual(other.TouchSurfaces);
     }
 
-    /// <summary>
-    /// Computes the hash code from all member contents; the diagnostics-only native pointer fields inside <see cref="Native"/> do
-    /// not participate.
-    /// 依所有欄位內容計算雜湊碼；<see cref="Native"/> 內僅供診斷的原生指標欄位不參與計算。
-    /// </summary>
+    /// <summary>Computes a hash of copied contents. 計算已複製內容的雜湊碼。</summary>
     /// <returns>The hash code. 雜湊碼。</returns>
     public override int GetHashCode()
     {
-        int hash = VendorId.GetHashCode();
-        hash = HashCodeCombiner.Combine(hash, ProductId.GetHashCode());
-        hash = HashCodeCombiner.Combine(hash, RevisionNumber.GetHashCode());
-        hash = HashCodeCombiner.Combine(hash, Usage.GetHashCode());
-        hash = HashCodeCombiner.Combine(hash, Native.HardwareVersion.GetHashCode());
-        hash = HashCodeCombiner.Combine(hash, Native.FirmwareVersion.GetHashCode());
-        hash = HashCodeCombiner.Combine(hash, Native.DeviceId.GetHashCode());
-        hash = HashCodeCombiner.Combine(hash, Native.DeviceRootId.GetHashCode());
-        hash = HashCodeCombiner.Combine(hash, DeviceFamily.GetHashCode());
-        hash = HashCodeCombiner.Combine(hash, SupportedInput.GetHashCode());
-        hash = HashCodeCombiner.Combine(hash, SupportedRumbleMotors.GetHashCode());
-        hash = HashCodeCombiner.Combine(hash, SupportedSystemButtons.GetHashCode());
-        hash = HashCodeCombiner.Combine(hash, ContainerId.GetHashCode());
-        hash = HashCodeCombiner.Combine(hash, DisplayName?.GetHashCode() ?? 0);
-        hash = HashCodeCombiner.Combine(hash, PnpPath?.GetHashCode() ?? 0);
-        hash = HashCodeCombiner.Combine(hash, Keyboard.GetHashCode());
-        hash = HashCodeCombiner.Combine(hash, Mouse.GetHashCode());
-        hash = HashCodeCombiner.Combine(hash, Sensors.GetHashCode());
-        hash = HashCodeCombiner.Combine(hash, Controller.GetHashCode());
-        hash = HashCodeCombiner.Combine(hash, ArcadeStick.GetHashCode());
-        hash = HashCodeCombiner.Combine(hash, FlightStick.GetHashCode());
-        hash = HashCodeCombiner.Combine(hash, Gamepad.GetHashCode());
-        hash = HashCodeCombiner.Combine(hash, RacingWheel.GetHashCode());
+        int hash = 17;
+        hash = HashCodeCombiner.Combine(hash, EqualityComparer<GameInputDeviceIdentity>.Default.GetHashCode(Identity!));
+        hash = HashCodeCombiner.Combine(hash, EqualityComparer<string?>.Default.GetHashCode(DisplayName!));
+        hash = HashCodeCombiner.Combine(hash, EqualityComparer<string?>.Default.GetHashCode(PnpPath!));
+        hash = HashCodeCombiner.Combine(hash, EqualityComparer<GameInputKeyboardInfo?>.Default.GetHashCode(Keyboard!));
+        hash = HashCodeCombiner.Combine(hash, EqualityComparer<GameInputMouseInfo?>.Default.GetHashCode(Mouse!));
+        hash = HashCodeCombiner.Combine(hash, EqualityComparer<GameInputSensorsInfo?>.Default.GetHashCode(Sensors!));
+        hash = HashCodeCombiner.Combine(hash, EqualityComparer<GameInputControllerInfoSnapshot?>.Default.GetHashCode(Controller!));
+        hash = HashCodeCombiner.Combine(hash, EqualityComparer<GameInputArcadeStickInfo?>.Default.GetHashCode(ArcadeStick!));
+        hash = HashCodeCombiner.Combine(hash, EqualityComparer<GameInputFlightStickInfo?>.Default.GetHashCode(FlightStick!));
+        hash = HashCodeCombiner.Combine(hash, EqualityComparer<GameInputGamepadInfo?>.Default.GetHashCode(Gamepad!));
+        hash = HashCodeCombiner.Combine(hash, EqualityComparer<GameInputRacingWheelInfo?>.Default.GetHashCode(RacingWheel!));
         hash = HashCodeCombiner.CombineRange(hash, ForceFeedbackMotors);
         hash = HashCodeCombiner.CombineRange(hash, InputReports);
         hash = HashCodeCombiner.CombineRange(hash, OutputReports);
+        hash = HashCodeCombiner.Combine(hash, EqualityComparer<GameInputLightingGroups>.Default.GetHashCode(SupportedLightingGroups!));
+        hash = HashCodeCombiner.Combine(hash, EqualityComparer<uint?>.Default.GetHashCode(XInputDeviceIndex!));
+        hash = HashCodeCombiner.CombineRange(hash, FeatureReports);
+        hash = HashCodeCombiner.CombineRange(hash, TouchSurfaces);
         return hash;
-    }
-
-    internal static GameInputDeviceInfoSnapshot FromNative(GameInputDeviceInfo native)
-    {
-        return new GameInputDeviceInfoSnapshot(
-            native,
-            NativeUtf8String.FromNullTerminated(native.DisplayName),
-            NativeUtf8String.FromNullTerminated(native.PnpPath),
-            PtrToNullableStructure<GameInputKeyboardInfo>(native.KeyboardInfo),
-            PtrToNullableStructure<GameInputMouseInfo>(native.MouseInfo),
-            PtrToNullableStructure<GameInputSensorsInfo>(native.SensorsInfo),
-            GameInputControllerInfoSnapshot.FromPointer(native.ControllerInfo),
-            PtrToNullableStructure<GameInputArcadeStickInfo>(native.ArcadeStickInfo),
-            PtrToNullableStructure<GameInputFlightStickInfo>(native.FlightStickInfo),
-            PtrToNullableStructure<GameInputGamepadInfo>(native.GamepadInfo),
-            PtrToNullableStructure<GameInputRacingWheelInfo>(native.RacingWheelInfo),
-            ReadArray<GameInputForceFeedbackMotorInfo>(native.ForceFeedbackMotorInfo, native.ForceFeedbackMotorCount),
-            ReadArray<GameInputRawDeviceReportInfo>(native.InputReportInfo, native.InputReportCount),
-            ReadArray<GameInputRawDeviceReportInfo>(native.OutputReportInfo, native.OutputReportCount));
-    }
-
-#if NET8_0_OR_GREATER
-    private static T? PtrToNullableStructure<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors | DynamicallyAccessedMemberTypes.NonPublicConstructors)] T>(IntPtr pointer)
-        where T : struct
-#else
-    private static T? PtrToNullableStructure<T>(IntPtr pointer)
-        where T : struct
-#endif
-    {
-        return pointer == IntPtr.Zero ? null : Marshal.PtrToStructure<T>(pointer);
-    }
-
-#if NET8_0_OR_GREATER
-    internal static IReadOnlyList<T> ReadArray<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors | DynamicallyAccessedMemberTypes.NonPublicConstructors)] T>(IntPtr pointer, uint count)
-        where T : struct
-#else
-    internal static IReadOnlyList<T> ReadArray<T>(IntPtr pointer, uint count)
-        where T : struct
-#endif
-    {
-        if (pointer == IntPtr.Zero || count == 0)
-        {
-            return Array.Empty<T>();
-        }
-
-        Type type = typeof(T);
-        bool isEnum = type.IsEnum;
-        TypeCode underlyingTypeCode = isEnum ? Type.GetTypeCode(Enum.GetUnderlyingType(type)) : TypeCode.Empty;
-        int itemSize = isEnum ? GetUnderlyingTypeSize(underlyingTypeCode) : Marshal.SizeOf<T>();
-
-        T[] values = new T[NativeSizeGuard.EnsureCount(count, NativeSizeGuard.MaxElementCount, "裝置資訊陣列元素數量")];
-        for (int index = 0; index < values.Length; index++)
-        {
-            IntPtr elementPointer = IntPtr.Add(pointer, checked(index * itemSize));
-            values[index] = isEnum
-                ? (T)Enum.ToObject(type, ReadUnderlyingEnumValue(elementPointer, underlyingTypeCode))
-                : Marshal.PtrToStructure<T>(elementPointer);
-        }
-
-        return values;
-    }
-
-    private static int GetUnderlyingTypeSize(TypeCode typeCode)
-    {
-        return typeCode switch
-        {
-            TypeCode.Byte or TypeCode.SByte => sizeof(byte),
-            TypeCode.Int16 or TypeCode.UInt16 => sizeof(short),
-            TypeCode.Int32 or TypeCode.UInt32 => sizeof(int),
-            TypeCode.Int64 or TypeCode.UInt64 => sizeof(long),
-            _ => throw new NotSupportedException($"不支援的 enum underlying type：{typeCode}。")
-        };
-    }
-
-    private static object ReadUnderlyingEnumValue(IntPtr pointer, TypeCode underlyingTypeCode)
-    {
-        return underlyingTypeCode switch
-        {
-            TypeCode.Byte => Marshal.ReadByte(pointer),
-            TypeCode.SByte => unchecked((sbyte)Marshal.ReadByte(pointer)),
-            TypeCode.Int16 => unchecked((short)Marshal.ReadInt16(pointer)),
-            TypeCode.UInt16 => unchecked((ushort)Marshal.ReadInt16(pointer)),
-            TypeCode.Int32 => Marshal.ReadInt32(pointer),
-            TypeCode.UInt32 => unchecked((uint)Marshal.ReadInt32(pointer)),
-            TypeCode.Int64 => Marshal.ReadInt64(pointer),
-            TypeCode.UInt64 => unchecked((ulong)Marshal.ReadInt64(pointer)),
-            _ => throw new NotSupportedException($"不支援的 enum underlying type：{underlyingTypeCode}。")
-        };
     }
 }
 
-/// <summary>
-/// A controller sub-information snapshot that holds no native pointers.
-/// 不持有原生指標的 controller 子資訊快照。
-/// </summary>
-/// <remarks>
-/// <see cref="AxisLabels"/>, <see cref="ButtonLabels"/>, and <see cref="Switches"/> are collection members; value equality
-/// compares their contents element by element instead of comparing the references of the copied arrays. <see cref="Native"/> does
-/// not participate in equality at all — it only has count fields and diagnostics-only native pointer fields, and the counts are
-/// already fully reflected in the lengths of the collection members above.
-/// <see cref="AxisLabels"/>、<see cref="ButtonLabels"/>、<see cref="Switches"/> 是集合欄位，
-/// 值相等性採逐一比較內容，而不是比較複本陣列的參考。<see cref="Native"/> 完全不參與相等性比較——
-/// 它只有 Count 欄位與僅供診斷的原生指標欄位，Count 已完整反映在上述集合欄位的長度中。
-/// </remarks>
+/// <summary>Controller labels and switches copied through API 4 getters. 透過 API 4 getter 複製的控制器標籤與開關。</summary>
 public readonly record struct GameInputControllerInfoSnapshot : IEquatable<GameInputControllerInfoSnapshot>
 {
     internal GameInputControllerInfoSnapshot(
-        GameInputControllerInfo native,
         IReadOnlyList<GameInputLabel> axisLabels,
         IReadOnlyList<GameInputLabel> buttonLabels,
         IReadOnlyList<GameInputControllerSwitchInfoSnapshot> switches)
     {
-        Native = native;
         AxisLabels = axisLabels;
         ButtonLabels = buttonLabels;
         Switches = switches;
     }
-
-    /// <summary>
-    /// The snapshot of the native controller fixed fields; the pointer fields are for diagnostics only.
-    /// 原生 controller 固定欄位快照；指標欄位只供診斷。
-    /// </summary>
-    /// <remarks>
-    /// The array fields in this structure (such as <see cref="GameInputControllerInfo.ControllerAxisLabels"/>) are pointers into
-    /// native memory whose lifetime is bound to the underlying COM object of the original device; dereferencing them after the
-    /// device is released causes undefined behavior. In typical scenarios use the copied members provided by this type, such as
-    /// <see cref="AxisLabels"/>, <see cref="ButtonLabels"/>, and <see cref="Switches"/>.
-    /// 這個結構中的陣列欄位（例如 <see cref="GameInputControllerInfo.ControllerAxisLabels"/>）是指向原生記憶體的指標，
-    /// 生命週期綁定於原始裝置的底層 COM 物件；裝置釋放後解參考會導致未定義行為。一般情境應改用本類別提供的
-    /// <see cref="AxisLabels"/>、<see cref="ButtonLabels"/>、<see cref="Switches"/> 等已複製欄位。
-    /// </remarks>
-    public GameInputControllerInfo Native { get; }
 
     /// <summary>
     /// The controller axis label list.
@@ -490,13 +213,7 @@ public readonly record struct GameInputControllerInfoSnapshot : IEquatable<GameI
     /// </summary>
     public IReadOnlyList<GameInputControllerSwitchInfoSnapshot> Switches { get => field ?? Array.Empty<GameInputControllerSwitchInfoSnapshot>(); }
 
-    /// <summary>
-    /// Compares the contents of <see cref="AxisLabels"/>, <see cref="ButtonLabels"/>, and <see cref="Switches"/> element by
-    /// element for value equality; the diagnostics-only native pointer fields inside <see cref="Native"/> do not participate
-    /// (their count fields are already fully reflected in the collection lengths).
-    /// 逐一比較 <see cref="AxisLabels"/>、<see cref="ButtonLabels"/>、<see cref="Switches"/> 內容的值相等性；
-    /// <see cref="Native"/> 內僅供診斷的原生指標欄位不參與比較（其 Count 欄位已完整反映在各集合欄位長度中）。
-    /// </summary>
+    /// <summary>Compares copied collection contents. 比較已複製的集合內容。</summary>
     /// <param name="other">The other snapshot to compare. 要比較的另一個快照。</param>
     /// <returns>Returns true when all members of the two snapshots are equal. 兩個快照的所有欄位皆相同時，傳回 true。</returns>
     public bool Equals(GameInputControllerInfoSnapshot other)
@@ -521,38 +238,6 @@ public readonly record struct GameInputControllerInfoSnapshot : IEquatable<GameI
         return hash;
     }
 
-    internal static GameInputControllerInfoSnapshot? FromPointer(IntPtr pointer)
-    {
-        if (pointer == IntPtr.Zero)
-        {
-            return null;
-        }
-
-        GameInputControllerInfo native = Marshal.PtrToStructure<GameInputControllerInfo>(pointer);
-        return new GameInputControllerInfoSnapshot(
-            native,
-            GameInputDeviceInfoSnapshot.ReadArray<GameInputLabel>(native.ControllerAxisLabels, native.ControllerAxisCount),
-            GameInputDeviceInfoSnapshot.ReadArray<GameInputLabel>(native.ControllerButtonLabels, native.ControllerButtonCount),
-            ReadSwitchInfo(native.ControllerSwitchInfo, native.ControllerSwitchCount));
-    }
-
-    private static GameInputControllerSwitchInfoSnapshot[] ReadSwitchInfo(IntPtr pointer, uint count)
-    {
-        if (pointer == IntPtr.Zero || count == 0)
-        {
-            return [];
-        }
-
-        int itemSize = Marshal.SizeOf<GameInputControllerSwitchInfo>();
-        GameInputControllerSwitchInfoSnapshot[] values = new GameInputControllerSwitchInfoSnapshot[checked((int)count)];
-        for (int index = 0; index < values.Length; index++)
-        {
-            GameInputControllerSwitchInfo native = Marshal.PtrToStructure<GameInputControllerSwitchInfo>(IntPtr.Add(pointer, checked(index * itemSize)));
-            values[index] = GameInputControllerSwitchInfoSnapshot.FromNative(native);
-        }
-
-        return values;
-    }
 }
 
 /// <summary>

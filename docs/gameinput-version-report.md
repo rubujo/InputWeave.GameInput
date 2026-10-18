@@ -1,30 +1,30 @@
 # GameInput 版本報告
 
-目前基準版本：`Microsoft.GameInput` `3.5.283`
+目前基準版本：`Microsoft.GameInput` `4.0.300`
 
 目前包裝程式庫版本：`InputWeave.GameInput v0.0.1`，NuGet / MSBuild 版本為 `0.0.1`。
 
-- API 版本：`3`
-- NuGet 套件 SHA256：`B5988CB8FF9D7009B6DDF6AD4E3FF87E91B00CC17FFCD5D628DABC21C208F100`
-- `native/include/GameInput.h` SHA256：`FBB769BEF01B133DBB62E3622A7137482CB52B642EA21DE080CB98279EF9610F`
-- `redist/GameInputRedist.msi` SHA256：`F8FCEB2D75E8DBB080088930A673C43B86D3E602329BD54309611E2EB78BF575`
+- 包裝 API 版本：`4`（套件主標頭 API 版本：`4`）
+- NuGet 套件 SHA256：`AE7DC3A311466A72DDCFD6C5CCD5B1E917BE890658236FA9791E937115AC2D79`
+- `native/include/GameInput.h` SHA256：`09B43DB68763D29CACBFEDCD4674ED7EF443ED2380A0BF20B2C8B452545D49A0`
+- `redist/GameInputRedist.msi` SHA256：`158505DFA70B082447371D402C2F50EB61973B9BF227AF23CE682CC90D70E453`
 
-低階互通層來源：`src/InputWeave.GameInput/Interop/Generated/` 下的列舉、常數、HRESULT、IID、回呼委派、結構配置、COM 介面與 `gameinput-abi-manifest.json` 均由目前基準的 `GameInput.h` 產生。
+低階互通層來源：`src/InputWeave.GameInput/Interop/Generated/` 下的列舉、常數、HRESULT、IID、回呼委派、結構配置、COM 介面與 `gameinput-abi-manifest.json` 均由目前基準的 `native/include/GameInput.h` 產生。套件追版預設維持目前包裝 API 範圍；明確遷移時使用 `-ApiVersion` 指定版本，並完成產生器、受控包裝與逐方法覆蓋率驗證。
 
-## Microsoft 官方 3.5 版本異動摘要
+## Microsoft 官方 4.0 版本異動摘要
 
-Microsoft 的套件 README 以 `3.5` 系列彙整版本說明，未提供 `3.5.283` 的逐 build Changelog。以下為本專案依官方內容整理的正體中文摘要：
+Microsoft 的套件 README 以 `4.0` 系列彙整版本說明，未提供 `4.0.300` 的逐 build Changelog。以下為本專案依官方內容整理的正體中文摘要：
 
-- 新增 Agility SDK 樣式的並存部署支援。
-- 新增 XInput 與背景 GIP 原始裝置報告支援。
-- 新增 PlayStation 5 DualSense 功能的 companion header；上游文件指向 Microsoft GameInput GitHub 儲存庫。
-- 公開標頭與靜態程式庫改採 MIT 授權。
-- 修正 Xbox 從暫停狀態恢復後遺失輸入的問題。
-- 修正 Xbox 輸入裝置缺少顯示名稱的問題。
-- 修正部分 Windows.Gaming.Input 遊戲收到重複 DualSense Edge 輸入的問題。
-- 包含其他穩定性與效能改善。
+- 新增裝置燈光、觸控裝置與 Nintendo Switch Pro 控制器支援。
+- 新增查詢裝置 XInput 索引的支援，以及軸、主要／次要開火與背鍵標籤欄位。
+- GameInputArcadeStickInfo 新增 LSB／RSB 按鈕旗標與對應標籤。
+- NuGet 套件新增 Windows 與 Xbox 的並存部署二進位檔，並提供有限的 x86 架構支援。
+- 將多種 IGameInputDevice 回呼整併為單一事件通知，並以 IGameInputDevice getter 取代 GameInputDeviceInfo 與相關結構。
+- 改善遠端存取應用程式的裝置支援與 HID 裝置震動支援，並包含穩定性與效能改善。
+- 包裝程式庫已遷移至 API 4，使用 native/include/GameInput.h 主標頭並更新裝置 getter、統一事件、燈光、觸控與功能報告 API。
+- 已交叉核對 GitHub 最新 v3.3.195.0 Release Notes；其中背鍵、DualSense 陀螺儀、PNP 容器分組、ARM 支援、Elite 重複裝置修正、終端機控制器支援與 CFG 改善均屬既有歷史異動，並非 4.0 新增功能。
 
-來源：[Microsoft.GameInput 3.5.283](https://www.nuget.org/packages/Microsoft.GameInput/3.5.283)
+來源：[Microsoft.GameInput 4.0.300](https://www.nuget.org/packages/Microsoft.GameInput/4.0.300)
 
 ## 追版流程
 

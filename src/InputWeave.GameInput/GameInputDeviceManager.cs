@@ -18,7 +18,10 @@ public sealed class GameInputDeviceManager : IDisposable
         | GameInputKind.GameInputKindArcadeStick
         | GameInputKind.GameInputKindFlightStick
         | GameInputKind.GameInputKindGamepad
-        | GameInputKind.GameInputKindRacingWheel;
+        | GameInputKind.GameInputKindRacingWheel
+        | GameInputKind.GameInputKindLighting
+        | GameInputKind.GameInputKindSystemButton
+        | GameInputKind.GameInputKindTouch;
 
     private readonly GameInputClient _client;
 #if NET9_0_OR_GREATER
@@ -144,9 +147,8 @@ public sealed class GameInputDeviceManager : IDisposable
     /// 重新整理裝置快取。
     /// </summary>
     /// <param name="inputKind">The GameInput input kind to query or filter. 要查詢或篩選的 GameInput 輸入種類。</param>
-    /// <param name="statusFilter">The device status to filter. 要篩選的裝置狀態。</param>
     /// <returns>The refreshed device information snapshot list. 重新整理後的裝置資訊快照清單。</returns>
-    public IReadOnlyList<GameInputDeviceInfoSnapshot> RefreshDevices(GameInputKind inputKind, GameInputDeviceStatus statusFilter = GameInputDeviceStatus.GameInputDeviceConnected)
+    public IReadOnlyList<GameInputDeviceInfoSnapshot> RefreshDevices(GameInputKind inputKind)
     {
         ThrowIfDisposed();
 
@@ -154,7 +156,7 @@ public sealed class GameInputDeviceManager : IDisposable
         // 避免並行的 Dispose 在兩者之間釋放根物件。
         (IReadOnlyList<GameInputDevice> devices, List<GameInputDeviceInfoSnapshot> snapshots) = _client.WithNativeLease(() =>
         {
-            IReadOnlyList<GameInputDevice> enumerated = _client.EnumerateDevices(inputKind, statusFilter);
+            IReadOnlyList<GameInputDevice> enumerated = _client.EnumerateDevices(inputKind);
             try
             {
                 List<GameInputDeviceInfoSnapshot> infoSnapshots = new(enumerated.Count);
@@ -185,8 +187,8 @@ public sealed class GameInputDeviceManager : IDisposable
     }
 
     /// <summary>
-    /// Refreshes the device cache using the default GameInput v3 primary input kinds.
-    /// 使用預設 GameInput v3 主要輸入種類重新整理裝置快取。
+    /// Refreshes the device cache using the default GameInput v4 primary input kinds.
+    /// 使用預設 GameInput v4 主要輸入種類重新整理裝置快取。
     /// </summary>
     /// <returns>The refreshed device information snapshot list. 重新整理後的裝置資訊快照清單。</returns>
     public IReadOnlyList<GameInputDeviceInfoSnapshot> RefreshDevices()
@@ -200,96 +202,79 @@ public sealed class GameInputDeviceManager : IDisposable
     /// 以背景執行緒非同步重新整理裝置快取，避免呼叫端執行緒（例如 UI 執行緒）被原生列舉阻塞。
     /// </summary>
     /// <remarks>
-    /// This method merely wraps <see cref="RefreshDevices(GameInputKind, GameInputDeviceStatus)"/> in
+    /// This method merely wraps <see cref="RefreshDevices(GameInputKind)"/> in
     /// <see cref="Task.Run(Action)"/>; it is not an asynchronous method that waits for native events, and the native enumeration
     /// call itself remains synchronous and blocking.
-    /// 這個方法只是把 <see cref="RefreshDevices(GameInputKind, GameInputDeviceStatus)"/> 包在
+    /// 這個方法只是把 <see cref="RefreshDevices(GameInputKind)"/> 包在
     /// <see cref="Task.Run(Action)"/> 中執行，不是等待原生事件的非同步方法；原生列舉呼叫本身仍是同步阻塞。
     /// </remarks>
     /// <param name="inputKind">The GameInput input kind to query or filter. 要查詢或篩選的 GameInput 輸入種類。</param>
-    /// <param name="statusFilter">The device status to filter. 要篩選的裝置狀態。</param>
     /// <param name="cancellationToken">The cancellation token. 取消語彙。</param>
     /// <returns>A task that produces the refreshed device information snapshot list. 產生重新整理後裝置資訊快照清單的工作。</returns>
     public Task<IReadOnlyList<GameInputDeviceInfoSnapshot>> RefreshDevicesAsync(
         GameInputKind inputKind,
-        GameInputDeviceStatus statusFilter = GameInputDeviceStatus.GameInputDeviceConnected,
         CancellationToken cancellationToken = default)
     {
         ThrowIfDisposed();
-        return Task.Run(() => RefreshDevices(inputKind, statusFilter), cancellationToken);
+        return Task.Run(() => RefreshDevices(inputKind), cancellationToken);
     }
 
     /// <summary>
-    /// Refreshes the device cache asynchronously on a background thread using the default GameInput v3 primary input kinds.
-    /// 使用預設 GameInput v3 主要輸入種類，以背景執行緒非同步重新整理裝置快取。
+    /// Refreshes the device cache asynchronously on a background thread using the default GameInput v4 primary input kinds.
+    /// 使用預設 GameInput v4 主要輸入種類，以背景執行緒非同步重新整理裝置快取。
     /// </summary>
     /// <param name="cancellationToken">The cancellation token. 取消語彙。</param>
     /// <returns>A task that produces the refreshed device information snapshot list. 產生重新整理後裝置資訊快照清單的工作。</returns>
     public Task<IReadOnlyList<GameInputDeviceInfoSnapshot>> RefreshDevicesAsync(CancellationToken cancellationToken = default)
     {
-        return RefreshDevicesAsync(s_defaultInputKinds, GameInputDeviceStatus.GameInputDeviceConnected, cancellationToken);
+        return RefreshDevicesAsync(s_defaultInputKinds, cancellationToken);
     }
 
     /// <summary>
     /// Asynchronously waits for the next device status event (for example plug/unplug or connection changes).
     /// 非同步等待下一筆裝置狀態事件（例如插拔、連線狀態變化）。
     /// </summary>
-    /// <remarks>
-    /// Only status changes that happen after the call are reported; devices that are already connected do not complete the task.
-    /// Internally registers a one-shot native callback; upon completion or cancellation it is unregistered on a background
-    /// thread, never by calling <see cref="GameInputCallbackRegistration.Dispose"/> synchronously on the native callback thread.
-    /// An exception raised while reading the device information faults the returned task.
-    /// 只回報呼叫之後發生的狀態變化；已經連線的裝置不會讓工作完成。
-    /// 內部會註冊一次性原生回呼；完成或取消後會透過背景執行緒解除註冊，
-    /// 不會在原生回呼執行緒中同步呼叫 <see cref="GameInputCallbackRegistration.Dispose"/>。
-    /// 讀取裝置資訊時發生的例外會讓傳回的工作以該例外失敗。
-    /// </remarks>
+    /// <remarks>Uses the native API 4 event stream, including initial Connected notifications for already connected devices. The one-shot registration is released in the background after completion or cancellation. 使用原生 API 4 事件串流，包含既有裝置的初始 Connected 通知。完成或取消後在背景釋放單次註冊。</remarks>
     /// <param name="inputKind">The GameInput input kind to query or filter. 要查詢或篩選的 GameInput 輸入種類。</param>
-    /// <param name="statusFilter">The device status to filter. 要篩選的裝置狀態。</param>
     /// <param name="cancellationToken">The cancellation token. 取消語彙。</param>
     /// <returns>A task that produces the next device status event. 產生下一筆裝置狀態事件的工作。</returns>
     public Task<GameInputDeviceManagerEvent> WaitForDeviceEventAsync(
         GameInputKind inputKind,
-        GameInputDeviceStatus statusFilter = GameInputDeviceStatus.GameInputDeviceAnyStatus,
         CancellationToken cancellationToken = default)
     {
         ThrowIfDisposed();
 
+        cancellationToken.ThrowIfCancellationRequested();
         return _client.RunAwaitableCallback<GameInputDeviceManagerEvent>(
             (onResult, onError) => _client.RegisterDeviceCallback(
                 null,
                 inputKind,
-                statusFilter,
-                // 只等待註冊之後發生的狀態變化；非同步列舉會先對所有已連線裝置觸發初始回呼，讓工作立即完成。
-                GameInputEnumerationKind.GameInputNoEnumeration,
-                (device, timestamp, currentStatus, previousStatus) =>
+                (deviceEvent, device) =>
                 {
-                    GameInputDeviceInfoSnapshot snapshot;
                     try
                     {
-                        snapshot = device.GetDeviceInfoSnapshot();
+                        GameInputDeviceInfoSnapshot snapshot = device.GetDeviceInfoSnapshot();
+                        onResult(CreateDeviceEvent(deviceEvent, snapshot));
                     }
                     catch (Exception ex)
                     {
                         onError(ex);
                         return;
                     }
-
-                    onResult(new GameInputDeviceManagerEvent(timestamp, currentStatus, previousStatus, snapshot));
                 }),
             cancellationToken,
             nameof(GameInputDeviceManager));
     }
 
     /// <summary>
-    /// Asynchronously waits for the next device status event using the default GameInput v3 primary input kinds.
-    /// 使用預設 GameInput v3 主要輸入種類，非同步等待下一筆裝置狀態事件。
+    /// Asynchronously waits for the next device status event using the default GameInput v4 primary input kinds.
+    /// 使用預設 GameInput v4 主要輸入種類，非同步等待下一筆裝置狀態事件。
     /// </summary>
     /// <param name="cancellationToken">The cancellation token. 取消語彙。</param>
     /// <returns>A task that produces the next device status event. 產生下一筆裝置狀態事件的工作。</returns>
     public Task<GameInputDeviceManagerEvent> WaitForDeviceEventAsync(CancellationToken cancellationToken = default)
     {
-        return WaitForDeviceEventAsync(s_defaultInputKinds, GameInputDeviceStatus.GameInputDeviceAnyStatus, cancellationToken);
+        return WaitForDeviceEventAsync(s_defaultInputKinds, cancellationToken);
     }
 
     /// <summary>
@@ -387,8 +372,7 @@ public sealed class GameInputDeviceManager : IDisposable
     /// 開始監看裝置狀態事件，事件會進入 manager 佇列。
     /// </summary>
     /// <param name="inputKind">The GameInput input kind to query or filter. 要查詢或篩選的 GameInput 輸入種類。</param>
-    /// <param name="statusFilter">The device status to filter. 要篩選的裝置狀態。</param>
-    public void StartDeviceEvents(GameInputKind inputKind, GameInputDeviceStatus statusFilter = GameInputDeviceStatus.GameInputDeviceAnyStatus)
+    public void StartDeviceEvents(GameInputKind inputKind)
     {
         ThrowIfDisposed();
 
@@ -401,16 +385,14 @@ public sealed class GameInputDeviceManager : IDisposable
             _deviceEvents = _client.RegisterDeviceCallback(
                 null,
                 inputKind,
-                statusFilter,
-                GameInputEnumerationKind.GameInputAsyncEnumeration,
                 EnqueueDeviceEvent);
             _manualDeviceEventsActive = true;
         }
     }
 
     /// <summary>
-    /// Starts watching device status events using the default GameInput v3 primary input kinds.
-    /// 使用預設 GameInput v3 主要輸入種類開始監看裝置狀態事件。
+    /// Starts watching device status events using the default GameInput v4 primary input kinds.
+    /// 使用預設 GameInput v4 主要輸入種類開始監看裝置狀態事件。
     /// </summary>
     public void StartDeviceEvents()
     {
@@ -913,10 +895,15 @@ public sealed class GameInputDeviceManager : IDisposable
         }
     }
 
-    private void EnqueueDeviceEvent(GameInputDevice device, ulong timestamp, GameInputDeviceStatus currentStatus, GameInputDeviceStatus previousStatus)
+    private void EnqueueDeviceEvent(GameInputDeviceEvent deviceEvent, GameInputDevice device)
     {
         GameInputDeviceInfoSnapshot snapshot = device.GetDeviceInfoSnapshot();
-        PublishDeviceEvent(new GameInputDeviceManagerEvent(timestamp, currentStatus, previousStatus, snapshot));
+        PublishDeviceEvent(CreateDeviceEvent(deviceEvent, snapshot));
+    }
+
+    private GameInputDeviceManagerEvent CreateDeviceEvent(GameInputDeviceEvent deviceEvent, GameInputDeviceInfoSnapshot snapshot)
+    {
+        return new GameInputDeviceManagerEvent(_client.GetCurrentTimestamp(), deviceEvent, snapshot);
     }
 
     internal void PublishDeviceEvent(GameInputDeviceManagerEvent managerEvent)
@@ -988,8 +975,6 @@ public sealed class GameInputDeviceManager : IDisposable
                 _deviceEvents = _client.RegisterDeviceCallback(
                     null,
                     s_defaultInputKinds,
-                    GameInputDeviceStatus.GameInputDeviceAnyStatus,
-                    GameInputEnumerationKind.GameInputAsyncEnumeration,
                     EnqueueDeviceEvent);
             }
             catch
@@ -1121,41 +1106,18 @@ public sealed class GameInputDeviceManager : IDisposable
     }
 }
 
-/// <summary>
-/// A device event in the GameInput manager queue.
-/// GameInput manager 佇列中的裝置事件。
-/// </summary>
-/// <param name="timestamp">The GameInput timestamp. GameInput 時間戳記。</param>
-/// <param name="currentStatus">The current device status. 目前裝置狀態。</param>
-/// <param name="previousStatus">The previous device status. 先前裝置狀態。</param>
-/// <param name="device">The device information snapshot associated with the event. 事件關聯的裝置資訊快照。</param>
-public sealed class GameInputDeviceManagerEvent(
-    ulong timestamp,
-    GameInputDeviceStatus currentStatus,
-    GameInputDeviceStatus previousStatus,
-    GameInputDeviceInfoSnapshot device)
+/// <summary>An API 4 device event with a copied device snapshot. 含已複製裝置快照的 API 4 裝置事件。</summary>
+/// <param name="timestamp">The timestamp when the managed handler received the event. 受控處理常式收到事件時的時間戳記。</param>
+/// <param name="deviceEvent">The native API 4 event. 原生 API 4 事件。</param>
+/// <param name="device">The independent device snapshot. 獨立裝置快照。</param>
+public sealed class GameInputDeviceManagerEvent(ulong timestamp, GameInputDeviceEvent deviceEvent, GameInputDeviceInfoSnapshot device)
 {
-    /// <summary>
-    /// The GameInput timestamp of the event.
-    /// 事件對應的 GameInput 時間戳記。
-    /// </summary>
+    /// <summary>The receipt timestamp. 收到事件時的時間戳記。</summary>
     public ulong Timestamp { get; } = timestamp;
 
-    /// <summary>
-    /// The device status after the event.
-    /// 事件發生後的裝置狀態。
-    /// </summary>
-    public GameInputDeviceStatus CurrentStatus { get; } = currentStatus;
+    /// <summary>The native API 4 event. 原生 API 4 事件。</summary>
+    public GameInputDeviceEvent DeviceEvent { get; } = deviceEvent;
 
-    /// <summary>
-    /// The device status before the event.
-    /// 事件發生前的裝置狀態。
-    /// </summary>
-    public GameInputDeviceStatus PreviousStatus { get; } = previousStatus;
-
-    /// <summary>
-    /// The device information snapshot of the event.
-    /// 事件對應的裝置資訊快照。
-    /// </summary>
+    /// <summary>The independent device snapshot. 獨立裝置快照。</summary>
     public GameInputDeviceInfoSnapshot Device { get; } = device;
 }

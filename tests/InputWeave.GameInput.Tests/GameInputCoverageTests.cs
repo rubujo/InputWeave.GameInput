@@ -21,7 +21,7 @@ public sealed class GameInputCoverageTests
         string report = File.ReadAllText(FindRepoFile("docs/gameinput-api-coverage.md"));
 
         Assert.Contains("InputWeave.GameInput v0.0.1", report);
-        Assert.Contains("Microsoft.GameInput 3.5.283", report);
+        Assert.Contains("Microsoft.GameInput 4.0.300", report);
         Assert.Contains("缺口：0", report);
         Assert.IsFalse(report.Contains("v.0.0.1", StringComparison.Ordinal));
     }
@@ -33,7 +33,7 @@ public sealed class GameInputCoverageTests
 
         Assert.Contains("## Microsoft 官方 ", report);
         Assert.Contains("版本異動摘要", report);
-        Assert.Contains("https://www.nuget.org/packages/Microsoft.GameInput/3.5.283", report);
+        Assert.Contains("https://www.nuget.org/packages/Microsoft.GameInput/4.0.300", report);
     }
 
     [TestMethod]
@@ -42,10 +42,10 @@ public sealed class GameInputCoverageTests
         string manifest = File.ReadAllText(FindRepoFile("src/InputWeave.GameInput/Interop/Generated/gameinput-abi-manifest.json"));
         string report = File.ReadAllText(FindRepoFile("docs/gameinput-api-coverage.md"));
 
-        Assert.Contains("\"apiVersion\": 3", manifest);
+        Assert.Contains("\"apiVersion\": 4", manifest);
         Assert.Contains("列舉：27 / 27", report);
-        Assert.Contains("結構：32 / 32", report);
-        Assert.Contains("回呼委派：4 / 4", report);
+        Assert.Contains("結構：33 / 33", report);
+        Assert.Contains("回呼委派：2 / 2", report);
         Assert.Contains("COM Interface：7 / 7", report);
         Assert.Contains("HRESULT：10 / 10", report);
     }
@@ -228,7 +228,7 @@ public sealed class GameInputCoverageTests
     private static GameInputDeviceInfoSnapshot CreateDeviceSnapshot(GameInputKind supportedInput, GameInputRumbleMotors supportedRumbleMotors)
     {
         return new GameInputDeviceInfoSnapshot(
-            new GameInputDeviceInfo
+            new GameInputDeviceIdentity
             {
                 SupportedInput = supportedInput,
                 SupportedRumbleMotors = supportedRumbleMotors

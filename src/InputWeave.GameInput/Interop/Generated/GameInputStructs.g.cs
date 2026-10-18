@@ -194,6 +194,38 @@ public struct GameInputSensorsState
 }
 
 /// <summary>
+/// A contact on a touch surface. 觸控表面上的接觸點。
+/// </summary>
+[StructLayout(LayoutKind.Sequential)]
+public struct GameInputTouchContact
+{
+    /// <summary>
+    /// The contactId field. contactId 欄位。
+    /// </summary>
+    public ulong ContactId;
+
+    /// <summary>
+    /// The screenX field. screenX 欄位。
+    /// </summary>
+    public int ScreenX;
+
+    /// <summary>
+    /// The screenY field. screenY 欄位。
+    /// </summary>
+    public int ScreenY;
+
+    /// <summary>
+    /// The padX field. padX 欄位。
+    /// </summary>
+    public uint PadX;
+
+    /// <summary>
+    /// The padY field. padY 欄位。
+    /// </summary>
+    public uint PadY;
+}
+
+/// <summary>
 /// Represents the native GameInput structure corresponding to GameInputArcadeStickState. 表示 GameInputArcadeStickState 對應的 GameInput 原生結構。
 /// </summary>
 [StructLayout(LayoutKind.Sequential)]
@@ -361,43 +393,6 @@ public unsafe struct GameInputControllerSwitchInfo
 }
 
 /// <summary>
-/// Represents the native GameInput structure corresponding to GameInputControllerInfo. 表示 GameInputControllerInfo 對應的 GameInput 原生結構。
-/// </summary>
-[StructLayout(LayoutKind.Sequential)]
-public struct GameInputControllerInfo
-{
-    /// <summary>
-    /// Represents the native GameInput field or constant corresponding to GameInputControllerInfo.ControllerAxisCount. 表示 GameInputControllerInfo.ControllerAxisCount 對應的 GameInput 原生欄位或常數。
-    /// </summary>
-    public uint ControllerAxisCount;
-
-    /// <summary>
-    /// Represents the native GameInput field or constant corresponding to GameInputControllerInfo.ControllerAxisLabels. 表示 GameInputControllerInfo.ControllerAxisLabels 對應的 GameInput 原生欄位或常數。
-    /// </summary>
-    public IntPtr ControllerAxisLabels;
-
-    /// <summary>
-    /// Represents the native GameInput field or constant corresponding to GameInputControllerInfo.ControllerButtonCount. 表示 GameInputControllerInfo.ControllerButtonCount 對應的 GameInput 原生欄位或常數。
-    /// </summary>
-    public uint ControllerButtonCount;
-
-    /// <summary>
-    /// Represents the native GameInput field or constant corresponding to GameInputControllerInfo.ControllerButtonLabels. 表示 GameInputControllerInfo.ControllerButtonLabels 對應的 GameInput 原生欄位或常數。
-    /// </summary>
-    public IntPtr ControllerButtonLabels;
-
-    /// <summary>
-    /// Represents the native GameInput field or constant corresponding to GameInputControllerInfo.ControllerSwitchCount. 表示 GameInputControllerInfo.ControllerSwitchCount 對應的 GameInput 原生欄位或常數。
-    /// </summary>
-    public uint ControllerSwitchCount;
-
-    /// <summary>
-    /// Represents the native GameInput field or constant corresponding to GameInputControllerInfo.ControllerSwitchInfo. 表示 GameInputControllerInfo.ControllerSwitchInfo 對應的 GameInput 原生欄位或常數。
-    /// </summary>
-    public IntPtr ControllerSwitchInfo;
-}
-
-/// <summary>
 /// Represents the native GameInput structure corresponding to GameInputKeyboardInfo. 表示 GameInputKeyboardInfo 對應的 GameInput 原生結構。
 /// </summary>
 [StructLayout(LayoutKind.Sequential)]
@@ -481,6 +476,33 @@ public struct GameInputSensorsInfo
 }
 
 /// <summary>
+/// Touch surface dimensions and contact capacity. 觸控表面尺寸與接觸點容量。
+/// </summary>
+[StructLayout(LayoutKind.Sequential)]
+public struct GameInputTouchSurfaceInfo
+{
+    /// <summary>
+    /// The maxContactCount field. maxContactCount 欄位。
+    /// </summary>
+    public uint MaxContactCount;
+
+    /// <summary>
+    /// The padWidth field. padWidth 欄位。
+    /// </summary>
+    public uint PadWidth;
+
+    /// <summary>
+    /// The padHeight field. padHeight 欄位。
+    /// </summary>
+    public uint PadHeight;
+
+    /// <summary>
+    /// The type field. type 欄位。
+    /// </summary>
+    public GameInputTouchSurfaceType Type;
+}
+
+/// <summary>
 /// Represents the native GameInput structure corresponding to GameInputArcadeStickInfo. 表示 GameInputArcadeStickInfo 對應的 GameInput 原生結構。
 /// </summary>
 [StructLayout(LayoutKind.Sequential)]
@@ -555,6 +577,16 @@ public struct GameInputArcadeStickInfo
     /// Represents the native GameInput field or constant corresponding to GameInputArcadeStickInfo.SpecialButton2Label. 表示 GameInputArcadeStickInfo.SpecialButton2Label 對應的 GameInput 原生欄位或常數。
     /// </summary>
     public GameInputLabel SpecialButton2Label;
+
+    /// <summary>
+    /// The leftThumbstickButtonLabel field. leftThumbstickButtonLabel 欄位。
+    /// </summary>
+    public GameInputLabel LeftThumbstickButtonLabel;
+
+    /// <summary>
+    /// The rightThumbstickButtonLabel field. rightThumbstickButtonLabel 欄位。
+    /// </summary>
+    public GameInputLabel RightThumbstickButtonLabel;
 
     /// <summary>
     /// Represents the native GameInput field or constant corresponding to GameInputArcadeStickInfo.ExtraButtonCount. 表示 GameInputArcadeStickInfo.ExtraButtonCount 對應的 GameInput 原生欄位或常數。
@@ -642,6 +674,26 @@ public struct GameInputFlightStickInfo
     /// Represents the native GameInput field or constant corresponding to GameInputFlightStickInfo.RightShoulderButtonLabel. 表示 GameInputFlightStickInfo.RightShoulderButtonLabel 對應的 GameInput 原生欄位或常數。
     /// </summary>
     public GameInputLabel RightShoulderButtonLabel;
+
+    /// <summary>
+    /// The rollLabel field. rollLabel 欄位。
+    /// </summary>
+    public GameInputLabel RollLabel;
+
+    /// <summary>
+    /// The pitchLabel field. pitchLabel 欄位。
+    /// </summary>
+    public GameInputLabel PitchLabel;
+
+    /// <summary>
+    /// The yawLabel field. yawLabel 欄位。
+    /// </summary>
+    public GameInputLabel YawLabel;
+
+    /// <summary>
+    /// The throttleLabel field. throttleLabel 欄位。
+    /// </summary>
+    public GameInputLabel ThrottleLabel;
 
     /// <summary>
     /// Represents the native GameInput field or constant corresponding to GameInputFlightStickInfo.ExtraButtonCount. 表示 GameInputFlightStickInfo.ExtraButtonCount 對應的 GameInput 原生欄位或常數。
@@ -746,6 +798,56 @@ public struct GameInputGamepadInfo
     public GameInputLabel RightThumbstickButtonLabel;
 
     /// <summary>
+    /// The paddleLeft1Label field. paddleLeft1Label 欄位。
+    /// </summary>
+    public GameInputLabel PaddleLeft1Label;
+
+    /// <summary>
+    /// The paddleLeft2Label field. paddleLeft2Label 欄位。
+    /// </summary>
+    public GameInputLabel PaddleLeft2Label;
+
+    /// <summary>
+    /// The paddleRight1Label field. paddleRight1Label 欄位。
+    /// </summary>
+    public GameInputLabel PaddleRight1Label;
+
+    /// <summary>
+    /// The paddleRight2Label field. paddleRight2Label 欄位。
+    /// </summary>
+    public GameInputLabel PaddleRight2Label;
+
+    /// <summary>
+    /// The leftTriggerLabel field. leftTriggerLabel 欄位。
+    /// </summary>
+    public GameInputLabel LeftTriggerLabel;
+
+    /// <summary>
+    /// The rightTriggerLabel field. rightTriggerLabel 欄位。
+    /// </summary>
+    public GameInputLabel RightTriggerLabel;
+
+    /// <summary>
+    /// The leftThumbstickXLabel field. leftThumbstickXLabel 欄位。
+    /// </summary>
+    public GameInputLabel LeftThumbstickXLabel;
+
+    /// <summary>
+    /// The leftThumbstickYLabel field. leftThumbstickYLabel 欄位。
+    /// </summary>
+    public GameInputLabel LeftThumbstickYLabel;
+
+    /// <summary>
+    /// The rightThumbstickXLabel field. rightThumbstickXLabel 欄位。
+    /// </summary>
+    public GameInputLabel RightThumbstickXLabel;
+
+    /// <summary>
+    /// The rightThumbstickYLabel field. rightThumbstickYLabel 欄位。
+    /// </summary>
+    public GameInputLabel RightThumbstickYLabel;
+
+    /// <summary>
     /// Represents the native GameInput field or constant corresponding to GameInputGamepadInfo.ExtraButtonCount. 表示 GameInputGamepadInfo.ExtraButtonCount 對應的 GameInput 原生欄位或常數。
     /// </summary>
     public uint ExtraButtonCount;
@@ -831,6 +933,31 @@ public struct GameInputRacingWheelInfo
     /// Represents the native GameInput field or constant corresponding to GameInputRacingWheelInfo.RightThumbstickButtonLabel. 表示 GameInputRacingWheelInfo.RightThumbstickButtonLabel 對應的 GameInput 原生欄位或常數。
     /// </summary>
     public GameInputLabel RightThumbstickButtonLabel;
+
+    /// <summary>
+    /// The steeringLabel field. steeringLabel 欄位。
+    /// </summary>
+    public GameInputLabel SteeringLabel;
+
+    /// <summary>
+    /// The throttleLabel field. throttleLabel 欄位。
+    /// </summary>
+    public GameInputLabel ThrottleLabel;
+
+    /// <summary>
+    /// The brakeLabel field. brakeLabel 欄位。
+    /// </summary>
+    public GameInputLabel BrakeLabel;
+
+    /// <summary>
+    /// The clutchLabel field. clutchLabel 欄位。
+    /// </summary>
+    public GameInputLabel ClutchLabel;
+
+    /// <summary>
+    /// The handbrakeLabel field. handbrakeLabel 欄位。
+    /// </summary>
+    public GameInputLabel HandbrakeLabel;
 
     /// <summary>
     /// Represents the native GameInput field or constant corresponding to GameInputRacingWheelInfo.HasClutch. 表示 GameInputRacingWheelInfo.HasClutch 對應的 GameInput 原生欄位或常數。
@@ -974,158 +1101,6 @@ public struct GameInputRawDeviceReportInfo
     /// Represents the native GameInput field or constant corresponding to GameInputRawDeviceReportInfo.Size. 表示 GameInputRawDeviceReportInfo.Size 對應的 GameInput 原生欄位或常數。
     /// </summary>
     public uint Size;
-}
-
-/// <summary>
-/// Represents the native GameInput structure corresponding to GameInputDeviceInfo. 表示 GameInputDeviceInfo 對應的 GameInput 原生結構。
-/// </summary>
-[StructLayout(LayoutKind.Sequential)]
-public struct GameInputDeviceInfo
-{
-    /// <summary>
-    /// Represents the native GameInput field or constant corresponding to GameInputDeviceInfo.VendorId. 表示 GameInputDeviceInfo.VendorId 對應的 GameInput 原生欄位或常數。
-    /// </summary>
-    public ushort VendorId;
-
-    /// <summary>
-    /// Represents the native GameInput field or constant corresponding to GameInputDeviceInfo.ProductId. 表示 GameInputDeviceInfo.ProductId 對應的 GameInput 原生欄位或常數。
-    /// </summary>
-    public ushort ProductId;
-
-    /// <summary>
-    /// Represents the native GameInput field or constant corresponding to GameInputDeviceInfo.RevisionNumber. 表示 GameInputDeviceInfo.RevisionNumber 對應的 GameInput 原生欄位或常數。
-    /// </summary>
-    public ushort RevisionNumber;
-
-    /// <summary>
-    /// Represents the native GameInput field or constant corresponding to GameInputDeviceInfo.Usage. 表示 GameInputDeviceInfo.Usage 對應的 GameInput 原生欄位或常數。
-    /// </summary>
-    public GameInputUsage Usage;
-
-    /// <summary>
-    /// Represents the native GameInput field or constant corresponding to GameInputDeviceInfo.HardwareVersion. 表示 GameInputDeviceInfo.HardwareVersion 對應的 GameInput 原生欄位或常數。
-    /// </summary>
-    public GameInputVersion HardwareVersion;
-
-    /// <summary>
-    /// Represents the native GameInput field or constant corresponding to GameInputDeviceInfo.FirmwareVersion. 表示 GameInputDeviceInfo.FirmwareVersion 對應的 GameInput 原生欄位或常數。
-    /// </summary>
-    public GameInputVersion FirmwareVersion;
-
-    /// <summary>
-    /// Represents the native GameInput field or constant corresponding to GameInputDeviceInfo.DeviceId. 表示 GameInputDeviceInfo.DeviceId 對應的 GameInput 原生欄位或常數。
-    /// </summary>
-    public AppLocalDeviceId DeviceId;
-
-    /// <summary>
-    /// Represents the native GameInput field or constant corresponding to GameInputDeviceInfo.DeviceRootId. 表示 GameInputDeviceInfo.DeviceRootId 對應的 GameInput 原生欄位或常數。
-    /// </summary>
-    public AppLocalDeviceId DeviceRootId;
-
-    /// <summary>
-    /// Represents the native GameInput field or constant corresponding to GameInputDeviceInfo.DeviceFamily. 表示 GameInputDeviceInfo.DeviceFamily 對應的 GameInput 原生欄位或常數。
-    /// </summary>
-    public GameInputDeviceFamily DeviceFamily;
-
-    /// <summary>
-    /// Represents the native GameInput field or constant corresponding to GameInputDeviceInfo.SupportedInput. 表示 GameInputDeviceInfo.SupportedInput 對應的 GameInput 原生欄位或常數。
-    /// </summary>
-    public GameInputKind SupportedInput;
-
-    /// <summary>
-    /// Represents the native GameInput field or constant corresponding to GameInputDeviceInfo.SupportedRumbleMotors. 表示 GameInputDeviceInfo.SupportedRumbleMotors 對應的 GameInput 原生欄位或常數。
-    /// </summary>
-    public GameInputRumbleMotors SupportedRumbleMotors;
-
-    /// <summary>
-    /// Represents the native GameInput field or constant corresponding to GameInputDeviceInfo.SupportedSystemButtons. 表示 GameInputDeviceInfo.SupportedSystemButtons 對應的 GameInput 原生欄位或常數。
-    /// </summary>
-    public GameInputSystemButtons SupportedSystemButtons;
-
-    /// <summary>
-    /// Represents the native GameInput field or constant corresponding to GameInputDeviceInfo.ContainerId. 表示 GameInputDeviceInfo.ContainerId 對應的 GameInput 原生欄位或常數。
-    /// </summary>
-    public Guid ContainerId;
-
-    /// <summary>
-    /// Represents the native GameInput field or constant corresponding to GameInputDeviceInfo.DisplayName. 表示 GameInputDeviceInfo.DisplayName 對應的 GameInput 原生欄位或常數。
-    /// </summary>
-    public IntPtr DisplayName;
-
-    /// <summary>
-    /// Represents the native GameInput field or constant corresponding to GameInputDeviceInfo.PnpPath. 表示 GameInputDeviceInfo.PnpPath 對應的 GameInput 原生欄位或常數。
-    /// </summary>
-    public IntPtr PnpPath;
-
-    /// <summary>
-    /// Represents the native GameInput field or constant corresponding to GameInputDeviceInfo.KeyboardInfo. 表示 GameInputDeviceInfo.KeyboardInfo 對應的 GameInput 原生欄位或常數。
-    /// </summary>
-    public IntPtr KeyboardInfo;
-
-    /// <summary>
-    /// Represents the native GameInput field or constant corresponding to GameInputDeviceInfo.MouseInfo. 表示 GameInputDeviceInfo.MouseInfo 對應的 GameInput 原生欄位或常數。
-    /// </summary>
-    public IntPtr MouseInfo;
-
-    /// <summary>
-    /// Represents the native GameInput field or constant corresponding to GameInputDeviceInfo.SensorsInfo. 表示 GameInputDeviceInfo.SensorsInfo 對應的 GameInput 原生欄位或常數。
-    /// </summary>
-    public IntPtr SensorsInfo;
-
-    /// <summary>
-    /// Represents the native GameInput field or constant corresponding to GameInputDeviceInfo.ControllerInfo. 表示 GameInputDeviceInfo.ControllerInfo 對應的 GameInput 原生欄位或常數。
-    /// </summary>
-    public IntPtr ControllerInfo;
-
-    /// <summary>
-    /// Represents the native GameInput field or constant corresponding to GameInputDeviceInfo.ArcadeStickInfo. 表示 GameInputDeviceInfo.ArcadeStickInfo 對應的 GameInput 原生欄位或常數。
-    /// </summary>
-    public IntPtr ArcadeStickInfo;
-
-    /// <summary>
-    /// Represents the native GameInput field or constant corresponding to GameInputDeviceInfo.FlightStickInfo. 表示 GameInputDeviceInfo.FlightStickInfo 對應的 GameInput 原生欄位或常數。
-    /// </summary>
-    public IntPtr FlightStickInfo;
-
-    /// <summary>
-    /// Represents the native GameInput field or constant corresponding to GameInputDeviceInfo.GamepadInfo. 表示 GameInputDeviceInfo.GamepadInfo 對應的 GameInput 原生欄位或常數。
-    /// </summary>
-    public IntPtr GamepadInfo;
-
-    /// <summary>
-    /// Represents the native GameInput field or constant corresponding to GameInputDeviceInfo.RacingWheelInfo. 表示 GameInputDeviceInfo.RacingWheelInfo 對應的 GameInput 原生欄位或常數。
-    /// </summary>
-    public IntPtr RacingWheelInfo;
-
-    /// <summary>
-    /// Represents the native GameInput field or constant corresponding to GameInputDeviceInfo.ForceFeedbackMotorCount. 表示 GameInputDeviceInfo.ForceFeedbackMotorCount 對應的 GameInput 原生欄位或常數。
-    /// </summary>
-    public uint ForceFeedbackMotorCount;
-
-    /// <summary>
-    /// Represents the native GameInput field or constant corresponding to GameInputDeviceInfo.ForceFeedbackMotorInfo. 表示 GameInputDeviceInfo.ForceFeedbackMotorInfo 對應的 GameInput 原生欄位或常數。
-    /// </summary>
-    public IntPtr ForceFeedbackMotorInfo;
-
-    /// <summary>
-    /// Represents the native GameInput field or constant corresponding to GameInputDeviceInfo.InputReportCount. 表示 GameInputDeviceInfo.InputReportCount 對應的 GameInput 原生欄位或常數。
-    /// </summary>
-    public uint InputReportCount;
-
-    /// <summary>
-    /// Represents the native GameInput field or constant corresponding to GameInputDeviceInfo.InputReportInfo. 表示 GameInputDeviceInfo.InputReportInfo 對應的 GameInput 原生欄位或常數。
-    /// </summary>
-    public IntPtr InputReportInfo;
-
-    /// <summary>
-    /// Represents the native GameInput field or constant corresponding to GameInputDeviceInfo.OutputReportCount. 表示 GameInputDeviceInfo.OutputReportCount 對應的 GameInput 原生欄位或常數。
-    /// </summary>
-    public uint OutputReportCount;
-
-    /// <summary>
-    /// Represents the native GameInput field or constant corresponding to GameInputDeviceInfo.OutputReportInfo. 表示 GameInputDeviceInfo.OutputReportInfo 對應的 GameInput 原生欄位或常數。
-    /// </summary>
-    public IntPtr OutputReportInfo;
 }
 
 /// <summary>
@@ -1458,6 +1433,28 @@ public struct GameInputRumbleParams
     /// Represents the native GameInput field or constant corresponding to GameInputRumbleParams.RightTrigger. 表示 GameInputRumbleParams.RightTrigger 對應的 GameInput 原生欄位或常數。
     /// </summary>
     public float RightTrigger;
+}
+
+/// <summary>
+/// An RGB lighting color. RGB 燈光色彩。
+/// </summary>
+[StructLayout(LayoutKind.Sequential)]
+public struct GameInputColor
+{
+    /// <summary>
+    /// The r field. r 欄位。
+    /// </summary>
+    public byte R;
+
+    /// <summary>
+    /// The g field. g 欄位。
+    /// </summary>
+    public byte G;
+
+    /// <summary>
+    /// The b field. b 欄位。
+    /// </summary>
+    public byte B;
 }
 
 /// <summary>

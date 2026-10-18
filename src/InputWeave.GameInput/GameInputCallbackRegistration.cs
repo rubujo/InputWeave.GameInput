@@ -91,8 +91,7 @@ public sealed class GameInputCallbackRegistration : IDisposable
         {
             if (Token != 0)
             {
-                // 刻意不先呼叫 StopCallback：它會非同步移除註冊，讓隨後的 UnregisterCallback 找不到 token 而傳回 false，
-                // 導致 GCHandle 無法釋放。UnregisterCallback 本身就保證不再派送，並等待進行中的回呼結束。
+                // UnregisterCallback 等待進行中的回呼結束；成功後才能釋放其受控內容。
                 unregistered = _unregisterCallback(Token);
             }
         }

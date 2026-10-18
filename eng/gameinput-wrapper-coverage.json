@@ -1,0 +1,165 @@
+{
+  "apiVersion": 4,
+  "interfaces": {
+    "IGameInput": {
+      "wrapper": "GameInputClient",
+      "methods": [
+        "GetCurrentTimestamp",
+        "GetCurrentReading",
+        "GetNextReading",
+        "GetPreviousReading",
+        "RegisterReadingCallback",
+        "RegisterDeviceCallback",
+        "UnregisterCallback",
+        "CreateDispatcher",
+        "FindDeviceFromId",
+        "FindDeviceFromPlatformString",
+        "EnableBackgroundInput",
+        "CreateAggregateDevice",
+        "DisableAggregateDevice"
+      ]
+    },
+    "IGameInputRawDeviceReport": {
+      "wrapper": "GameInputRawDeviceReport",
+      "methods": [
+        "GetDevice",
+        "GetReportInfo",
+        "GetRawDataSize",
+        "GetRawData",
+        "SetRawData"
+      ]
+    },
+    "IGameInputReading": {
+      "wrapper": "GameInputReading",
+      "methods": [
+        "GetInputKind",
+        "GetTimestamp",
+        "GetDevice",
+        "GetControllerAxisCount",
+        "GetControllerAxisState",
+        "GetControllerButtonCount",
+        "GetControllerButtonState",
+        "GetControllerSwitchCount",
+        "GetControllerSwitchState",
+        "GetKeyCount",
+        "GetKeyState",
+        "GetMouseState",
+        "GetSensorsState",
+        "GetArcadeStickState",
+        "GetFlightStickState",
+        "GetGamepadState",
+        "GetRacingWheelState",
+        "GetRawReport",
+        "GetSystemButtonState",
+        "GetTouchContactCount",
+        "GetTouchSurfaceState"
+      ]
+    },
+    "IGameInputDevice": {
+      "wrapper": "GameInputDevice",
+      "methods": [
+        "GetVendorId",
+        "GetProductId",
+        "GetRevisionNumber",
+        "GetUsage",
+        "GetHardwareVersion",
+        "GetFirmwareVersion",
+        "GetDeviceId",
+        "GetDeviceRootId",
+        "GetDeviceFamily",
+        "GetSupportedInput",
+        "GetSupportedRumbleMotors",
+        "GetSupportedSystemButtons",
+        "GetSupportedLightingGroups",
+        "GetSupportedLightingGroupSize",
+        "GetContainerId",
+        "GetDisplayName",
+        "GetPnpPath",
+        "GetXInputDeviceIndex",
+        "GetKeyboardInfo",
+        "GetMouseInfo",
+        "GetSensorsInfo",
+        "GetControllerAxisCount",
+        "GetControllerAxisLabels",
+        "GetControllerButtonCount",
+        "GetControllerButtonLabels",
+        "GetControllerSwitchCount",
+        "GetControllerSwitchInfo",
+        "GetArcadeStickInfo",
+        "GetFlightStickInfo",
+        "GetGamepadInfo",
+        "GetRacingWheelInfo",
+        "GetForceFeedbackMotorCount",
+        "GetForceFeedbackMotorInfo",
+        "GetInputReportCount",
+        "GetInputReportInfo",
+        "GetOutputReportCount",
+        "GetOutputReportInfo",
+        "GetFeatureReportCount",
+        "GetFeatureReportInfo",
+        "GetHapticInfo",
+        "IsConnected",
+        "CreateForceFeedbackEffect",
+        "IsForceFeedbackMotorPoweredOn",
+        "SetForceFeedbackMotorGain",
+        "SetRumbleState",
+        "DirectInputEscape",
+        "CreateInputMapper",
+        "GetExtraAxisCount",
+        "GetExtraButtonCount",
+        "GetExtraAxisIndexes",
+        "GetExtraButtonIndexes",
+        "CreateRawDeviceReport",
+        "GetRawDeviceFeature",
+        "SetRawDeviceFeature",
+        "SendRawDeviceOutput",
+        "SetLightingColor",
+        "ApplyLightingColors",
+        "ApplyLightingSystemDefault",
+        "GetTouchSurfaceCount",
+        "GetTouchSurfaceInfo"
+      ]
+    },
+    "IGameInputDispatcher": {
+      "wrapper": "GameInputDispatcher",
+      "methods": [
+        "Dispatch",
+        "OpenWaitHandle"
+      ]
+    },
+    "IGameInputForceFeedbackEffect": {
+      "wrapper": "GameInputForceFeedbackEffect",
+      "methods": [
+        "GetDevice",
+        "GetMotorIndex",
+        "GetGain",
+        "SetGain",
+        "GetParams",
+        "SetParams",
+        "GetState",
+        "SetState"
+      ]
+    },
+    "IGameInputMapper": {
+      "wrapper": "GameInputMapper",
+      "methods": [
+        "GetArcadeStickButtonMappingInfo",
+        "GetFlightStickAxisMappingInfo",
+        "GetFlightStickButtonMappingInfo",
+        "GetGamepadAxisMappingInfo",
+        "GetGamepadButtonMappingInfo",
+        "GetRacingWheelAxisMappingInfo",
+        "GetRacingWheelButtonMappingInfo"
+      ]
+    }
+  },
+  "functions": {
+    "GameInputCreate": {
+      "equivalent": "GameInputInitialize",
+      "wrapper": "GameInputClient.Create"
+    },
+    "GameInputInitialize": {
+      "wrapper": "GameInputClient.Create"
+    }
+  }
+}

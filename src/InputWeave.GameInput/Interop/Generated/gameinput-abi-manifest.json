@@ -1,5 +1,5 @@
 {
-  "apiVersion": 3,
+  "apiVersion": 4,
   "enums": [
     {
       "name": "GameInputKind",
@@ -56,58 +56,44 @@
         {
           "name": "GameInputKindRacingWheel",
           "value": 524288
+        },
+        {
+          "name": "GameInputKindLighting",
+          "value": 1048576
+        },
+        {
+          "name": "GameInputKindSystemButton",
+          "value": 2097152
+        },
+        {
+          "name": "GameInputKindTouch",
+          "value": 4194304
         }
       ]
     },
     {
-      "name": "GameInputEnumerationKind",
+      "name": "GameInputDeviceEvent",
       "isFlags": false,
       "members": [
         {
-          "name": "GameInputNoEnumeration",
+          "name": "GameInputDeviceEventConnected",
           "value": 0
         },
         {
-          "name": "GameInputAsyncEnumeration",
+          "name": "GameInputDeviceEventDisconnected",
           "value": 1
         },
         {
-          "name": "GameInputBlockingEnumeration",
-          "value": 2
-        }
-      ]
-    },
-    {
-      "name": "GameInputFocusPolicy",
-      "isFlags": true,
-      "members": [
-        {
-          "name": "GameInputDefaultFocusPolicy",
-          "value": 0
-        },
-        {
-          "name": "GameInputExclusiveForegroundInput",
+          "name": "GameInputDeviceEventKeyboardLayoutUpdated",
           "value": 2
         },
         {
-          "name": "GameInputExclusiveForegroundGuideButton",
-          "value": 8
+          "name": "GameInputDeviceEventHapticInfoUpdated",
+          "value": 3
         },
         {
-          "name": "GameInputExclusiveForegroundShareButton",
-          "value": 32
-        },
-        {
-          "name": "GameInputEnableBackgroundInput",
-          "value": 64
-        },
-        {
-          "name": "GameInputEnableBackgroundGuideButton",
-          "value": 128
-        },
-        {
-          "name": "GameInputEnableBackgroundShareButton",
-          "value": 256
+          "name": "GameInputDeviceEventXInputIndexUpdated",
+          "value": 4
         }
       ]
     },
@@ -372,6 +358,14 @@
         {
           "name": "GameInputArcadeStickSpecial2",
           "value": 8192
+        },
+        {
+          "name": "GameInputArcadeStickLeftThumbstick",
+          "value": 16384
+        },
+        {
+          "name": "GameInputArcadeStickRightThumbstick",
+          "value": 32768
         }
       ]
     },
@@ -582,6 +576,10 @@
         {
           "name": "GameInputRawOutputReport",
           "value": 1
+        },
+        {
+          "name": "GameInputRawFeatureReport",
+          "value": 2
         }
       ]
     },
@@ -764,28 +762,6 @@
       ]
     },
     {
-      "name": "GameInputDeviceStatus",
-      "isFlags": true,
-      "members": [
-        {
-          "name": "GameInputDeviceNoStatus",
-          "value": 0
-        },
-        {
-          "name": "GameInputDeviceConnected",
-          "value": 1
-        },
-        {
-          "name": "GameInputDeviceHapticInfoReady",
-          "value": 2097152
-        },
-        {
-          "name": "GameInputDeviceAnyStatus",
-          "value": -1
-        }
-      ]
-    },
-    {
       "name": "GameInputDeviceFamily",
       "isFlags": false,
       "members": [
@@ -816,6 +792,52 @@
         {
           "name": "GameInputFamilyAggregate",
           "value": 5
+        }
+      ]
+    },
+    {
+      "name": "GameInputLightingGroups",
+      "isFlags": true,
+      "members": [
+        {
+          "name": "GameInputLightingGroupUnknown",
+          "value": 0
+        },
+        {
+          "name": "GameInputLightingGroupLeftThumbstick",
+          "value": 1
+        },
+        {
+          "name": "GameInputLightingGroupRightThumbstick",
+          "value": 2
+        },
+        {
+          "name": "GameInputLightingGroupDPad",
+          "value": 4
+        },
+        {
+          "name": "GameInputLightingGroupFaceButtons",
+          "value": 8
+        },
+        {
+          "name": "GameInputLightingGroupCenterLight",
+          "value": 16
+        },
+        {
+          "name": "GameInputLightingGroupKeyboardKey",
+          "value": 32
+        },
+        {
+          "name": "GameInputLightingGroupLeftHeadset",
+          "value": 64
+        },
+        {
+          "name": "GameInputLightingGroupRightHeadset",
+          "value": 128
+        },
+        {
+          "name": "GameInputLightingGroupAll",
+          "value": -1
         }
       ]
     },
@@ -1322,6 +1344,70 @@
         {
           "name": "GameInputLabelPaddleRight2",
           "value": 124
+        },
+        {
+          "name": "GameInputLabelTouchpadButton",
+          "value": 125
+        },
+        {
+          "name": "GameInputLabelLeftThumbstickX",
+          "value": 126
+        },
+        {
+          "name": "GameInputLabelLeftThumbstickY",
+          "value": 127
+        },
+        {
+          "name": "GameInputLabelRightThumbstickX",
+          "value": 128
+        },
+        {
+          "name": "GameInputLabelRightThumbstickY",
+          "value": 129
+        },
+        {
+          "name": "GameInputLabelRoll",
+          "value": 130
+        },
+        {
+          "name": "GameInputLabelPitch",
+          "value": 131
+        },
+        {
+          "name": "GameInputLabelYaw",
+          "value": 132
+        },
+        {
+          "name": "GameInputLabelThrottle",
+          "value": 133
+        },
+        {
+          "name": "GameInputLabelSteering",
+          "value": 134
+        },
+        {
+          "name": "GameInputLabelBrake",
+          "value": 135
+        },
+        {
+          "name": "GameInputLabelClutch",
+          "value": 136
+        },
+        {
+          "name": "GameInputLabelHandbrake",
+          "value": 137
+        },
+        {
+          "name": "GameInputLabelPatternShifter",
+          "value": 138
+        },
+        {
+          "name": "GameInputLabelFirePrimary",
+          "value": 139
+        },
+        {
+          "name": "GameInputLabelFireSecondary",
+          "value": 140
         }
       ]
     },
@@ -1458,6 +1544,24 @@
       ]
     },
     {
+      "name": "GameInputTouchSurfaceType",
+      "isFlags": false,
+      "members": [
+        {
+          "name": "GameInputTouchSurfaceTypeUnknown",
+          "value": 0
+        },
+        {
+          "name": "GameInputTouchSurfaceTypeTouchscreen",
+          "value": 1
+        },
+        {
+          "name": "GameInputTouchSurfaceTypeTouchpad",
+          "value": 2
+        }
+      ]
+    },
+    {
       "name": "GameInputElementKind",
       "isFlags": false,
       "members": [
@@ -1530,6 +1634,16 @@
       ]
     },
     {
+      "name": "GameInputTouchContact",
+      "members": [
+        "uint64_t contactId;",
+        "int32_t screenX;",
+        "int32_t screenY;",
+        "uint32_t padX;",
+        "uint32_t padY;"
+      ]
+    },
+    {
       "name": "GameInputArcadeStickState",
       "members": [
         "GameInputArcadeStickButtons buttons;"
@@ -1585,17 +1699,6 @@
       ]
     },
     {
-      "name": "GameInputControllerInfo",
-      "members": [
-        "uint32_t controllerAxisCount;",
-        "_Field_size_full_(controllerAxisCount) const GameInputLabel* controllerAxisLabels;",
-        "uint32_t controllerButtonCount;",
-        "_Field_size_full_(controllerButtonCount) const GameInputLabel* controllerButtonLabels;",
-        "uint32_t controllerSwitchCount;",
-        "_Field_size_full_(controllerSwitchCount) const GameInputControllerSwitchInfo* controllerSwitchInfo;"
-      ]
-    },
-    {
       "name": "GameInputKeyboardInfo",
       "members": [
         "GameInputKeyboardKind kind;",
@@ -1623,6 +1726,15 @@
       ]
     },
     {
+      "name": "GameInputTouchSurfaceInfo",
+      "members": [
+        "uint32_t maxContactCount;",
+        "uint32_t padWidth;",
+        "uint32_t padHeight;",
+        "GameInputTouchSurfaceType type;"
+      ]
+    },
+    {
       "name": "GameInputArcadeStickInfo",
       "members": [
         "GameInputLabel menuButtonLabel;",
@@ -1639,6 +1751,8 @@
         "GameInputLabel actionButton6Label;",
         "GameInputLabel specialButton1Label;",
         "GameInputLabel specialButton2Label;",
+        "GameInputLabel leftThumbstickButtonLabel;",
+        "GameInputLabel rightThumbstickButtonLabel;",
         "uint32_t extraButtonCount;",
         "uint32_t extraAxisCount;"
       ]
@@ -1660,6 +1774,10 @@
         "GameInputLabel yButtonLabel;",
         "GameInputLabel leftShoulderButtonLabel;",
         "GameInputLabel rightShoulderButtonLabel;",
+        "GameInputLabel rollLabel;",
+        "GameInputLabel pitchLabel;",
+        "GameInputLabel yawLabel;",
+        "GameInputLabel throttleLabel;",
         "uint32_t extraButtonCount;",
         "uint32_t extraAxisCount;"
       ]
@@ -1684,6 +1802,16 @@
         "GameInputLabel rightShoulderButtonLabel;",
         "GameInputLabel leftThumbstickButtonLabel;",
         "GameInputLabel rightThumbstickButtonLabel;",
+        "GameInputLabel paddleLeft1Label;",
+        "GameInputLabel paddleLeft2Label;",
+        "GameInputLabel paddleRight1Label;",
+        "GameInputLabel paddleRight2Label;",
+        "GameInputLabel leftTriggerLabel;",
+        "GameInputLabel rightTriggerLabel;",
+        "GameInputLabel leftThumbstickXLabel;",
+        "GameInputLabel leftThumbstickYLabel;",
+        "GameInputLabel rightThumbstickXLabel;",
+        "GameInputLabel rightThumbstickYLabel;",
         "uint32_t extraButtonCount;",
         "uint32_t extraAxisCount;"
       ]
@@ -1705,6 +1833,11 @@
         "GameInputLabel yButtonLabel;",
         "GameInputLabel leftThumbstickButtonLabel;",
         "GameInputLabel rightThumbstickButtonLabel;",
+        "GameInputLabel steeringLabel;",
+        "GameInputLabel throttleLabel;",
+        "GameInputLabel brakeLabel;",
+        "GameInputLabel clutchLabel;",
+        "GameInputLabel handbrakeLabel;",
         "bool hasClutch;",
         "bool hasHandbrake;",
         "bool hasPatternShifter;",
@@ -1738,40 +1871,6 @@
         "GameInputRawDeviceReportKind kind;",
         "uint32_t id;",
         "uint32_t size;"
-      ]
-    },
-    {
-      "name": "GameInputDeviceInfo",
-      "members": [
-        "uint16_t vendorId;",
-        "uint16_t productId;",
-        "uint16_t revisionNumber;",
-        "GameInputUsage usage;",
-        "GameInputVersion hardwareVersion;",
-        "GameInputVersion firmwareVersion;",
-        "APP_LOCAL_DEVICE_ID deviceId;",
-        "APP_LOCAL_DEVICE_ID deviceRootId;",
-        "GameInputDeviceFamily deviceFamily;",
-        "GameInputKind supportedInput;",
-        "GameInputRumbleMotors supportedRumbleMotors;",
-        "GameInputSystemButtons supportedSystemButtons;",
-        "GUID containerId;",
-        "const char* displayName;",
-        "const char* pnpPath;",
-        "_Field_size_full_opt_(1) const GameInputKeyboardInfo* keyboardInfo;",
-        "_Field_size_full_opt_(1) const GameInputMouseInfo* mouseInfo;",
-        "_Field_size_full_opt_(1) const GameInputSensorsInfo* sensorsInfo;",
-        "_Field_size_full_opt_(1) const GameInputControllerInfo* controllerInfo;",
-        "_Field_size_full_opt_(1) const GameInputArcadeStickInfo* arcadeStickInfo;",
-        "_Field_size_full_opt_(1) const GameInputFlightStickInfo* flightStickInfo;",
-        "_Field_size_full_opt_(1) const GameInputGamepadInfo* gamepadInfo;",
-        "_Field_size_full_opt_(1) const GameInputRacingWheelInfo* racingWheelInfo;",
-        "uint32_t forceFeedbackMotorCount;",
-        "_Field_size_full_(forceFeedbackMotorCount) const GameInputForceFeedbackMotorInfo* forceFeedbackMotorInfo;",
-        "uint32_t inputReportCount;",
-        "_Field_size_full_opt_(inputReportCount) const GameInputRawDeviceReportInfo* inputReportInfo;",
-        "uint32_t outputReportCount;",
-        "_Field_size_full_opt_(outputReportCount) const GameInputRawDeviceReportInfo* outputReportInfo;"
       ]
     },
     {
@@ -1871,6 +1970,14 @@
       ]
     },
     {
+      "name": "GameInputColor",
+      "members": [
+        "uint8_t r;",
+        "uint8_t g;",
+        "uint8_t b;"
+      ]
+    },
+    {
       "name": "GameInputAxisMapping",
       "members": [
         "GameInputElementKind controllerElementKind;",
@@ -1905,39 +2012,15 @@
       "parameters": [
         "_In_ GameInputCallbackToken callbackToken",
         "_In_ void* context",
-        "_In_ IGameInputDevice* device",
-        "_In_ uint64_t timestamp",
-        "_In_ GameInputDeviceStatus currentStatus",
-        "_In_ GameInputDeviceStatus previousStatus"
-      ]
-    },
-    {
-      "name": "GameInputSystemButtonCallback",
-      "parameters": [
-        "_In_ GameInputCallbackToken callbackToken",
-        "_In_ void* context",
-        "_In_ IGameInputDevice* device",
-        "_In_ uint64_t timestamp",
-        "_In_ GameInputSystemButtons currentButtons",
-        "_In_ GameInputSystemButtons previousButtons"
-      ]
-    },
-    {
-      "name": "GameInputKeyboardLayoutCallback",
-      "parameters": [
-        "_In_ GameInputCallbackToken callbackToken",
-        "_In_ void* context",
-        "_In_ IGameInputDevice* device",
-        "_In_ uint64_t timestamp",
-        "_In_ uint32_t currentLayout",
-        "_In_ uint32_t previousLayout"
+        "_In_ GameInputDeviceEvent deviceEvent",
+        "_In_ IGameInputDevice* device"
       ]
     }
   ],
   "interfaces": [
     {
       "name": "IGameInput",
-      "iid": "20EFC1C7-5D9A-43BA-B26F-B807FA48609C",
+      "iid": "F2DAAE4C-4D21-4250-8953-4F791E6279AB",
       "methods": [
         {
           "name": "GetCurrentTimestamp",
@@ -1961,19 +2044,7 @@
         },
         {
           "name": "RegisterDeviceCallback",
-          "signature": "IFACEMETHOD(RegisterDeviceCallback)( _In_opt_ IGameInputDevice* device, _In_ GameInputKind inputKind, _In_ GameInputDeviceStatus statusFilter, _In_ GameInputEnumerationKind enumerationKind, _In_opt_ void* context, _In_ GameInputDeviceCallback callbackFunc, _Out_opt_ _Result_zeroonfailure_ GameInputCallbackToken* callbackToken) PURE;"
-        },
-        {
-          "name": "RegisterSystemButtonCallback",
-          "signature": "IFACEMETHOD(RegisterSystemButtonCallback)( _In_opt_ IGameInputDevice* device, _In_ GameInputSystemButtons buttonFilter, _In_opt_ void* context, _In_ GameInputSystemButtonCallback callbackFunc, _Out_opt_ _Result_zeroonfailure_ GameInputCallbackToken* callbackToken) PURE;"
-        },
-        {
-          "name": "RegisterKeyboardLayoutCallback",
-          "signature": "IFACEMETHOD(RegisterKeyboardLayoutCallback)( _In_opt_ IGameInputDevice* device, _In_opt_ void* context, _In_ GameInputKeyboardLayoutCallback callbackFunc, _Out_opt_ _Result_zeroonfailure_ GameInputCallbackToken* callbackToken) PURE;"
-        },
-        {
-          "name": "StopCallback",
-          "signature": "IFACEMETHOD_(void, StopCallback)( _In_ GameInputCallbackToken callbackToken) PURE;"
+          "signature": "IFACEMETHOD(RegisterDeviceCallback)( _In_opt_ IGameInputDevice* device, _In_ GameInputKind inputKind, _In_opt_ void* context, _In_ GameInputDeviceCallback callbackFunc, _Out_opt_ _Result_zeroonfailure_ GameInputCallbackToken* callbackToken) PURE;"
         },
         {
           "name": "UnregisterCallback",
@@ -1992,8 +2063,8 @@
           "signature": "IFACEMETHOD(FindDeviceFromPlatformString)( _In_ LPCWSTR value, _COM_Outptr_ IGameInputDevice** device) PURE;"
         },
         {
-          "name": "SetFocusPolicy",
-          "signature": "IFACEMETHOD_(void, SetFocusPolicy)( _In_ GameInputFocusPolicy policy) PURE;"
+          "name": "EnableBackgroundInput",
+          "signature": "IFACEMETHOD_(void, EnableBackgroundInput)( bool enable) PURE;"
         },
         {
           "name": "CreateAggregateDevice",
@@ -2007,7 +2078,7 @@
     },
     {
       "name": "IGameInputRawDeviceReport",
-      "iid": "05A42D89-2CB6-45A3-874D-E635723587AB",
+      "iid": "E35550A9-8507-404B-823C-2035958A6936",
       "methods": [
         {
           "name": "GetDevice",
@@ -2033,7 +2104,7 @@
     },
     {
       "name": "IGameInputReading",
-      "iid": "C81C4CDE-ED1A-4631-A30F-C556A6241A1F",
+      "iid": "0DFAA2A2-688B-4A9C-A3A9-0FEB4F90EE12",
       "methods": [
         {
           "name": "GetInputKind",
@@ -2106,24 +2177,188 @@
         {
           "name": "GetRawReport",
           "signature": "IFACEMETHOD_(bool, GetRawReport)( _Outptr_result_maybenull_ IGameInputRawDeviceReport** report) PURE;"
+        },
+        {
+          "name": "GetSystemButtonState",
+          "signature": "IFACEMETHOD_(bool, GetSystemButtonState)( _Out_ GameInputSystemButtons* buttons) PURE;"
+        },
+        {
+          "name": "GetTouchContactCount",
+          "signature": "IFACEMETHOD_(uint32_t, GetTouchContactCount)( uint32_t surfaceIndex) PURE;"
+        },
+        {
+          "name": "GetTouchSurfaceState",
+          "signature": "IFACEMETHOD_(uint32_t, GetTouchSurfaceState)( uint32_t surfaceIndex, uint32_t contactArrayCount, _Out_writes_to_opt_(contactArrayCount, return) GameInputTouchContact* contactArray) PURE;"
         }
       ]
     },
     {
       "name": "IGameInputDevice",
-      "iid": "63E2F38B-A399-4275-8AE7-D4C6E524D12A",
+      "iid": "4420F01D-8918-49D4-B302-DBEAD986105F",
       "methods": [
         {
-          "name": "GetDeviceInfo",
-          "signature": "IFACEMETHOD(GetDeviceInfo)( _Outptr_ const GameInputDeviceInfo** info) PURE;"
+          "name": "GetVendorId",
+          "signature": "IFACEMETHOD_(uint16_t, GetVendorId)() PURE;"
+        },
+        {
+          "name": "GetProductId",
+          "signature": "IFACEMETHOD_(uint16_t, GetProductId)() PURE;"
+        },
+        {
+          "name": "GetRevisionNumber",
+          "signature": "IFACEMETHOD_(uint16_t, GetRevisionNumber)() PURE;"
+        },
+        {
+          "name": "GetUsage",
+          "signature": "IFACEMETHOD_(void, GetUsage)( _Out_ GameInputUsage* usage) PURE;"
+        },
+        {
+          "name": "GetHardwareVersion",
+          "signature": "IFACEMETHOD_(void, GetHardwareVersion)( _Out_ GameInputVersion* version) PURE;"
+        },
+        {
+          "name": "GetFirmwareVersion",
+          "signature": "IFACEMETHOD_(void, GetFirmwareVersion)( _Out_ GameInputVersion* version) PURE;"
+        },
+        {
+          "name": "GetDeviceId",
+          "signature": "IFACEMETHOD_(void, GetDeviceId)( _Out_ APP_LOCAL_DEVICE_ID* deviceId) PURE;"
+        },
+        {
+          "name": "GetDeviceRootId",
+          "signature": "IFACEMETHOD_(void, GetDeviceRootId)( _Out_ APP_LOCAL_DEVICE_ID* deviceRootId) PURE;"
+        },
+        {
+          "name": "GetDeviceFamily",
+          "signature": "IFACEMETHOD_(GameInputDeviceFamily, GetDeviceFamily)() PURE;"
+        },
+        {
+          "name": "GetSupportedInput",
+          "signature": "IFACEMETHOD_(GameInputKind, GetSupportedInput)() PURE;"
+        },
+        {
+          "name": "GetSupportedRumbleMotors",
+          "signature": "IFACEMETHOD_(GameInputRumbleMotors, GetSupportedRumbleMotors)() PURE;"
+        },
+        {
+          "name": "GetSupportedSystemButtons",
+          "signature": "IFACEMETHOD_(GameInputSystemButtons, GetSupportedSystemButtons)() PURE;"
+        },
+        {
+          "name": "GetSupportedLightingGroups",
+          "signature": "IFACEMETHOD_(GameInputLightingGroups, GetSupportedLightingGroups)() PURE;"
+        },
+        {
+          "name": "GetSupportedLightingGroupSize",
+          "signature": "IFACEMETHOD_(uint32_t, GetSupportedLightingGroupSize)(GameInputLightingGroups group) PURE;"
+        },
+        {
+          "name": "GetContainerId",
+          "signature": "IFACEMETHOD_(void, GetContainerId)( _Out_ GUID* containerId) PURE;"
+        },
+        {
+          "name": "GetDisplayName",
+          "signature": "IFACEMETHOD_(uint32_t, GetDisplayName)( _In_ uint32_t bufferByteCount, _Out_writes_bytes_opt_(bufferByteCount) char* buffer) PURE;"
+        },
+        {
+          "name": "GetPnpPath",
+          "signature": "IFACEMETHOD_(uint32_t, GetPnpPath)( _In_ uint32_t bufferByteCount, _Out_writes_bytes_opt_(bufferByteCount) char* buffer) PURE;"
+        },
+        {
+          "name": "GetXInputDeviceIndex",
+          "signature": "IFACEMETHOD_(bool, GetXInputDeviceIndex)( _Out_ uint32_t* index) PURE;"
+        },
+        {
+          "name": "GetKeyboardInfo",
+          "signature": "IFACEMETHOD_(bool, GetKeyboardInfo)( _Out_ GameInputKeyboardInfo* info) PURE;"
+        },
+        {
+          "name": "GetMouseInfo",
+          "signature": "IFACEMETHOD_(bool, GetMouseInfo)( _Out_ GameInputMouseInfo* info) PURE;"
+        },
+        {
+          "name": "GetSensorsInfo",
+          "signature": "IFACEMETHOD_(bool, GetSensorsInfo)( _Out_ GameInputSensorsInfo* info) PURE;"
+        },
+        {
+          "name": "GetControllerAxisCount",
+          "signature": "IFACEMETHOD_(uint32_t, GetControllerAxisCount)() PURE;"
+        },
+        {
+          "name": "GetControllerAxisLabels",
+          "signature": "IFACEMETHOD_(uint32_t, GetControllerAxisLabels)( _In_ uint32_t labelArrayCount, _Out_writes_to_opt_(labelArrayCount, return) GameInputLabel* labelArray) PURE;"
+        },
+        {
+          "name": "GetControllerButtonCount",
+          "signature": "IFACEMETHOD_(uint32_t, GetControllerButtonCount)() PURE;"
+        },
+        {
+          "name": "GetControllerButtonLabels",
+          "signature": "IFACEMETHOD_(uint32_t, GetControllerButtonLabels)( _In_ uint32_t labelArrayCount, _Out_writes_to_opt_(labelArrayCount, return) GameInputLabel* labelArray) PURE;"
+        },
+        {
+          "name": "GetControllerSwitchCount",
+          "signature": "IFACEMETHOD_(uint32_t, GetControllerSwitchCount)() PURE;"
+        },
+        {
+          "name": "GetControllerSwitchInfo",
+          "signature": "IFACEMETHOD_(uint32_t, GetControllerSwitchInfo)( _In_ uint32_t infoArrayCount, _Out_writes_to_opt_(infoArrayCount, return) GameInputControllerSwitchInfo* infoArray) PURE;"
+        },
+        {
+          "name": "GetArcadeStickInfo",
+          "signature": "IFACEMETHOD_(bool, GetArcadeStickInfo)( _Out_ GameInputArcadeStickInfo* info) PURE;"
+        },
+        {
+          "name": "GetFlightStickInfo",
+          "signature": "IFACEMETHOD_(bool, GetFlightStickInfo)( _Out_ GameInputFlightStickInfo* info) PURE;"
+        },
+        {
+          "name": "GetGamepadInfo",
+          "signature": "IFACEMETHOD_(bool, GetGamepadInfo)( _Out_ GameInputGamepadInfo* info) PURE;"
+        },
+        {
+          "name": "GetRacingWheelInfo",
+          "signature": "IFACEMETHOD_(bool, GetRacingWheelInfo)( _Out_ GameInputRacingWheelInfo* info) PURE;"
+        },
+        {
+          "name": "GetForceFeedbackMotorCount",
+          "signature": "IFACEMETHOD_(uint32_t, GetForceFeedbackMotorCount)() PURE;"
+        },
+        {
+          "name": "GetForceFeedbackMotorInfo",
+          "signature": "IFACEMETHOD_(uint32_t, GetForceFeedbackMotorInfo)( _In_ uint32_t infoArrayCount, _Out_writes_to_opt_(infoArrayCount, return) GameInputForceFeedbackMotorInfo* infoArray) PURE;"
+        },
+        {
+          "name": "GetInputReportCount",
+          "signature": "IFACEMETHOD_(uint32_t, GetInputReportCount)() PURE;"
+        },
+        {
+          "name": "GetInputReportInfo",
+          "signature": "IFACEMETHOD_(uint32_t, GetInputReportInfo)( _In_ uint32_t infoArrayCount, _Out_writes_to_opt_(infoArrayCount, return) GameInputRawDeviceReportInfo* infoArray) PURE;"
+        },
+        {
+          "name": "GetOutputReportCount",
+          "signature": "IFACEMETHOD_(uint32_t, GetOutputReportCount)() PURE;"
+        },
+        {
+          "name": "GetOutputReportInfo",
+          "signature": "IFACEMETHOD_(uint32_t, GetOutputReportInfo)( _In_ uint32_t infoArrayCount, _Out_writes_to_opt_(infoArrayCount, return) GameInputRawDeviceReportInfo* infoArray) PURE;"
+        },
+        {
+          "name": "GetFeatureReportCount",
+          "signature": "IFACEMETHOD_(uint32_t, GetFeatureReportCount)() PURE;"
+        },
+        {
+          "name": "GetFeatureReportInfo",
+          "signature": "IFACEMETHOD_(uint32_t, GetFeatureReportInfo)( _In_ uint32_t infoArrayCount, _Out_writes_to_opt_(infoArrayCount, return) GameInputRawDeviceReportInfo* infoArray) PURE;"
         },
         {
           "name": "GetHapticInfo",
           "signature": "IFACEMETHOD(GetHapticInfo)( _Out_ GameInputHapticInfo* info) PURE;"
         },
         {
-          "name": "GetDeviceStatus",
-          "signature": "IFACEMETHOD_(GameInputDeviceStatus, GetDeviceStatus)() PURE;"
+          "name": "IsConnected",
+          "signature": "IFACEMETHOD_(bool, IsConnected)() PURE;"
         },
         {
           "name": "CreateForceFeedbackEffect",
@@ -2170,8 +2405,36 @@
           "signature": "IFACEMETHOD(CreateRawDeviceReport)( _In_ uint32_t reportId, _In_ GameInputRawDeviceReportKind reportKind, _COM_Outptr_ IGameInputRawDeviceReport** report) PURE;"
         },
         {
+          "name": "GetRawDeviceFeature",
+          "signature": "IFACEMETHOD(GetRawDeviceFeature)( _In_ uint32_t reportId, _COM_Outptr_ IGameInputRawDeviceReport** report) PURE;"
+        },
+        {
+          "name": "SetRawDeviceFeature",
+          "signature": "IFACEMETHOD(SetRawDeviceFeature)( _In_ IGameInputRawDeviceReport* report) PURE;"
+        },
+        {
           "name": "SendRawDeviceOutput",
           "signature": "IFACEMETHOD(SendRawDeviceOutput)( _In_ IGameInputRawDeviceReport* report) PURE;"
+        },
+        {
+          "name": "SetLightingColor",
+          "signature": "IFACEMETHOD_(void, SetLightingColor)( GameInputColor color, GameInputLightingGroups group, _In_opt_ uint32_t groupOrderIndex = GAMEINPUT_LIGHTING_GROUP_ORDER_INDEX_ALL) PURE;"
+        },
+        {
+          "name": "ApplyLightingColors",
+          "signature": "IFACEMETHOD_(void, ApplyLightingColors)() PURE;"
+        },
+        {
+          "name": "ApplyLightingSystemDefault",
+          "signature": "IFACEMETHOD_(void, ApplyLightingSystemDefault)() PURE;"
+        },
+        {
+          "name": "GetTouchSurfaceCount",
+          "signature": "IFACEMETHOD_(uint32_t, GetTouchSurfaceCount)() PURE;"
+        },
+        {
+          "name": "GetTouchSurfaceInfo",
+          "signature": "IFACEMETHOD(GetTouchSurfaceInfo)( uint32_t surfaceIndex, _Out_ GameInputTouchSurfaceInfo* info) PURE;"
         }
       ]
     },
@@ -2191,7 +2454,7 @@
     },
     {
       "name": "IGameInputForceFeedbackEffect",
-      "iid": "FF61096A-3373-4093-A1DF-6D31846B3511",
+      "iid": "BB3500C0-4B43-44CA-81A2-382FC63AE0E9",
       "methods": [
         {
           "name": "GetDevice",
@@ -2306,16 +2569,121 @@
   ],
   "constants": [
     {
+      "name": "GameInputGamepadModuleSystemDuo",
+      "value": "GameInputGamepadMenu | GameInputGamepadView",
+      "type": "GameInputGamepadButtons"
+    },
+    {
+      "name": "GameInputGamepadModuleDpad",
+      "value": "GameInputGamepadDPadUp | GameInputGamepadDPadDown | GameInputGamepadDPadLeft | GameInputGamepadDPadRight",
+      "type": "GameInputGamepadButtons"
+    },
+    {
+      "name": "GameInputGamepadModuleShoulders",
+      "value": "GameInputGamepadLeftShoulder | GameInputGamepadRightShoulder",
+      "type": "GameInputGamepadButtons"
+    },
+    {
+      "name": "GameInputGamepadModuleTriggers",
+      "value": "GameInputGamepadLeftTriggerButton | GameInputGamepadRightTriggerButton",
+      "type": "GameInputGamepadButtons"
+    },
+    {
+      "name": "GameInputGamepadModuleThumbsticks",
+      "value": "GameInputGamepadLeftThumbstickUp | GameInputGamepadLeftThumbstickDown | GameInputGamepadLeftThumbstickLeft | GameInputGamepadLeftThumbstickRight | GameInputGamepadRightThumbstickUp | GameInputGamepadRightThumbstickDown | GameInputGamepadRightThumbstickLeft | GameInputGamepadRightThumbstickRight",
+      "type": "GameInputGamepadButtons"
+    },
+    {
+      "name": "GameInputGamepadModulePaddles2",
+      "value": "GameInputGamepadPaddleLeft1 | GameInputGamepadPaddleRight1",
+      "type": "GameInputGamepadButtons"
+    },
+    {
+      "name": "GameInputGamepadModulePaddles4",
+      "value": "GameInputGamepadPaddleLeft1 | GameInputGamepadPaddleLeft2 | GameInputGamepadPaddleRight1 | GameInputGamepadPaddleRight2",
+      "type": "GameInputGamepadButtons"
+    },
+    {
+      "name": "GameInputGamepadLayoutBasic",
+      "value": "GameInputGamepadModuleSystemDuo | GameInputGamepadModuleDpad | GameInputGamepadA | GameInputGamepadB",
+      "type": "GameInputGamepadButtons"
+    },
+    {
+      "name": "GameInputGamepadLayoutButtons",
+      "value": "GameInputGamepadLayoutBasic | GameInputGamepadX | GameInputGamepadY | GameInputGamepadModuleShoulders",
+      "type": "GameInputGamepadButtons"
+    },
+    {
+      "name": "GameInputGamepadLayoutStandard",
+      "value": "GameInputGamepadLayoutButtons | GameInputGamepadModuleTriggers | GameInputGamepadModuleThumbsticks | GameInputGamepadLeftThumbstick | GameInputGamepadRightThumbstick",
+      "type": "GameInputGamepadButtons"
+    },
+    {
+      "name": "GameInputGamepadLayoutElite",
+      "value": "GameInputGamepadLayoutStandard | GameInputGamepadModulePaddles4",
+      "type": "GameInputGamepadButtons"
+    },
+    {
       "name": "GAMEINPUT_HAPTIC_MAX_LOCATIONS",
-      "value": "8"
+      "value": "8",
+      "type": "uint32_t"
     },
     {
       "name": "GAMEINPUT_HAPTIC_MAX_AUDIO_ENDPOINT_ID_SIZE",
-      "value": "256"
+      "value": "256",
+      "type": "uint32_t"
+    },
+    {
+      "name": "GAMEINPUT_LIGHTING_GROUP_ORDER_INDEX_ALL",
+      "value": "0xFFFFFFFF",
+      "type": "uint32_t"
     },
     {
       "name": "GAMEINPUT_MAX_SWITCH_STATES",
-      "value": "8"
+      "value": "8",
+      "type": "uint32_t"
+    },
+    {
+      "name": "GAMEINPUT_FACILITY",
+      "value": "0x38A",
+      "type": "LONG"
+    },
+    {
+      "name": "GAMEINPUT_HAPTIC_LOCATION_NONE",
+      "value": "00000000-0000-0000-0000-000000000000",
+      "type": "GUID"
+    },
+    {
+      "name": "GAMEINPUT_HAPTIC_LOCATION_GRIP_LEFT",
+      "value": "08c707c2-66bb-406c-a84a-dfe085120a92",
+      "type": "GUID"
+    },
+    {
+      "name": "GAMEINPUT_HAPTIC_LOCATION_GRIP_RIGHT",
+      "value": "155a0b77-8bb2-40db-8690-b6d41126dfc1",
+      "type": "GUID"
+    },
+    {
+      "name": "GAMEINPUT_HAPTIC_LOCATION_TRIGGER_LEFT",
+      "value": "8de4d896-5559-4081-86e5-1724cc07c6bc",
+      "type": "GUID"
+    },
+    {
+      "name": "GAMEINPUT_HAPTIC_LOCATION_TRIGGER_RIGHT",
+      "value": "ff0cb557-3af5-406b-8b0f-555a2d92a220",
+      "type": "GUID"
+    }
+  ],
+  "functions": [
+    {
+      "name": "GameInputInitialize",
+      "parameters": "_In_ REFIID riid, _COM_Outptr_ LPVOID* ppv",
+      "isInline": false
+    },
+    {
+      "name": "GameInputCreate",
+      "parameters": "_COM_Outptr_ IGameInput** gameInput",
+      "isInline": true
     }
   ]
 }

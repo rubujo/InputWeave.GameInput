@@ -28,17 +28,17 @@
 排查方式：
 
 1. 確認裝置已連線，並且 Windows 可以在系統設定或遊戲控制器工具中看到它。
-2. 呼叫 `RefreshDevices(GameInputKind, GameInputDeviceStatus)` 時確認 `inputKind` 與 `statusFilter` 沒有篩掉目標裝置。
+2. 呼叫 `RefreshDevices(GameInputKind)` 時確認 `inputKind` 沒有篩掉目標裝置。
 3. `GetCurrent*` API 回傳 `null` 不一定是錯誤，可能只是目前沒有該輸入種類的 reading；輪詢迴圈應把 `null` 視為正常暫態。
 
 ## 裝置列舉很慢
 
-`EnumerateDevices`、`RefreshDevices` 使用 GameInput 的阻塞式列舉（`GameInputBlockingEnumeration`），時間幾乎都花在原生 `RegisterDeviceCallback` 等待初始回呼完成。實測 GameInput 3.5.274 與 3.5.278 每次都約 960 毫秒，與輸入種類、裝置數量無關。處理序內第一次 `GameInputClient.Create()`（包含 `GameInputDeviceManager.Create()`）也會多花約一秒，等待 GameInput 發現已連線的裝置；之後再建立 client 不會重複等待。
+API 4 的裝置通知是非同步派送，沒有同步列舉完成訊號。`EnumerateDevices`、`RefreshDevices` 會收集 1.25 秒的明確探索時間窗；晚到裝置可能不在該次快照中。這不是原生阻塞式列舉，第一次建立 client 也不再模擬舊版同步探索。
 
 處理方式：
 
 1. 不要在 UI 執行緒或每一幀的遊戲迴圈中呼叫；UI 程式請改用 `EnumerateDevicesAsync`／`RefreshDevicesAsync`。
-2. 需要持續追蹤裝置時，建立一次 `GameInputDeviceManager` 並訂閱 `DeviceChanged`（內部使用非同步列舉，不會卡住呼叫端），只在收到連線／斷線事件時才重新整理，而不是定期重新列舉。
+2. 需要持續追蹤裝置時，建立一次 `GameInputDeviceManager` 並訂閱 `DeviceChanged`（內部持續接收非同步裝置事件），只在收到連線／斷線事件時才重新整理，而不是定期重新列舉。
 
 ## `SupportedInput` 顯示成數字或比對不成立
 
@@ -65,8 +65,8 @@
 1. 所有包裝型別的 `Dispose()` 都可重複、並行呼叫，只有第一次會釋放原生參考。在 `DeviceChanged` 等原生回呼中 Dispose `GameInputClient` 或 `GameInputDeviceManager` 是安全的：解除註冊會在背景完成，不會卡住回呼執行緒。`GameInputClient.Dispose()` 會等其他執行緒上已在進行中的原生呼叫返回後，才釋放原生物件。
 2. 沒有呼叫 `Dispose()` 的包裝會在 GC 回收時由 `SafeHandle` 終結器釋放原生參考，但回收時機不確定，仍應以 `using` 或 `Dispose()` 明確釋放。GameInput 根物件釋放後，從它取得的裝置、reading 等子物件都會失效。請先釋放子物件，最後才釋放 `GameInputClient` 或 `GameInputDeviceManager`；需要保留的資料請先轉成 snapshot。
 3. 所有目標框架都透過 vtable 函式指標呼叫 GameInput，不使用 COM Interop 的 RCW，所以 GameInput 物件不受 COM apartment 限制：在 STA（WinForms、WPF 的 UI 執行緒）建立的物件可以在背景執行緒使用，反之亦然。
-4. `GameInputInitialize` 對所有 client 傳回同一個單例根物件。實測 GameInput 3.5.274 與 3.5.278 在該根物件最後一份參考被釋放、同時另一條執行緒建立新 client 時，會以存取違規讓整個處理序結束；因此本套件第一次建立 client 時會替單例根物件保留一份參考直到處理序結束（與執行階段 DLL 常駐到處理序結束相同），個別 client 的 `Dispose()` 仍會解除其回呼註冊並歸還自己的參考。同時建立、釋放多個 client 或 `GameInputDeviceManager` 是安全的。另外，根物件第一次建立後約一秒內，執行階段會把每個已連線裝置都當成剛連線回報；第一次建立 client 時會以阻塞式列舉等待這段探索完成，因此建立後立即呼叫 `WaitForDeviceEventAsync` 不會被原本就已連線的裝置完成。
-5. 背景程式或主控台程式收不到輸入時，請確認焦點政策：GameInput 預設只把輸入交給前景應用程式，需要背景輸入時請呼叫 `SetFocusPolicy(GameInputFocusPolicy.GameInputEnableBackgroundInput)`。另外，實測 GameInput 3.5.274 與 3.5.278 都收不到以 `SendInput` 模擬的鍵盤輸入（虛擬鍵與掃描碼兩種方式皆然），自動化測試請改用實體裝置。
+4. `GameInputInitialize` 對所有 client 傳回同一個單例根物件。實測 GameInput 3.5.274 與 3.5.278 在該根物件最後一份參考被釋放、同時另一條執行緒建立新 client 時，會以存取違規讓整個處理序結束；因此本套件第一次建立 client 時會替單例根物件保留一份參考直到處理序結束（與執行階段 DLL 常駐到處理序結束相同），個別 client 的 `Dispose()` 仍會解除其回呼註冊並歸還自己的參考。同時建立、釋放多個 client 或 `GameInputDeviceManager` 是安全的。API 4 會對新回呼註冊非同步派送既有裝置的初始 Connected 通知；`WaitForDeviceEventAsync` 也遵循這個語意。
+5. 背景程式或主控台程式收不到輸入時，請確認焦點政策：GameInput 預設只把輸入交給前景應用程式，需要背景輸入時請呼叫 `EnableBackgroundInput(true)`。另外，實測 GameInput 3.5.274 與 3.5.278 都收不到以 `SendInput` 模擬的鍵盤輸入（虛擬鍵與掃描碼兩種方式皆然），自動化測試請改用實體裝置。
 
 ## Callback 例外沒有直接拋出
 

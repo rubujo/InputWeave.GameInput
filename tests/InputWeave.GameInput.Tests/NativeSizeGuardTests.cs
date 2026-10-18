@@ -42,40 +42,4 @@ public sealed class NativeSizeGuardTests
             () => GameInputDevice.EnsureNativeWrittenCount(4, 3, "測試寫入數量"));
     }
 
-    [TestMethod]
-    public void FromNullTerminatedReadsStringWithinLimit()
-    {
-        byte[] utf8 = [0x41, 0x42, 0x43, 0x00];
-        IntPtr buffer = Marshal.AllocHGlobal(utf8.Length);
-        try
-        {
-            Marshal.Copy(utf8, 0, buffer, utf8.Length);
-
-            Assert.AreEqual("ABC", NativeUtf8String.FromNullTerminated(buffer));
-        }
-        finally
-        {
-            Marshal.FreeHGlobal(buffer);
-        }
-    }
-
-    [TestMethod]
-    public void FromNullTerminatedThrowsInvalidOperationExceptionWhenStringExceedsLimit()
-    {
-        int bufferSize = NativeSizeGuard.MaxUtf8StringByteLength + 2;
-        IntPtr buffer = Marshal.AllocHGlobal(bufferSize);
-        try
-        {
-            for (int index = 0; index < bufferSize; index++)
-            {
-                Marshal.WriteByte(buffer, index, 0x41);
-            }
-
-            _ = Assert.ThrowsExactly<InvalidOperationException>(() => NativeUtf8String.FromNullTerminated(buffer));
-        }
-        finally
-        {
-            Marshal.FreeHGlobal(buffer);
-        }
-    }
 }

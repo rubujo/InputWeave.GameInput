@@ -15,7 +15,10 @@
 - 套件版本：`0.0.1`
 - 發佈標籤：`v0.0.1`
 - 目標框架：`net48;net8.0;net10.0`
-- GameInput 基準：`Microsoft.GameInput` `3.5.283`，API 版本 `3`
+- GameInput 基準：`Microsoft.GameInput` `4.0.300`，包裝 API 版本 `4`（使用官方 `native/include/GameInput.h` 主標頭）
+- API 4 遷移與破壞性變更：[docs/gameinput-api4-migration.md](docs/gameinput-api4-migration.md)
+- API 4 驗證紀錄：[docs/gameinput-api4-validation.md](docs/gameinput-api4-validation.md)
+- DualSense helper 評估：[docs/gameinput-dualsense-helper.md](docs/gameinput-dualsense-helper.md)
 - GameInput 版本異動：[docs/gameinput-version-report.md](docs/gameinput-version-report.md)
 - 授權中繼資料：`CC0-1.0`
 - API 覆蓋率：[docs/gameinput-api-coverage.md](docs/gameinput-api-coverage.md)
@@ -121,7 +124,7 @@ if (manager.TryGetFirstGamepad(out GameInputDevice? gamepadDevice, out GameInput
 
 - 需要呼叫尚未包裝成高階便利方法的原生 GameInput API（可對照 [docs/gameinput-api-coverage.md](docs/gameinput-api-coverage.md) 確認涵蓋範圍）。
 - 需要自訂原生結構的封送方式，或要整合既有的原生 C++/COM 呼叫端。
-- 需要診斷層級的原始資料（例如 `GameInputDeviceInfo` 的原生指標欄位），而不是高階快照已複製的欄位。
+- 需要直接使用 API 4 的原生列舉、結構配置或 raw report 格式；裝置資訊快照本身不再暴露原生指標。
 
 `InputWeave.GameInput.Interop` 內的列舉、常數與結構是公開型別，可直接使用；COM 介面本身則是 `internal`，一般不會也不需要直接操作。高階包裝類別在每次原生呼叫期間都會取得內部租約來存取對應的低階介面，這屬於函式庫內部實作；一般應用程式若發現高階 API 涵蓋不到的情境，建議優先回報需求，而不是依賴內部實作細節。
 

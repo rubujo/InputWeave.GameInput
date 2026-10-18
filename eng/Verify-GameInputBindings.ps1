@@ -119,6 +119,51 @@ foreach ($interfaceDefinition in $manifest.interfaces)
     {
         throw "$($interfaceDefinition.name)Vtbl 的方法順序與 ABI manifest 不一致，vtable slot 順序錯誤會導致執行期呼叫錯誤的原生方法。"
     }
+
+    # 獨立由原生簽章核對 ABI 型別；不能只檢查同一份產生器的輸出是否一致。
+    foreach ($method in $interfaceDefinition.methods)
+    {
+        $signature = [regex]::Replace($method.signature, '(?<!\w)_\w+_(?:\([^)]*\))?', '')
+        $shape = [regex]::Match($signature, '^IFACEMETHOD(?:_\((?<return>[^,]+),\s*\w+\)|\(\w+\))\((?<parameters>.*)\) PURE;$')
+        if (-not $shape.Success)
+        {
+            throw "無法獨立解析 $($interfaceDefinition.name).$($method.name) 的原生簽章。"
+        }
+
+        $nativeTypes = [System.Collections.Generic.List[string]]::new()
+        $nativeTypes.Add('IntPtr')
+        foreach ($parameter in ($shape.Groups['parameters'].Value -split ','))
+        {
+            if ([string]::IsNullOrWhiteSpace($parameter)) { continue }
+            $type = [regex]::Replace($parameter, '\s*=.*$', '')
+            $type = [regex]::Replace($type.Trim(), '\s+\w+$', '').Trim()
+            $nativeTypes.Add($type)
+        }
+        $returnType = if ($shape.Groups['return'].Success) { $shape.Groups['return'].Value.Trim() } else { 'int' }
+        $nativeTypes.Add($returnType)
+        $field = [regex]::Match($vtableMatch.Groups['body'].Value, 'delegate\*\s+unmanaged\[Stdcall\]<(?<types>[^>]*)>\s+' + [regex]::Escape($method.name) + ';')
+        $actualTypes = @($field.Groups['types'].Value -split ',' | ForEach-Object { $_.Trim() })
+        if ($actualTypes.Count -ne $nativeTypes.Count)
+        {
+            throw "$($interfaceDefinition.name).$($method.name) 的 vtable 引數數量與主標頭不一致。"
+        }
+        $aliases = @{ uint8_t = 'byte'; uint16_t = 'ushort'; uint32_t = 'uint'; uint64_t = 'ulong'; int32_t = 'int'; int64_t = 'long'; size_t = 'UIntPtr'; bool = 'byte'; GUID = 'Guid'; APP_LOCAL_DEVICE_ID = 'AppLocalDeviceId'; GameInputCallbackToken = 'ulong'; HANDLE = 'IntPtr'; LPCWSTR = 'IntPtr' }
+        for ($index = 0; $index -lt $nativeTypes.Count; $index++)
+        {
+            $expected = $nativeTypes[$index].Replace('const ', '').Trim()
+            foreach ($alias in $aliases.GetEnumerator())
+            {
+                $expected = [regex]::Replace($expected, '\b' + $alias.Key + '\b', $alias.Value)
+            }
+            $expected = [regex]::Replace($expected, 'IGameInput\w*\*\*', 'void**')
+            $expected = [regex]::Replace($expected, 'IGameInput\w*\*|GameInput\w+Callback|void\*(?!\*)', 'IntPtr')
+            $actual = $actualTypes[$index]
+            if ($expected -ne $actual -and -not ($actual -eq 'IntPtr' -and $expected.EndsWith('*')))
+            {
+                throw "$($interfaceDefinition.name).$($method.name) 的 ABI 型別不符：位置 $index，預期 $expected，實際 $actual。"
+            }
+        }
+    }
 }
 
 Write-Information 'GameInput baseline、redist 雜湊、低階 interop 產生檔、ABI manifest 與 vtable 順序驗證通過。' -InformationAction Continue

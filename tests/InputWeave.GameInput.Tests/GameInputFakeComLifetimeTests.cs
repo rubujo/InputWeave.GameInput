@@ -67,7 +67,7 @@ public sealed class GameInputFakeComLifetimeTests
 
         try
         {
-            _ = device.Status;
+            _ = device.IsConnected();
         }
         finally
         {
@@ -86,7 +86,7 @@ public sealed class GameInputFakeComLifetimeTests
         device.Dispose();
         int callsBefore = fake.NativeCallCount;
 
-        ObjectDisposedException exception = Assert.ThrowsExactly<ObjectDisposedException>(() => device.Status);
+        ObjectDisposedException exception = Assert.ThrowsExactly<ObjectDisposedException>(() => device.IsConnected());
 
         Assert.AreEqual(nameof(GameInputDevice), exception.ObjectName);
         Assert.AreEqual(callsBefore, fake.NativeCallCount, "Dispose 後不得再呼叫原生物件。");
@@ -214,8 +214,7 @@ public sealed class GameInputFakeComLifetimeTests
         {
             manager.PublishDeviceEvent(new GameInputDeviceManagerEvent(
                 (ulong)index,
-                GameInputDeviceStatus.GameInputDeviceConnected,
-                GameInputDeviceStatus.GameInputDeviceNoStatus,
+                GameInputDeviceEvent.GameInputDeviceEventConnected,
                 default));
         }
 
@@ -327,7 +326,7 @@ public sealed class GameInputFakeComLifetimeTests
             "背景解除註冊完成後應歸還擁有者租約。");
     }
     [TestMethod]
-    public void DeviceInfoPointersAreReadWhileTheDeviceIsStillAlive()
+    public void DeviceGettersRunUnderOneLeaseEvenWhenDisposed()
     {
         // 原生呼叫期間 Dispose 裝置，並在參考歸零時把顯示名稱記憶體改寫，模擬原生物件已被回收。
         // 若讀取指標發生在租約結束之後，會讀到改寫後的內容。
@@ -347,25 +346,24 @@ public sealed class GameInputFakeComLifetimeTests
             FakeComObject.OnFinalRelease = null;
         }
 
-        Assert.AreEqual("Fake Pad", snapshot.DisplayName, "裝置資訊內的原生指標必須在同一個租約內讀取。");
+        Assert.AreEqual("Fake Pad", snapshot.DisplayName, "API 4 getter 必須在同一個租約內完成，避免中途 Dispose 提早釋放。");
         Assert.AreEqual(0, fake.RefCount);
     }
 
     [TestMethod]
-    public void NullDeviceInfoPointerThrowsGameInputException()
+    public void OversizedDeviceStringThrowsBeforeAllocation()
     {
         using FakeComObject fake = FakeComObject.CreateDevice("Fake Pad");
         using GameInputDevice device = new(new IGameInputDevice(fake.Pointer));
-        FakeComObject.ReturnNullDeviceInfo = true;
+        FakeComObject.ReturnOversizedString = true;
 
         try
         {
-            GameInputException exception = Assert.ThrowsExactly<GameInputException>(() => device.GetDeviceInfoSnapshot());
-            Assert.AreEqual(unchecked((int)0x80004003), exception.HResult);
+            Assert.ThrowsExactly<InvalidOperationException>(() => device.GetDeviceInfoSnapshot());
         }
         finally
         {
-            FakeComObject.ReturnNullDeviceInfo = false;
+            FakeComObject.ReturnOversizedString = false;
         }
     }
 
@@ -549,7 +547,7 @@ public sealed class GameInputFakeComLifetimeTests
     /// <summary>
     /// 記憶體中的假 COM 物件，配置為 [vtable 指標][參考計數][原生呼叫次數]。
     /// 以 <see cref="Marshal.GetFunctionPointerForDelegate{TDelegate}(TDelegate)"/> 產生 vtable 函式指標，
-    /// 兩個目標框架都適用；委派存放在靜態欄位，確保原生端呼叫期間不會被 GC 回收。
+    /// 三個目標框架都適用；委派存放在靜態欄位，確保原生端呼叫期間不會被 GC 回收。
     /// </summary>
     private sealed unsafe class FakeComObject : IDisposable
     {
@@ -558,10 +556,8 @@ public sealed class GameInputFakeComLifetimeTests
         private static readonly RefCountFunction s_addRef = AddRef;
         private static readonly RefCountFunction s_release = Release;
         private static readonly TimestampFunction s_timestamp = GetTimestamp;
-        private static readonly DeviceStatusFunction s_deviceStatus = GetDeviceStatus;
         private static readonly GetCurrentReadingFunction s_getCurrentReading = GetCurrentReading;
         private static readonly RegisterDeviceCallbackFunction s_registerDeviceCallback = RegisterDeviceCallback;
-        private static readonly GetDeviceInfoFunction s_getDeviceInfo = GetDeviceInfo;
         private static readonly CreateForceFeedbackEffectFunction s_createForceFeedbackEffect = CreateForceFeedbackEffect;
         private static readonly GetRawDataFunction s_getRawData = GetRawData;
         private static readonly SetRawDataFunction s_setRawData = SetRawData;
@@ -569,7 +565,6 @@ public sealed class GameInputFakeComLifetimeTests
         private static readonly GetGamepadStateFunction s_getGamepadState = GetGamepadState;
 
         private readonly IntPtr _vtbl;
-        private IntPtr _deviceInfo;
         private IntPtr _displayName;
         private int _displayNameLength;
         private bool _disposed;
@@ -581,14 +576,12 @@ public sealed class GameInputFakeComLifetimeTests
             *(IntPtr*)Pointer = vtbl;
             *RefCountSlot(Pointer) = 1;
             *CallCountSlot(Pointer) = 0;
-            *DeviceInfoSlot(Pointer) = IntPtr.Zero;
+            *DisplayNameSlot(Pointer) = IntPtr.Zero;
         }
 
         [UnmanagedFunctionPointer(CallingConvention.StdCall)]
         private delegate uint RefCountFunction(IntPtr self);
 
-        [UnmanagedFunctionPointer(CallingConvention.StdCall)]
-        private delegate int GetDeviceInfoFunction(IntPtr self, IntPtr info);
 
         [UnmanagedFunctionPointer(CallingConvention.StdCall)]
         private delegate byte GetGamepadStateFunction(IntPtr self, IntPtr state);
@@ -608,14 +601,12 @@ public sealed class GameInputFakeComLifetimeTests
         [UnmanagedFunctionPointer(CallingConvention.StdCall)]
         private delegate ulong TimestampFunction(IntPtr self);
 
-        [UnmanagedFunctionPointer(CallingConvention.StdCall)]
-        private delegate GameInputDeviceStatus DeviceStatusFunction(IntPtr self);
 
         [UnmanagedFunctionPointer(CallingConvention.StdCall)]
         private delegate int GetCurrentReadingFunction(IntPtr self, GameInputKind inputKind, IntPtr device, IntPtr reading);
 
         [UnmanagedFunctionPointer(CallingConvention.StdCall)]
-        private delegate int RegisterDeviceCallbackFunction(IntPtr self, IntPtr device, GameInputKind inputKind, GameInputDeviceStatus statusFilter, GameInputEnumerationKind enumerationKind, IntPtr context, IntPtr callbackFunc, IntPtr callbackToken);
+        private delegate int RegisterDeviceCallbackFunction(IntPtr self, IntPtr device, GameInputKind inputKind, IntPtr context, IntPtr callbackFunc, IntPtr callbackToken);
 
         public static Action? OnNativeCall { get; set; }
 
@@ -625,9 +616,9 @@ public sealed class GameInputFakeComLifetimeTests
         public static Action? OnFinalRelease { get; set; }
 
         /// <summary>
-        /// 為 true 時，GetDeviceInfo 回報成功但不提供資訊指標。
+        /// 為 true 時，API 4 字串 getter 回報超過上限的長度。
         /// </summary>
-        public static bool ReturnNullDeviceInfo { get; set; }
+        public static bool ReturnOversizedString { get; set; }
 
         public static byte[]? LastSetRawData { get; set; }
 
@@ -667,9 +658,66 @@ public sealed class GameInputFakeComLifetimeTests
             IGameInputDeviceVtbl* table = (IGameInputDeviceVtbl*)vtbl;
             table->AddRef = (delegate* unmanaged[Stdcall]<IntPtr, uint>)Marshal.GetFunctionPointerForDelegate(s_addRef);
             table->Release = (delegate* unmanaged[Stdcall]<IntPtr, uint>)Marshal.GetFunctionPointerForDelegate(s_release);
-            table->GetDeviceStatus = (delegate* unmanaged[Stdcall]<IntPtr, GameInputDeviceStatus>)Marshal.GetFunctionPointerForDelegate(s_deviceStatus);
-            table->GetDeviceInfo = (delegate* unmanaged[Stdcall]<IntPtr, IntPtr*, int>)Marshal.GetFunctionPointerForDelegate(s_getDeviceInfo);
             table->CreateForceFeedbackEffect = (delegate* unmanaged[Stdcall]<IntPtr, uint, IntPtr, void**, int>)Marshal.GetFunctionPointerForDelegate(s_createForceFeedbackEffect);
+            table->GetVendorId = (delegate* unmanaged[Stdcall]<IntPtr, ushort>)Marshal.GetFunctionPointerForDelegate(s_api4GetVendorId);
+            table->GetProductId = (delegate* unmanaged[Stdcall]<IntPtr, ushort>)Marshal.GetFunctionPointerForDelegate(s_api4GetProductId);
+            table->GetRevisionNumber = (delegate* unmanaged[Stdcall]<IntPtr, ushort>)Marshal.GetFunctionPointerForDelegate(s_api4GetRevisionNumber);
+            table->GetUsage = (delegate* unmanaged[Stdcall]<IntPtr, GameInputUsage*, void>)Marshal.GetFunctionPointerForDelegate(s_api4GetUsage);
+            table->GetHardwareVersion = (delegate* unmanaged[Stdcall]<IntPtr, GameInputVersion*, void>)Marshal.GetFunctionPointerForDelegate(s_api4GetHardwareVersion);
+            table->GetFirmwareVersion = (delegate* unmanaged[Stdcall]<IntPtr, GameInputVersion*, void>)Marshal.GetFunctionPointerForDelegate(s_api4GetFirmwareVersion);
+            table->GetDeviceId = (delegate* unmanaged[Stdcall]<IntPtr, AppLocalDeviceId*, void>)Marshal.GetFunctionPointerForDelegate(s_api4GetDeviceId);
+            table->GetDeviceRootId = (delegate* unmanaged[Stdcall]<IntPtr, AppLocalDeviceId*, void>)Marshal.GetFunctionPointerForDelegate(s_api4GetDeviceRootId);
+            table->GetDeviceFamily = (delegate* unmanaged[Stdcall]<IntPtr, GameInputDeviceFamily>)Marshal.GetFunctionPointerForDelegate(s_api4GetDeviceFamily);
+            table->GetSupportedInput = (delegate* unmanaged[Stdcall]<IntPtr, GameInputKind>)Marshal.GetFunctionPointerForDelegate(s_api4GetSupportedInput);
+            table->GetSupportedRumbleMotors = (delegate* unmanaged[Stdcall]<IntPtr, GameInputRumbleMotors>)Marshal.GetFunctionPointerForDelegate(s_api4GetSupportedRumbleMotors);
+            table->GetSupportedSystemButtons = (delegate* unmanaged[Stdcall]<IntPtr, GameInputSystemButtons>)Marshal.GetFunctionPointerForDelegate(s_api4GetSupportedSystemButtons);
+            table->GetSupportedLightingGroups = (delegate* unmanaged[Stdcall]<IntPtr, GameInputLightingGroups>)Marshal.GetFunctionPointerForDelegate(s_api4GetSupportedLightingGroups);
+            table->GetSupportedLightingGroupSize = (delegate* unmanaged[Stdcall]<IntPtr, GameInputLightingGroups, uint>)Marshal.GetFunctionPointerForDelegate(s_api4GetSupportedLightingGroupSize);
+            table->GetContainerId = (delegate* unmanaged[Stdcall]<IntPtr, Guid*, void>)Marshal.GetFunctionPointerForDelegate(s_api4GetContainerId);
+            table->GetDisplayName = (delegate* unmanaged[Stdcall]<IntPtr, uint, IntPtr, uint>)Marshal.GetFunctionPointerForDelegate(s_api4GetDisplayName);
+            table->GetPnpPath = (delegate* unmanaged[Stdcall]<IntPtr, uint, IntPtr, uint>)Marshal.GetFunctionPointerForDelegate(s_api4GetPnpPath);
+            table->GetXInputDeviceIndex = (delegate* unmanaged[Stdcall]<IntPtr, uint*, byte>)Marshal.GetFunctionPointerForDelegate(s_api4GetXInputDeviceIndex);
+            table->GetKeyboardInfo = (delegate* unmanaged[Stdcall]<IntPtr, GameInputKeyboardInfo*, byte>)Marshal.GetFunctionPointerForDelegate(s_api4GetKeyboardInfo);
+            table->GetMouseInfo = (delegate* unmanaged[Stdcall]<IntPtr, GameInputMouseInfo*, byte>)Marshal.GetFunctionPointerForDelegate(s_api4GetMouseInfo);
+            table->GetSensorsInfo = (delegate* unmanaged[Stdcall]<IntPtr, GameInputSensorsInfo*, byte>)Marshal.GetFunctionPointerForDelegate(s_api4GetSensorsInfo);
+            table->GetControllerAxisCount = (delegate* unmanaged[Stdcall]<IntPtr, uint>)Marshal.GetFunctionPointerForDelegate(s_api4GetControllerAxisCount);
+            table->GetControllerAxisLabels = (delegate* unmanaged[Stdcall]<IntPtr, uint, IntPtr, uint>)Marshal.GetFunctionPointerForDelegate(s_api4GetControllerAxisLabels);
+            table->GetControllerButtonCount = (delegate* unmanaged[Stdcall]<IntPtr, uint>)Marshal.GetFunctionPointerForDelegate(s_api4GetControllerButtonCount);
+            table->GetControllerButtonLabels = (delegate* unmanaged[Stdcall]<IntPtr, uint, IntPtr, uint>)Marshal.GetFunctionPointerForDelegate(s_api4GetControllerButtonLabels);
+            table->GetControllerSwitchCount = (delegate* unmanaged[Stdcall]<IntPtr, uint>)Marshal.GetFunctionPointerForDelegate(s_api4GetControllerSwitchCount);
+            table->GetControllerSwitchInfo = (delegate* unmanaged[Stdcall]<IntPtr, uint, IntPtr, uint>)Marshal.GetFunctionPointerForDelegate(s_api4GetControllerSwitchInfo);
+            table->GetArcadeStickInfo = (delegate* unmanaged[Stdcall]<IntPtr, GameInputArcadeStickInfo*, byte>)Marshal.GetFunctionPointerForDelegate(s_api4GetArcadeStickInfo);
+            table->GetFlightStickInfo = (delegate* unmanaged[Stdcall]<IntPtr, GameInputFlightStickInfo*, byte>)Marshal.GetFunctionPointerForDelegate(s_api4GetFlightStickInfo);
+            table->GetGamepadInfo = (delegate* unmanaged[Stdcall]<IntPtr, GameInputGamepadInfo*, byte>)Marshal.GetFunctionPointerForDelegate(s_api4GetGamepadInfo);
+            table->GetRacingWheelInfo = (delegate* unmanaged[Stdcall]<IntPtr, GameInputRacingWheelInfo*, byte>)Marshal.GetFunctionPointerForDelegate(s_api4GetRacingWheelInfo);
+            table->GetForceFeedbackMotorCount = (delegate* unmanaged[Stdcall]<IntPtr, uint>)Marshal.GetFunctionPointerForDelegate(s_api4GetForceFeedbackMotorCount);
+            table->GetForceFeedbackMotorInfo = (delegate* unmanaged[Stdcall]<IntPtr, uint, IntPtr, uint>)Marshal.GetFunctionPointerForDelegate(s_api4GetForceFeedbackMotorInfo);
+            table->GetInputReportCount = (delegate* unmanaged[Stdcall]<IntPtr, uint>)Marshal.GetFunctionPointerForDelegate(s_api4GetInputReportCount);
+            table->GetInputReportInfo = (delegate* unmanaged[Stdcall]<IntPtr, uint, IntPtr, uint>)Marshal.GetFunctionPointerForDelegate(s_api4GetInputReportInfo);
+            table->GetOutputReportCount = (delegate* unmanaged[Stdcall]<IntPtr, uint>)Marshal.GetFunctionPointerForDelegate(s_api4GetOutputReportCount);
+            table->GetOutputReportInfo = (delegate* unmanaged[Stdcall]<IntPtr, uint, IntPtr, uint>)Marshal.GetFunctionPointerForDelegate(s_api4GetOutputReportInfo);
+            table->GetFeatureReportCount = (delegate* unmanaged[Stdcall]<IntPtr, uint>)Marshal.GetFunctionPointerForDelegate(s_api4GetFeatureReportCount);
+            table->GetFeatureReportInfo = (delegate* unmanaged[Stdcall]<IntPtr, uint, IntPtr, uint>)Marshal.GetFunctionPointerForDelegate(s_api4GetFeatureReportInfo);
+            table->GetHapticInfo = (delegate* unmanaged[Stdcall]<IntPtr, IntPtr, int>)Marshal.GetFunctionPointerForDelegate(s_api4GetHapticInfo);
+            table->IsConnected = (delegate* unmanaged[Stdcall]<IntPtr, byte>)Marshal.GetFunctionPointerForDelegate(s_api4IsConnected);
+            table->IsForceFeedbackMotorPoweredOn = (delegate* unmanaged[Stdcall]<IntPtr, uint, byte>)Marshal.GetFunctionPointerForDelegate(s_api4IsForceFeedbackMotorPoweredOn);
+            table->SetForceFeedbackMotorGain = (delegate* unmanaged[Stdcall]<IntPtr, uint, float, void>)Marshal.GetFunctionPointerForDelegate(s_api4SetForceFeedbackMotorGain);
+            table->SetRumbleState = (delegate* unmanaged[Stdcall]<IntPtr, IntPtr, void>)Marshal.GetFunctionPointerForDelegate(s_api4SetRumbleState);
+            table->DirectInputEscape = (delegate* unmanaged[Stdcall]<IntPtr, uint, IntPtr, uint, IntPtr, uint, uint*, int>)Marshal.GetFunctionPointerForDelegate(s_api4DirectInputEscape);
+            table->CreateInputMapper = (delegate* unmanaged[Stdcall]<IntPtr, void**, int>)Marshal.GetFunctionPointerForDelegate(s_api4CreateInputMapper);
+            table->GetExtraAxisCount = (delegate* unmanaged[Stdcall]<IntPtr, GameInputKind, uint*, int>)Marshal.GetFunctionPointerForDelegate(s_api4GetExtraAxisCount);
+            table->GetExtraButtonCount = (delegate* unmanaged[Stdcall]<IntPtr, GameInputKind, uint*, int>)Marshal.GetFunctionPointerForDelegate(s_api4GetExtraButtonCount);
+            table->GetExtraAxisIndexes = (delegate* unmanaged[Stdcall]<IntPtr, GameInputKind, uint, IntPtr, int>)Marshal.GetFunctionPointerForDelegate(s_api4GetExtraAxisIndexes);
+            table->GetExtraButtonIndexes = (delegate* unmanaged[Stdcall]<IntPtr, GameInputKind, uint, IntPtr, int>)Marshal.GetFunctionPointerForDelegate(s_api4GetExtraButtonIndexes);
+            table->CreateRawDeviceReport = (delegate* unmanaged[Stdcall]<IntPtr, uint, GameInputRawDeviceReportKind, void**, int>)Marshal.GetFunctionPointerForDelegate(s_api4CreateRawDeviceReport);
+            table->GetRawDeviceFeature = (delegate* unmanaged[Stdcall]<IntPtr, uint, void**, int>)Marshal.GetFunctionPointerForDelegate(s_api4GetRawDeviceFeature);
+            table->SetRawDeviceFeature = (delegate* unmanaged[Stdcall]<IntPtr, IntPtr, int>)Marshal.GetFunctionPointerForDelegate(s_api4SetRawDeviceFeature);
+            table->SendRawDeviceOutput = (delegate* unmanaged[Stdcall]<IntPtr, IntPtr, int>)Marshal.GetFunctionPointerForDelegate(s_api4SendRawDeviceOutput);
+            table->SetLightingColor = (delegate* unmanaged[Stdcall]<IntPtr, GameInputColor, GameInputLightingGroups, uint, void>)Marshal.GetFunctionPointerForDelegate(s_api4SetLightingColor);
+            table->ApplyLightingColors = (delegate* unmanaged[Stdcall]<IntPtr, void>)Marshal.GetFunctionPointerForDelegate(s_api4ApplyLightingColors);
+            table->ApplyLightingSystemDefault = (delegate* unmanaged[Stdcall]<IntPtr, void>)Marshal.GetFunctionPointerForDelegate(s_api4ApplyLightingSystemDefault);
+            table->GetTouchSurfaceCount = (delegate* unmanaged[Stdcall]<IntPtr, uint>)Marshal.GetFunctionPointerForDelegate(s_api4GetTouchSurfaceCount);
+            table->GetTouchSurfaceInfo = (delegate* unmanaged[Stdcall]<IntPtr, uint, GameInputTouchSurfaceInfo*, int>)Marshal.GetFunctionPointerForDelegate(s_api4GetTouchSurfaceInfo);
             FakeComObject fake = new(vtbl);
             if (displayName is not null)
             {
@@ -677,9 +725,7 @@ public sealed class GameInputFakeComLifetimeTests
                 fake._displayName = Marshal.AllocHGlobal(utf8.Length);
                 fake._displayNameLength = utf8.Length - 1;
                 Marshal.Copy(utf8, 0, fake._displayName, utf8.Length);
-                fake._deviceInfo = Marshal.AllocHGlobal(Marshal.SizeOf<GameInputDeviceInfo>());
-                Marshal.StructureToPtr(new GameInputDeviceInfo { DisplayName = fake._displayName }, fake._deviceInfo, fDeleteOld: false);
-                *DeviceInfoSlot(fake.Pointer) = fake._deviceInfo;
+                *DisplayNameSlot(fake.Pointer) = fake._displayName;
             }
 
             return fake;
@@ -733,7 +779,7 @@ public sealed class GameInputFakeComLifetimeTests
             table->Release = (delegate* unmanaged[Stdcall]<IntPtr, uint>)Marshal.GetFunctionPointerForDelegate(s_release);
             table->GetCurrentTimestamp = (delegate* unmanaged[Stdcall]<IntPtr, ulong>)Marshal.GetFunctionPointerForDelegate(s_timestamp);
             table->GetCurrentReading = (delegate* unmanaged[Stdcall]<IntPtr, GameInputKind, IntPtr, void**, int>)Marshal.GetFunctionPointerForDelegate(s_getCurrentReading);
-            table->RegisterDeviceCallback = (delegate* unmanaged[Stdcall]<IntPtr, IntPtr, GameInputKind, GameInputDeviceStatus, GameInputEnumerationKind, IntPtr, IntPtr, ulong*, int>)Marshal.GetFunctionPointerForDelegate(s_registerDeviceCallback);
+            table->RegisterDeviceCallback = (delegate* unmanaged[Stdcall]<IntPtr, IntPtr, GameInputKind, IntPtr, IntPtr, ulong*, int>)Marshal.GetFunctionPointerForDelegate(s_registerDeviceCallback);
             return new FakeComObject(vtbl);
         }
 
@@ -747,11 +793,513 @@ public sealed class GameInputFakeComLifetimeTests
             _disposed = true;
             Marshal.FreeHGlobal(Pointer);
             Marshal.FreeHGlobal(_vtbl);
-            if (_deviceInfo != IntPtr.Zero)
+            if (_displayName != IntPtr.Zero)
             {
-                Marshal.FreeHGlobal(_deviceInfo);
                 Marshal.FreeHGlobal(_displayName);
             }
+        }
+
+        [UnmanagedFunctionPointer(CallingConvention.StdCall)]
+        private delegate ushort Api4GetVendorIdFunction(IntPtr p0);
+        private static readonly Api4GetVendorIdFunction s_api4GetVendorId = Api4GetVendorId;
+        private static ushort Api4GetVendorId(IntPtr p0)
+        {
+            OnNativeCall?.Invoke();
+            return 0;
+        }
+
+        [UnmanagedFunctionPointer(CallingConvention.StdCall)]
+        private delegate ushort Api4GetProductIdFunction(IntPtr p0);
+        private static readonly Api4GetProductIdFunction s_api4GetProductId = Api4GetProductId;
+        private static ushort Api4GetProductId(IntPtr p0)
+        {
+            return default;
+        }
+
+        [UnmanagedFunctionPointer(CallingConvention.StdCall)]
+        private delegate ushort Api4GetRevisionNumberFunction(IntPtr p0);
+        private static readonly Api4GetRevisionNumberFunction s_api4GetRevisionNumber = Api4GetRevisionNumber;
+        private static ushort Api4GetRevisionNumber(IntPtr p0)
+        {
+            return default;
+        }
+
+        [UnmanagedFunctionPointer(CallingConvention.StdCall)]
+        private delegate void Api4GetUsageFunction(IntPtr p0, IntPtr p1);
+        private static readonly Api4GetUsageFunction s_api4GetUsage = Api4GetUsage;
+        private static void Api4GetUsage(IntPtr p0, IntPtr p1)
+        {
+            // 輸出結構由呼叫端初始化為 default；假端不需解參考。
+        }
+
+        [UnmanagedFunctionPointer(CallingConvention.StdCall)]
+        private delegate void Api4GetHardwareVersionFunction(IntPtr p0, IntPtr p1);
+        private static readonly Api4GetHardwareVersionFunction s_api4GetHardwareVersion = Api4GetHardwareVersion;
+        private static void Api4GetHardwareVersion(IntPtr p0, IntPtr p1)
+        {
+            // 輸出結構由呼叫端初始化為 default；假端不需解參考。
+        }
+
+        [UnmanagedFunctionPointer(CallingConvention.StdCall)]
+        private delegate void Api4GetFirmwareVersionFunction(IntPtr p0, IntPtr p1);
+        private static readonly Api4GetFirmwareVersionFunction s_api4GetFirmwareVersion = Api4GetFirmwareVersion;
+        private static void Api4GetFirmwareVersion(IntPtr p0, IntPtr p1)
+        {
+            // 輸出結構由呼叫端初始化為 default；假端不需解參考。
+        }
+
+        [UnmanagedFunctionPointer(CallingConvention.StdCall)]
+        private delegate void Api4GetDeviceIdFunction(IntPtr p0, IntPtr p1);
+        private static readonly Api4GetDeviceIdFunction s_api4GetDeviceId = Api4GetDeviceId;
+        private static void Api4GetDeviceId(IntPtr p0, IntPtr p1)
+        {
+            // 輸出結構由呼叫端初始化為 default；假端不需解參考。
+        }
+
+        [UnmanagedFunctionPointer(CallingConvention.StdCall)]
+        private delegate void Api4GetDeviceRootIdFunction(IntPtr p0, IntPtr p1);
+        private static readonly Api4GetDeviceRootIdFunction s_api4GetDeviceRootId = Api4GetDeviceRootId;
+        private static void Api4GetDeviceRootId(IntPtr p0, IntPtr p1)
+        {
+            // 輸出結構由呼叫端初始化為 default；假端不需解參考。
+        }
+
+        [UnmanagedFunctionPointer(CallingConvention.StdCall)]
+        private delegate GameInputDeviceFamily Api4GetDeviceFamilyFunction(IntPtr p0);
+        private static readonly Api4GetDeviceFamilyFunction s_api4GetDeviceFamily = Api4GetDeviceFamily;
+        private static GameInputDeviceFamily Api4GetDeviceFamily(IntPtr p0)
+        {
+            return default;
+        }
+
+        [UnmanagedFunctionPointer(CallingConvention.StdCall)]
+        private delegate GameInputKind Api4GetSupportedInputFunction(IntPtr p0);
+        private static readonly Api4GetSupportedInputFunction s_api4GetSupportedInput = Api4GetSupportedInput;
+        private static GameInputKind Api4GetSupportedInput(IntPtr p0)
+        {
+            return default;
+        }
+
+        [UnmanagedFunctionPointer(CallingConvention.StdCall)]
+        private delegate GameInputRumbleMotors Api4GetSupportedRumbleMotorsFunction(IntPtr p0);
+        private static readonly Api4GetSupportedRumbleMotorsFunction s_api4GetSupportedRumbleMotors = Api4GetSupportedRumbleMotors;
+        private static GameInputRumbleMotors Api4GetSupportedRumbleMotors(IntPtr p0)
+        {
+            return default;
+        }
+
+        [UnmanagedFunctionPointer(CallingConvention.StdCall)]
+        private delegate GameInputSystemButtons Api4GetSupportedSystemButtonsFunction(IntPtr p0);
+        private static readonly Api4GetSupportedSystemButtonsFunction s_api4GetSupportedSystemButtons = Api4GetSupportedSystemButtons;
+        private static GameInputSystemButtons Api4GetSupportedSystemButtons(IntPtr p0)
+        {
+            return default;
+        }
+
+        [UnmanagedFunctionPointer(CallingConvention.StdCall)]
+        private delegate GameInputLightingGroups Api4GetSupportedLightingGroupsFunction(IntPtr p0);
+        private static readonly Api4GetSupportedLightingGroupsFunction s_api4GetSupportedLightingGroups = Api4GetSupportedLightingGroups;
+        private static GameInputLightingGroups Api4GetSupportedLightingGroups(IntPtr p0)
+        {
+            return default;
+        }
+
+        [UnmanagedFunctionPointer(CallingConvention.StdCall)]
+        private delegate uint Api4GetSupportedLightingGroupSizeFunction(IntPtr p0, GameInputLightingGroups p1);
+        private static readonly Api4GetSupportedLightingGroupSizeFunction s_api4GetSupportedLightingGroupSize = Api4GetSupportedLightingGroupSize;
+        private static uint Api4GetSupportedLightingGroupSize(IntPtr p0, GameInputLightingGroups p1)
+        {
+            return default;
+        }
+
+        [UnmanagedFunctionPointer(CallingConvention.StdCall)]
+        private delegate void Api4GetContainerIdFunction(IntPtr p0, IntPtr p1);
+        private static readonly Api4GetContainerIdFunction s_api4GetContainerId = Api4GetContainerId;
+        private static void Api4GetContainerId(IntPtr p0, IntPtr p1)
+        {
+            // 輸出結構由呼叫端初始化為 default；假端不需解參考。
+        }
+
+        [UnmanagedFunctionPointer(CallingConvention.StdCall)]
+        private delegate uint Api4GetDisplayNameFunction(IntPtr p0, uint p1, IntPtr p2);
+        private static readonly Api4GetDisplayNameFunction s_api4GetDisplayName = Api4GetDisplayName;
+        private static uint Api4GetDisplayName(IntPtr p0, uint p1, IntPtr p2)
+        {
+            if (ReturnOversizedString)
+            {
+                return uint.MaxValue;
+            }
+            IntPtr info = *DisplayNameSlot(p0);
+            if (info == IntPtr.Zero)
+            {
+                return 0;
+            }
+            IntPtr text = info;
+            int length = 0;
+            while (Marshal.ReadByte(text, length) != 0)
+            {
+                length++;
+            }
+            byte[] bytes = new byte[length + 1];
+            Marshal.Copy(text, bytes, 0, bytes.Length);
+            if (p1 >= bytes.Length && p2 != IntPtr.Zero)
+            {
+                Marshal.Copy(bytes, 0, p2, bytes.Length);
+            }
+            return (uint)bytes.Length;
+        }
+
+        [UnmanagedFunctionPointer(CallingConvention.StdCall)]
+        private delegate uint Api4GetPnpPathFunction(IntPtr p0, uint p1, IntPtr p2);
+        private static readonly Api4GetPnpPathFunction s_api4GetPnpPath = Api4GetPnpPath;
+        private static uint Api4GetPnpPath(IntPtr p0, uint p1, IntPtr p2)
+        {
+            return default;
+        }
+
+        [UnmanagedFunctionPointer(CallingConvention.StdCall)]
+        private delegate byte Api4GetXInputDeviceIndexFunction(IntPtr p0, IntPtr p1);
+        private static readonly Api4GetXInputDeviceIndexFunction s_api4GetXInputDeviceIndex = Api4GetXInputDeviceIndex;
+        private static byte Api4GetXInputDeviceIndex(IntPtr p0, IntPtr p1)
+        {
+            // 輸出結構由呼叫端初始化為 default；假端不需解參考。
+            return default;
+        }
+
+        [UnmanagedFunctionPointer(CallingConvention.StdCall)]
+        private delegate byte Api4GetKeyboardInfoFunction(IntPtr p0, IntPtr p1);
+        private static readonly Api4GetKeyboardInfoFunction s_api4GetKeyboardInfo = Api4GetKeyboardInfo;
+        private static byte Api4GetKeyboardInfo(IntPtr p0, IntPtr p1)
+        {
+            // 輸出結構由呼叫端初始化為 default；假端不需解參考。
+            return default;
+        }
+
+        [UnmanagedFunctionPointer(CallingConvention.StdCall)]
+        private delegate byte Api4GetMouseInfoFunction(IntPtr p0, IntPtr p1);
+        private static readonly Api4GetMouseInfoFunction s_api4GetMouseInfo = Api4GetMouseInfo;
+        private static byte Api4GetMouseInfo(IntPtr p0, IntPtr p1)
+        {
+            // 輸出結構由呼叫端初始化為 default；假端不需解參考。
+            return default;
+        }
+
+        [UnmanagedFunctionPointer(CallingConvention.StdCall)]
+        private delegate byte Api4GetSensorsInfoFunction(IntPtr p0, IntPtr p1);
+        private static readonly Api4GetSensorsInfoFunction s_api4GetSensorsInfo = Api4GetSensorsInfo;
+        private static byte Api4GetSensorsInfo(IntPtr p0, IntPtr p1)
+        {
+            // 輸出結構由呼叫端初始化為 default；假端不需解參考。
+            return default;
+        }
+
+        [UnmanagedFunctionPointer(CallingConvention.StdCall)]
+        private delegate uint Api4GetControllerAxisCountFunction(IntPtr p0);
+        private static readonly Api4GetControllerAxisCountFunction s_api4GetControllerAxisCount = Api4GetControllerAxisCount;
+        private static uint Api4GetControllerAxisCount(IntPtr p0)
+        {
+            return default;
+        }
+
+        [UnmanagedFunctionPointer(CallingConvention.StdCall)]
+        private delegate uint Api4GetControllerAxisLabelsFunction(IntPtr p0, uint p1, IntPtr p2);
+        private static readonly Api4GetControllerAxisLabelsFunction s_api4GetControllerAxisLabels = Api4GetControllerAxisLabels;
+        private static uint Api4GetControllerAxisLabels(IntPtr p0, uint p1, IntPtr p2)
+        {
+            return default;
+        }
+
+        [UnmanagedFunctionPointer(CallingConvention.StdCall)]
+        private delegate uint Api4GetControllerButtonCountFunction(IntPtr p0);
+        private static readonly Api4GetControllerButtonCountFunction s_api4GetControllerButtonCount = Api4GetControllerButtonCount;
+        private static uint Api4GetControllerButtonCount(IntPtr p0)
+        {
+            return default;
+        }
+
+        [UnmanagedFunctionPointer(CallingConvention.StdCall)]
+        private delegate uint Api4GetControllerButtonLabelsFunction(IntPtr p0, uint p1, IntPtr p2);
+        private static readonly Api4GetControllerButtonLabelsFunction s_api4GetControllerButtonLabels = Api4GetControllerButtonLabels;
+        private static uint Api4GetControllerButtonLabels(IntPtr p0, uint p1, IntPtr p2)
+        {
+            return default;
+        }
+
+        [UnmanagedFunctionPointer(CallingConvention.StdCall)]
+        private delegate uint Api4GetControllerSwitchCountFunction(IntPtr p0);
+        private static readonly Api4GetControllerSwitchCountFunction s_api4GetControllerSwitchCount = Api4GetControllerSwitchCount;
+        private static uint Api4GetControllerSwitchCount(IntPtr p0)
+        {
+            return default;
+        }
+
+        [UnmanagedFunctionPointer(CallingConvention.StdCall)]
+        private delegate uint Api4GetControllerSwitchInfoFunction(IntPtr p0, uint p1, IntPtr p2);
+        private static readonly Api4GetControllerSwitchInfoFunction s_api4GetControllerSwitchInfo = Api4GetControllerSwitchInfo;
+        private static uint Api4GetControllerSwitchInfo(IntPtr p0, uint p1, IntPtr p2)
+        {
+            return default;
+        }
+
+        [UnmanagedFunctionPointer(CallingConvention.StdCall)]
+        private delegate byte Api4GetArcadeStickInfoFunction(IntPtr p0, IntPtr p1);
+        private static readonly Api4GetArcadeStickInfoFunction s_api4GetArcadeStickInfo = Api4GetArcadeStickInfo;
+        private static byte Api4GetArcadeStickInfo(IntPtr p0, IntPtr p1)
+        {
+            // 輸出結構由呼叫端初始化為 default；假端不需解參考。
+            return default;
+        }
+
+        [UnmanagedFunctionPointer(CallingConvention.StdCall)]
+        private delegate byte Api4GetFlightStickInfoFunction(IntPtr p0, IntPtr p1);
+        private static readonly Api4GetFlightStickInfoFunction s_api4GetFlightStickInfo = Api4GetFlightStickInfo;
+        private static byte Api4GetFlightStickInfo(IntPtr p0, IntPtr p1)
+        {
+            // 輸出結構由呼叫端初始化為 default；假端不需解參考。
+            return default;
+        }
+
+        [UnmanagedFunctionPointer(CallingConvention.StdCall)]
+        private delegate byte Api4GetGamepadInfoFunction(IntPtr p0, IntPtr p1);
+        private static readonly Api4GetGamepadInfoFunction s_api4GetGamepadInfo = Api4GetGamepadInfo;
+        private static byte Api4GetGamepadInfo(IntPtr p0, IntPtr p1)
+        {
+            // 輸出結構由呼叫端初始化為 default；假端不需解參考。
+            return default;
+        }
+
+        [UnmanagedFunctionPointer(CallingConvention.StdCall)]
+        private delegate byte Api4GetRacingWheelInfoFunction(IntPtr p0, IntPtr p1);
+        private static readonly Api4GetRacingWheelInfoFunction s_api4GetRacingWheelInfo = Api4GetRacingWheelInfo;
+        private static byte Api4GetRacingWheelInfo(IntPtr p0, IntPtr p1)
+        {
+            // 輸出結構由呼叫端初始化為 default；假端不需解參考。
+            return default;
+        }
+
+        [UnmanagedFunctionPointer(CallingConvention.StdCall)]
+        private delegate uint Api4GetForceFeedbackMotorCountFunction(IntPtr p0);
+        private static readonly Api4GetForceFeedbackMotorCountFunction s_api4GetForceFeedbackMotorCount = Api4GetForceFeedbackMotorCount;
+        private static uint Api4GetForceFeedbackMotorCount(IntPtr p0)
+        {
+            return default;
+        }
+
+        [UnmanagedFunctionPointer(CallingConvention.StdCall)]
+        private delegate uint Api4GetForceFeedbackMotorInfoFunction(IntPtr p0, uint p1, IntPtr p2);
+        private static readonly Api4GetForceFeedbackMotorInfoFunction s_api4GetForceFeedbackMotorInfo = Api4GetForceFeedbackMotorInfo;
+        private static uint Api4GetForceFeedbackMotorInfo(IntPtr p0, uint p1, IntPtr p2)
+        {
+            return default;
+        }
+
+        [UnmanagedFunctionPointer(CallingConvention.StdCall)]
+        private delegate uint Api4GetInputReportCountFunction(IntPtr p0);
+        private static readonly Api4GetInputReportCountFunction s_api4GetInputReportCount = Api4GetInputReportCount;
+        private static uint Api4GetInputReportCount(IntPtr p0)
+        {
+            return default;
+        }
+
+        [UnmanagedFunctionPointer(CallingConvention.StdCall)]
+        private delegate uint Api4GetInputReportInfoFunction(IntPtr p0, uint p1, IntPtr p2);
+        private static readonly Api4GetInputReportInfoFunction s_api4GetInputReportInfo = Api4GetInputReportInfo;
+        private static uint Api4GetInputReportInfo(IntPtr p0, uint p1, IntPtr p2)
+        {
+            return default;
+        }
+
+        [UnmanagedFunctionPointer(CallingConvention.StdCall)]
+        private delegate uint Api4GetOutputReportCountFunction(IntPtr p0);
+        private static readonly Api4GetOutputReportCountFunction s_api4GetOutputReportCount = Api4GetOutputReportCount;
+        private static uint Api4GetOutputReportCount(IntPtr p0)
+        {
+            return default;
+        }
+
+        [UnmanagedFunctionPointer(CallingConvention.StdCall)]
+        private delegate uint Api4GetOutputReportInfoFunction(IntPtr p0, uint p1, IntPtr p2);
+        private static readonly Api4GetOutputReportInfoFunction s_api4GetOutputReportInfo = Api4GetOutputReportInfo;
+        private static uint Api4GetOutputReportInfo(IntPtr p0, uint p1, IntPtr p2)
+        {
+            return default;
+        }
+
+        [UnmanagedFunctionPointer(CallingConvention.StdCall)]
+        private delegate uint Api4GetFeatureReportCountFunction(IntPtr p0);
+        private static readonly Api4GetFeatureReportCountFunction s_api4GetFeatureReportCount = Api4GetFeatureReportCount;
+        private static uint Api4GetFeatureReportCount(IntPtr p0)
+        {
+            return default;
+        }
+
+        [UnmanagedFunctionPointer(CallingConvention.StdCall)]
+        private delegate uint Api4GetFeatureReportInfoFunction(IntPtr p0, uint p1, IntPtr p2);
+        private static readonly Api4GetFeatureReportInfoFunction s_api4GetFeatureReportInfo = Api4GetFeatureReportInfo;
+        private static uint Api4GetFeatureReportInfo(IntPtr p0, uint p1, IntPtr p2)
+        {
+            return default;
+        }
+
+        [UnmanagedFunctionPointer(CallingConvention.StdCall)]
+        private delegate int Api4GetHapticInfoFunction(IntPtr p0, IntPtr p1);
+        private static readonly Api4GetHapticInfoFunction s_api4GetHapticInfo = Api4GetHapticInfo;
+        private static int Api4GetHapticInfo(IntPtr p0, IntPtr p1)
+        {
+            return default;
+        }
+
+        [UnmanagedFunctionPointer(CallingConvention.StdCall)]
+        private delegate byte Api4IsConnectedFunction(IntPtr p0);
+        private static readonly Api4IsConnectedFunction s_api4IsConnected = Api4IsConnected;
+        private static byte Api4IsConnected(IntPtr p0)
+        {
+            Interlocked.Increment(ref *CallCountSlot(p0));
+            OnNativeCall?.Invoke();
+            return 1;
+        }
+
+        [UnmanagedFunctionPointer(CallingConvention.StdCall)]
+        private delegate byte Api4IsForceFeedbackMotorPoweredOnFunction(IntPtr p0, uint p1);
+        private static readonly Api4IsForceFeedbackMotorPoweredOnFunction s_api4IsForceFeedbackMotorPoweredOn = Api4IsForceFeedbackMotorPoweredOn;
+        private static byte Api4IsForceFeedbackMotorPoweredOn(IntPtr p0, uint p1)
+        {
+            return default;
+        }
+
+        [UnmanagedFunctionPointer(CallingConvention.StdCall)]
+        private delegate void Api4SetForceFeedbackMotorGainFunction(IntPtr p0, uint p1, float p2);
+        private static readonly Api4SetForceFeedbackMotorGainFunction s_api4SetForceFeedbackMotorGain = Api4SetForceFeedbackMotorGain;
+        private static void Api4SetForceFeedbackMotorGain(IntPtr p0, uint p1, float p2)
+        {
+        }
+
+        [UnmanagedFunctionPointer(CallingConvention.StdCall)]
+        private delegate void Api4SetRumbleStateFunction(IntPtr p0, IntPtr p1);
+        private static readonly Api4SetRumbleStateFunction s_api4SetRumbleState = Api4SetRumbleState;
+        private static void Api4SetRumbleState(IntPtr p0, IntPtr p1)
+        {
+        }
+
+        [UnmanagedFunctionPointer(CallingConvention.StdCall)]
+        private delegate int Api4DirectInputEscapeFunction(IntPtr p0, uint p1, IntPtr p2, uint p3, IntPtr p4, uint p5, IntPtr p6);
+        private static readonly Api4DirectInputEscapeFunction s_api4DirectInputEscape = Api4DirectInputEscape;
+        private static int Api4DirectInputEscape(IntPtr p0, uint p1, IntPtr p2, uint p3, IntPtr p4, uint p5, IntPtr p6)
+        {
+            // 輸出結構由呼叫端初始化為 default；假端不需解參考。
+            return default;
+        }
+
+        [UnmanagedFunctionPointer(CallingConvention.StdCall)]
+        private delegate int Api4CreateInputMapperFunction(IntPtr p0, void** p1);
+        private static readonly Api4CreateInputMapperFunction s_api4CreateInputMapper = Api4CreateInputMapper;
+        private static int Api4CreateInputMapper(IntPtr p0, void** p1)
+        {
+            return default;
+        }
+
+        [UnmanagedFunctionPointer(CallingConvention.StdCall)]
+        private delegate int Api4GetExtraAxisCountFunction(IntPtr p0, GameInputKind p1, IntPtr p2);
+        private static readonly Api4GetExtraAxisCountFunction s_api4GetExtraAxisCount = Api4GetExtraAxisCount;
+        private static int Api4GetExtraAxisCount(IntPtr p0, GameInputKind p1, IntPtr p2)
+        {
+            // 輸出結構由呼叫端初始化為 default；假端不需解參考。
+            return default;
+        }
+
+        [UnmanagedFunctionPointer(CallingConvention.StdCall)]
+        private delegate int Api4GetExtraButtonCountFunction(IntPtr p0, GameInputKind p1, IntPtr p2);
+        private static readonly Api4GetExtraButtonCountFunction s_api4GetExtraButtonCount = Api4GetExtraButtonCount;
+        private static int Api4GetExtraButtonCount(IntPtr p0, GameInputKind p1, IntPtr p2)
+        {
+            // 輸出結構由呼叫端初始化為 default；假端不需解參考。
+            return default;
+        }
+
+        [UnmanagedFunctionPointer(CallingConvention.StdCall)]
+        private delegate int Api4GetExtraAxisIndexesFunction(IntPtr p0, GameInputKind p1, uint p2, IntPtr p3);
+        private static readonly Api4GetExtraAxisIndexesFunction s_api4GetExtraAxisIndexes = Api4GetExtraAxisIndexes;
+        private static int Api4GetExtraAxisIndexes(IntPtr p0, GameInputKind p1, uint p2, IntPtr p3)
+        {
+            return default;
+        }
+
+        [UnmanagedFunctionPointer(CallingConvention.StdCall)]
+        private delegate int Api4GetExtraButtonIndexesFunction(IntPtr p0, GameInputKind p1, uint p2, IntPtr p3);
+        private static readonly Api4GetExtraButtonIndexesFunction s_api4GetExtraButtonIndexes = Api4GetExtraButtonIndexes;
+        private static int Api4GetExtraButtonIndexes(IntPtr p0, GameInputKind p1, uint p2, IntPtr p3)
+        {
+            return default;
+        }
+
+        [UnmanagedFunctionPointer(CallingConvention.StdCall)]
+        private delegate int Api4CreateRawDeviceReportFunction(IntPtr p0, uint p1, GameInputRawDeviceReportKind p2, void** p3);
+        private static readonly Api4CreateRawDeviceReportFunction s_api4CreateRawDeviceReport = Api4CreateRawDeviceReport;
+        private static int Api4CreateRawDeviceReport(IntPtr p0, uint p1, GameInputRawDeviceReportKind p2, void** p3)
+        {
+            return default;
+        }
+
+        [UnmanagedFunctionPointer(CallingConvention.StdCall)]
+        private delegate int Api4GetRawDeviceFeatureFunction(IntPtr p0, uint p1, void** p2);
+        private static readonly Api4GetRawDeviceFeatureFunction s_api4GetRawDeviceFeature = Api4GetRawDeviceFeature;
+        private static int Api4GetRawDeviceFeature(IntPtr p0, uint p1, void** p2)
+        {
+            return default;
+        }
+
+        [UnmanagedFunctionPointer(CallingConvention.StdCall)]
+        private delegate int Api4SetRawDeviceFeatureFunction(IntPtr p0, IntPtr p1);
+        private static readonly Api4SetRawDeviceFeatureFunction s_api4SetRawDeviceFeature = Api4SetRawDeviceFeature;
+        private static int Api4SetRawDeviceFeature(IntPtr p0, IntPtr p1)
+        {
+            return default;
+        }
+
+        [UnmanagedFunctionPointer(CallingConvention.StdCall)]
+        private delegate int Api4SendRawDeviceOutputFunction(IntPtr p0, IntPtr p1);
+        private static readonly Api4SendRawDeviceOutputFunction s_api4SendRawDeviceOutput = Api4SendRawDeviceOutput;
+        private static int Api4SendRawDeviceOutput(IntPtr p0, IntPtr p1)
+        {
+            return default;
+        }
+
+        [UnmanagedFunctionPointer(CallingConvention.StdCall)]
+        private delegate void Api4SetLightingColorFunction(IntPtr p0, GameInputColor p1, GameInputLightingGroups p2, uint p3);
+        private static readonly Api4SetLightingColorFunction s_api4SetLightingColor = Api4SetLightingColor;
+        private static void Api4SetLightingColor(IntPtr p0, GameInputColor p1, GameInputLightingGroups p2, uint p3)
+        {
+        }
+
+        [UnmanagedFunctionPointer(CallingConvention.StdCall)]
+        private delegate void Api4ApplyLightingColorsFunction(IntPtr p0);
+        private static readonly Api4ApplyLightingColorsFunction s_api4ApplyLightingColors = Api4ApplyLightingColors;
+        private static void Api4ApplyLightingColors(IntPtr p0)
+        {
+        }
+
+        [UnmanagedFunctionPointer(CallingConvention.StdCall)]
+        private delegate void Api4ApplyLightingSystemDefaultFunction(IntPtr p0);
+        private static readonly Api4ApplyLightingSystemDefaultFunction s_api4ApplyLightingSystemDefault = Api4ApplyLightingSystemDefault;
+        private static void Api4ApplyLightingSystemDefault(IntPtr p0)
+        {
+        }
+
+        [UnmanagedFunctionPointer(CallingConvention.StdCall)]
+        private delegate uint Api4GetTouchSurfaceCountFunction(IntPtr p0);
+        private static readonly Api4GetTouchSurfaceCountFunction s_api4GetTouchSurfaceCount = Api4GetTouchSurfaceCount;
+        private static uint Api4GetTouchSurfaceCount(IntPtr p0)
+        {
+            return default;
+        }
+
+        [UnmanagedFunctionPointer(CallingConvention.StdCall)]
+        private delegate int Api4GetTouchSurfaceInfoFunction(IntPtr p0, uint p1, IntPtr p2);
+        private static readonly Api4GetTouchSurfaceInfoFunction s_api4GetTouchSurfaceInfo = Api4GetTouchSurfaceInfo;
+        private static int Api4GetTouchSurfaceInfo(IntPtr p0, uint p1, IntPtr p2)
+        {
+            // 輸出結構由呼叫端初始化為 default；假端不需解參考。
+            return default;
         }
 
         private static IntPtr AllocateVtbl(int size)
@@ -771,7 +1319,7 @@ public sealed class GameInputFakeComLifetimeTests
             return (int*)((byte*)self + IntPtr.Size);
         }
 
-        private static IntPtr* DeviceInfoSlot(IntPtr self)
+        private static IntPtr* DisplayNameSlot(IntPtr self)
         {
             return (IntPtr*)((byte*)self + IntPtr.Size + (2 * sizeof(int)));
         }
@@ -820,30 +1368,20 @@ public sealed class GameInputFakeComLifetimeTests
             return 0;
         }
 
-        private static int RegisterDeviceCallback(IntPtr self, IntPtr device, GameInputKind inputKind, GameInputDeviceStatus statusFilter, GameInputEnumerationKind enumerationKind, IntPtr context, IntPtr callbackFunc, IntPtr callbackToken)
+        private static int RegisterDeviceCallback(IntPtr self, IntPtr device, GameInputKind inputKind, IntPtr context, IntPtr callbackFunc, IntPtr callbackToken)
         {
-            // 模擬阻塞式列舉：先同步觸發回呼、再回報失敗，驗證已收集的裝置會被釋放。
+            // 模擬註冊失敗前已進行中的事件：先觸發回呼、再回報失敗，驗證已收集的裝置會被釋放。
             if (EnumeratedDevice != IntPtr.Zero)
             {
-                ((delegate* unmanaged[Stdcall]<ulong, IntPtr, IGameInputDevice, ulong, GameInputDeviceStatus, GameInputDeviceStatus, void>)callbackFunc)(
+                ((delegate* unmanaged[Stdcall]<ulong, IntPtr, GameInputDeviceEvent, IGameInputDevice, void>)callbackFunc)(
                     0,
                     context,
-                    new IGameInputDevice(EnumeratedDevice),
-                    0,
-                    GameInputDeviceStatus.GameInputDeviceConnected,
-                    GameInputDeviceStatus.GameInputDeviceNoStatus);
+                    GameInputDeviceEvent.GameInputDeviceEventConnected,
+                    new IGameInputDevice(EnumeratedDevice));
             }
 
             *(ulong*)callbackToken = 0;
             return unchecked((int)0x80004005);
-        }
-
-        private static int GetDeviceInfo(IntPtr self, IntPtr info)
-        {
-            Interlocked.Increment(ref *CallCountSlot(self));
-            OnNativeCall?.Invoke();
-            *(IntPtr*)info = ReturnNullDeviceInfo ? IntPtr.Zero : *DeviceInfoSlot(self);
-            return 0;
         }
 
         private static int CreateForceFeedbackEffect(IntPtr self, uint motorIndex, IntPtr parameters, IntPtr effect)
@@ -895,11 +1433,6 @@ public sealed class GameInputFakeComLifetimeTests
             return 1;
         }
 
-        private static GameInputDeviceStatus GetDeviceStatus(IntPtr self)
-        {
-            Interlocked.Increment(ref *CallCountSlot(self));
-            OnNativeCall?.Invoke();
-            return GameInputDeviceStatus.GameInputDeviceConnected;
-        }
+
     }
 }

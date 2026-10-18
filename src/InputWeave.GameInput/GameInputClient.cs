@@ -32,27 +32,21 @@ public sealed class GameInputClient : IDisposable
 #if NET8_0_OR_GREATER
     private static unsafe IntPtr ReadingCallbackPointer => (IntPtr)(delegate* unmanaged[Stdcall]<ulong, IntPtr, IGameInputReading, void>)&OnReadingCallback;
 
-    private static unsafe IntPtr DeviceCallbackPointer => (IntPtr)(delegate* unmanaged[Stdcall]<ulong, IntPtr, IGameInputDevice, ulong, GameInputDeviceStatus, GameInputDeviceStatus, void>)&OnDeviceCallback;
+    private static unsafe IntPtr DeviceCallbackPointer => (IntPtr)(delegate* unmanaged[Stdcall]<ulong, IntPtr, GameInputDeviceEvent, IGameInputDevice, void>)&OnDeviceCallback;
 
-    private static unsafe IntPtr SystemButtonCallbackPointer => (IntPtr)(delegate* unmanaged[Stdcall]<ulong, IntPtr, IGameInputDevice, ulong, GameInputSystemButtons, GameInputSystemButtons, void>)&OnSystemButtonCallback;
 
-    private static unsafe IntPtr KeyboardLayoutCallbackPointer => (IntPtr)(delegate* unmanaged[Stdcall]<ulong, IntPtr, IGameInputDevice, ulong, uint, uint, void>)&OnKeyboardLayoutCallback;
 #else
     // .NET Framework 沒有 UnmanagedCallersOnly；依「Marshalling a Delegate as a Callback Method」的做法，
     // 以 UnmanagedFunctionPointer 委派取得原生可呼叫的函式指標，並用靜態欄位讓委派在整個處理序期間保持存活，
     // 避免原生端呼叫到已被 GC 回收的 thunk。
     private static readonly GameInputReadingCallback s_readingCallback = OnReadingCallback;
     private static readonly GameInputDeviceCallback s_deviceCallback = OnDeviceCallback;
-    private static readonly GameInputSystemButtonCallback s_systemButtonCallback = OnSystemButtonCallback;
-    private static readonly GameInputKeyboardLayoutCallback s_keyboardLayoutCallback = OnKeyboardLayoutCallback;
 
     private static IntPtr ReadingCallbackPointer { get; } = Marshal.GetFunctionPointerForDelegate(s_readingCallback);
 
     private static IntPtr DeviceCallbackPointer { get; } = Marshal.GetFunctionPointerForDelegate(s_deviceCallback);
 
-    private static IntPtr SystemButtonCallbackPointer { get; } = Marshal.GetFunctionPointerForDelegate(s_systemButtonCallback);
 
-    private static IntPtr KeyboardLayoutCallbackPointer { get; } = Marshal.GetFunctionPointerForDelegate(s_keyboardLayoutCallback);
 #endif
 
 #if NET9_0_OR_GREATER
@@ -60,17 +54,6 @@ public sealed class GameInputClient : IDisposable
 #else
     private readonly object _syncRoot = new();
 #endif
-    private const GameInputKind AllInputKinds =
-        GameInputKind.GameInputKindRawDeviceReport
-        | GameInputKind.GameInputKindController
-        | GameInputKind.GameInputKindKeyboard
-        | GameInputKind.GameInputKindMouse
-        | GameInputKind.GameInputKindSensors
-        | GameInputKind.GameInputKindArcadeStick
-        | GameInputKind.GameInputKindFlightStick
-        | GameInputKind.GameInputKindGamepad
-        | GameInputKind.GameInputKindRacingWheel;
-
 #if NET9_0_OR_GREATER
     private static readonly System.Threading.Lock s_runtimeInitializationLock = new();
 #else
@@ -88,8 +71,8 @@ public sealed class GameInputClient : IDisposable
     }
 
     /// <summary>
-    /// Creates a GameInput v3 client.
-    /// 建立 GameInput v3 用戶端。
+    /// Creates a GameInput v4 client.
+    /// 建立 GameInput v4 用戶端。
     /// </summary>
     /// <remarks>
     /// All target frameworks call GameInput through raw vtable function pointers instead of COM Interop runtime callable wrappers,
@@ -131,17 +114,6 @@ public sealed class GameInputClient : IDisposable
     {
         using ComLease<IGameInput> call = EnterNative();
         return call.Native.GetCurrentTimestamp();
-    }
-
-    /// <summary>
-    /// Sets the GameInput focus policy.
-    /// 設定 GameInput 焦點政策。
-    /// </summary>
-    /// <param name="policy">The focus policy to apply. 要套用的焦點政策。</param>
-    public void SetFocusPolicy(GameInputFocusPolicy policy)
-    {
-        using ComLease<IGameInput> call = EnterNative();
-        call.Native.SetFocusPolicy(policy);
     }
 
     /// <summary>
@@ -638,10 +610,14 @@ public sealed class GameInputClient : IDisposable
     /// 列舉目前符合條件的裝置。
     /// </summary>
     /// <param name="inputKind">The GameInput input kind to query or filter. 要查詢或篩選的 GameInput 輸入種類。</param>
-    /// <param name="statusFilter">The device status to filter. 要篩選的裝置狀態。</param>
-    /// <returns>The list of devices matching the requested input kind and status filter. 符合指定輸入種類與狀態篩選的裝置清單。</returns>
-    public IReadOnlyList<GameInputDevice> EnumerateDevices(GameInputKind inputKind, GameInputDeviceStatus statusFilter = GameInputDeviceStatus.GameInputDeviceConnected)
+    /// <returns>The list of devices matching the requested input kind. 符合指定輸入種類的裝置清單。</returns>
+    /// <remarks>Collects asynchronous API 4 notifications during a 1.25-second discovery window. This is a bounded discovery snapshot, not an atomic native enumeration. Do not call synchronously from a native callback. 收集 API 4 非同步通知，時間窗為 1.25 秒。這是有界探索快照，並非原生原子列舉。不得在原生回呼內同步呼叫。</remarks>
+    public IReadOnlyList<GameInputDevice> EnumerateDevices(GameInputKind inputKind)
     {
+        if (GameInputCallbackThread.IsExecutingCallback)
+        {
+            throw new InvalidOperationException("不能在原生回呼執行緒內同步探索裝置，請改用 EnumerateDevicesAsync。");
+        }
         // 租約涵蓋註冊到 finally 的停止與解除註冊，避免 Dispose 在列舉期間釋放原生物件。
         using ComLease<IGameInput> call = EnterNative();
         DeviceEnumerationContext context = new();
@@ -652,13 +628,12 @@ public sealed class GameInputClient : IDisposable
             int hResult = call.Native.RegisterDeviceCallback(
                 device: null,
                 inputKind,
-                statusFilter,
-                GameInputEnumerationKind.GameInputBlockingEnumeration,
                 GCHandle.ToIntPtr(contextHandle),
                 DeviceCallbackPointer,
                 out token);
 
             GameInputException.ThrowIfFailed(hResult);
+            context.CollectFor(TimeSpan.FromSeconds(1.25));
             return context.Detach();
         }
         catch
@@ -682,9 +657,7 @@ public sealed class GameInputClient : IDisposable
             bool unregistered = true;
             if (token != 0)
             {
-                // 不要先呼叫 StopCallback：它會在背景非同步移除註冊，移除完成後 UnregisterCallback 找不到 token 而傳回 false
-                // （實機量測：先 Stop 約 5% 為 false，Stop 後等 50ms 則 100%；只呼叫 Unregister 為 0%）。
-                // UnregisterCallback 本身就保證不再派送，並會等待進行中的回呼結束。
+                // 等原生端停止派送並完成進行中的回呼，再釋放 GCHandle。
                 unregistered = call.Native.UnregisterCallback(token);
             }
 
@@ -698,25 +671,23 @@ public sealed class GameInputClient : IDisposable
 
     /// <summary>
     /// Enumerates the matching devices asynchronously on a background thread, preventing the calling thread from being blocked by
-    /// the native blocking enumeration.
-    /// 以背景執行緒非同步列舉目前符合條件的裝置，避免呼叫端執行緒被原生阻塞式列舉卡住。
+    /// the discovery collection window.
+    /// 以背景執行緒非同步列舉目前符合條件的裝置，避免呼叫端執行緒被探索收集時間窗卡住。
     /// </summary>
     /// <remarks>
-    /// This method merely wraps <see cref="EnumerateDevices(GameInputKind, GameInputDeviceStatus)"/> in
-    /// <see cref="Task.Run(Action)"/>; it is not an asynchronous method that waits for native events.
-    /// 這個方法只是把 <see cref="EnumerateDevices(GameInputKind, GameInputDeviceStatus)"/> 包在
-    /// <see cref="Task.Run(Action)"/> 中執行，不是等待原生事件的非同步方法。
+    /// This method merely wraps <see cref="EnumerateDevices(GameInputKind)"/> in
+    /// <see cref="Task.Run(Action)"/>; cancellation prevents queued work from starting but does not interrupt an active discovery window.
+    /// 這個方法只是把 <see cref="EnumerateDevices(GameInputKind)"/> 包在
+    /// <see cref="Task.Run(Action)"/> 中執行，取消可阻止尚未開始的工作，但不會中斷已進行中的探索時間窗。
     /// </remarks>
     /// <param name="inputKind">The GameInput input kind to query or filter. 要查詢或篩選的 GameInput 輸入種類。</param>
-    /// <param name="statusFilter">The device status to filter. 要篩選的裝置狀態。</param>
     /// <param name="cancellationToken">The cancellation token. 取消語彙。</param>
     /// <returns>A task that produces the list of matching devices. 產生符合條件裝置清單的工作。</returns>
     public Task<IReadOnlyList<GameInputDevice>> EnumerateDevicesAsync(
         GameInputKind inputKind,
-        GameInputDeviceStatus statusFilter = GameInputDeviceStatus.GameInputDeviceConnected,
         CancellationToken cancellationToken = default)
     {
-        return Task.Run(() => EnumerateDevices(inputKind, statusFilter), cancellationToken);
+        return Task.Run(() => EnumerateDevices(inputKind), cancellationToken);
     }
 
     /// <summary>
@@ -858,9 +829,9 @@ public sealed class GameInputClient : IDisposable
     /// <summary>
     /// Consolidates the boilerplate of one-shot native callback plus cancellation token plus exception-based completion on
     /// dispose, shared by <see cref="WaitForReadingAsync{TResult}"/> and
-    /// <see cref="GameInputDeviceManager.WaitForDeviceEventAsync(GameInputKind, GameInputDeviceStatus, CancellationToken)"/>.
+    /// <see cref="GameInputDeviceManager.WaitForDeviceEventAsync(GameInputKind, CancellationToken)"/>.
     /// 收斂「一次性原生回呼 + 取消語彙 + Dispose 時以例外收尾」的樣板邏輯，供 <see cref="WaitForReadingAsync{TResult}"/>
-    /// 與 <see cref="GameInputDeviceManager.WaitForDeviceEventAsync(GameInputKind, GameInputDeviceStatus, CancellationToken)"/> 共用。
+    /// 與 <see cref="GameInputDeviceManager.WaitForDeviceEventAsync(GameInputKind, CancellationToken)"/> 共用。
     /// </summary>
     /// <typeparam name="TResult">The converted safe result type. 轉換後的安全結果型別。</typeparam>
     /// <param name="register">The delegate that registers the one-shot native callback; it receives <c>onResult</c> and <c>onError</c>, and the callback should finish converting the result before invoking <c>onResult</c>, or pass any conversion exception to <c>onError</c> so the task faults instead of never completing. 註冊一次性原生回呼的委派；會收到 <c>onResult</c> 與 <c>onError</c>，回呼應先把結果轉換完成再呼叫 <c>onResult</c>，轉換時的例外則交給 <c>onError</c>，讓工作失敗而不是永遠不會完成。</param>
@@ -939,151 +910,6 @@ public sealed class GameInputClient : IDisposable
     }
 
     /// <summary>
-    /// Registers a device callback.
-    /// 註冊裝置 callback。
-    /// </summary>
-    /// <param name="device">An optional GameInput device filter. 選用的 GameInput 裝置篩選。</param>
-    /// <param name="inputKind">The GameInput input kind to query or filter. 要查詢或篩選的 GameInput 輸入種類。</param>
-    /// <param name="statusFilter">The device status to filter. 要篩選的裝置狀態。</param>
-    /// <param name="enumerationKind">The device enumeration mode. 裝置列舉模式。</param>
-    /// <param name="handler">The managed callback handler to register. 要註冊的 managed callback handler。</param>
-    /// <returns>The callback registration used to unregister the callback. 用來解除註冊的 callback 註冊。</returns>
-    public GameInputCallbackRegistration RegisterDeviceCallback(
-        GameInputDevice? device,
-        GameInputKind inputKind,
-        GameInputDeviceStatus statusFilter,
-        GameInputEnumerationKind enumerationKind,
-        GameInputDeviceHandler handler)
-    {
-#if NET8_0_OR_GREATER
-        ArgumentNullException.ThrowIfNull(handler);
-#else
-        if (handler is null)
-        {
-            throw new ArgumentNullException(nameof(handler));
-        }
-#endif
-
-        DeviceCallbackContext context = new(handler);
-        GCHandle handle = GCHandle.Alloc(context);
-        ulong token = 0;
-        try
-        {
-            using ComLease<IGameInput> call = EnterNative();
-            using ComLease<IGameInputDevice> deviceLease = device is null ? default : device.EnterNative();
-            int hResult = call.Native.RegisterDeviceCallback(
-                deviceLease.NativeOrNull,
-                inputKind,
-                statusFilter,
-                enumerationKind,
-                GCHandle.ToIntPtr(handle),
-                DeviceCallbackPointer,
-                out token);
-            GameInputException.ThrowIfFailed(hResult);
-            return AddRegistration(token, handle, context.Deactivate);
-        }
-        catch
-        {
-            if (handle.IsAllocated)
-            {
-                handle.Free();
-            }
-
-            throw;
-        }
-    }
-
-    /// <summary>
-    /// Registers a system button callback.
-    /// 註冊 system button callback。
-    /// </summary>
-    /// <param name="device">An optional GameInput device filter. 選用的 GameInput 裝置篩選。</param>
-    /// <param name="buttonFilter">The system buttons to filter. 要篩選的 system button。</param>
-    /// <param name="handler">The managed callback handler to register. 要註冊的 managed callback handler。</param>
-    /// <returns>The callback registration used to unregister the callback. 用來解除註冊的 callback 註冊。</returns>
-    public GameInputCallbackRegistration RegisterSystemButtonCallback(GameInputDevice? device, GameInputSystemButtons buttonFilter, GameInputSystemButtonHandler handler)
-    {
-#if NET8_0_OR_GREATER
-        ArgumentNullException.ThrowIfNull(handler);
-#else
-        if (handler is null)
-        {
-            throw new ArgumentNullException(nameof(handler));
-        }
-#endif
-
-        SystemButtonCallbackContext context = new(handler);
-        GCHandle handle = GCHandle.Alloc(context);
-        ulong token = 0;
-        try
-        {
-            using ComLease<IGameInput> call = EnterNative();
-            using ComLease<IGameInputDevice> deviceLease = device is null ? default : device.EnterNative();
-            int hResult = call.Native.RegisterSystemButtonCallback(
-                deviceLease.NativeOrNull,
-                buttonFilter,
-                GCHandle.ToIntPtr(handle),
-                SystemButtonCallbackPointer,
-                out token);
-            GameInputException.ThrowIfFailed(hResult);
-            return AddRegistration(token, handle, context.Deactivate);
-        }
-        catch
-        {
-            if (handle.IsAllocated)
-            {
-                handle.Free();
-            }
-
-            throw;
-        }
-    }
-
-    /// <summary>
-    /// Registers a keyboard layout callback.
-    /// 註冊鍵盤配置 callback。
-    /// </summary>
-    /// <param name="device">An optional GameInput device filter. 選用的 GameInput 裝置篩選。</param>
-    /// <param name="handler">The managed callback handler to register. 要註冊的 managed callback handler。</param>
-    /// <returns>The callback registration used to unregister the callback. 用來解除註冊的 callback 註冊。</returns>
-    public GameInputCallbackRegistration RegisterKeyboardLayoutCallback(GameInputDevice? device, GameInputKeyboardLayoutHandler handler)
-    {
-#if NET8_0_OR_GREATER
-        ArgumentNullException.ThrowIfNull(handler);
-#else
-        if (handler is null)
-        {
-            throw new ArgumentNullException(nameof(handler));
-        }
-#endif
-
-        KeyboardLayoutCallbackContext context = new(handler);
-        GCHandle handle = GCHandle.Alloc(context);
-        ulong token = 0;
-        try
-        {
-            using ComLease<IGameInput> call = EnterNative();
-            using ComLease<IGameInputDevice> deviceLease = device is null ? default : device.EnterNative();
-            int hResult = call.Native.RegisterKeyboardLayoutCallback(
-                deviceLease.NativeOrNull,
-                GCHandle.ToIntPtr(handle),
-                KeyboardLayoutCallbackPointer,
-                out token);
-            GameInputException.ThrowIfFailed(hResult);
-            return AddRegistration(token, handle, context.Deactivate);
-        }
-        catch
-        {
-            if (handle.IsAllocated)
-            {
-                handle.Free();
-            }
-
-            throw;
-        }
-    }
-
-    /// <summary>
     /// Releases the GameInput client and any callbacks not yet unregistered.
     /// 釋放 GameInput 用戶端與尚未解除註冊的 callback。
     /// </summary>
@@ -1149,27 +975,10 @@ public sealed class GameInputClient : IDisposable
     }
 
     /// <summary>
-    /// Performs the one-time, process-wide runtime setup on the first client creation: anchors the singleton root object and
-    /// waits for the initial device discovery. Concurrent first calls wait until the setup has finished.
-    /// 在第一次建立 client 時執行一次性的處理序層級設定：保留單例根物件的錨點參考並等待初始裝置探索完成。
-    /// 同時進行的第一次呼叫會等到設定完成。
+    /// Retains a process-wide reference to the singleton native root, preventing concurrent initialization and final release from racing.
+    /// 保留處理序層級的原生單例根物件參考，防止並行初始化與最終釋放互相競爭。
     /// </summary>
-    /// <remarks>
-    /// <c>GameInputInitialize</c> returns the same singleton root to every caller. Measured with GameInput 3.5.274 and 3.5.278,
-    /// the process crashes with an access violation when that root's last reference is released on one thread while another
-    /// thread calls <c>GameInputInitialize</c> (for example one client being disposed while another is created), whereas holding
-    /// an anchor reference survived more than 15,000 such overlaps. This matches the loader, which also keeps the runtime module
-    /// loaded until the process exits. In addition, for about one second after the root is first created the runtime reports
-    /// every connected device as newly connected, even to callbacks registered with <c>GameInputNoEnumeration</c>; a blocking
-    /// enumeration waits for that discovery so later waits for device events are not completed by devices that were already
-    /// connected.
-    /// <c>GameInputInitialize</c> 對每個呼叫端都傳回同一個單例根物件。以 GameInput 3.5.274 與 3.5.278 實測，
-    /// 一條執行緒釋放該根物件最後一份參考、同時另一條執行緒呼叫 <c>GameInputInitialize</c>（例如一個 client 釋放時另一個正在建立）
-    /// 會讓處理序以存取違規崩潰；保留錨點參考後，超過 15,000 次同樣的重疊都正常。這與載入器讓執行階段模組常駐到處理序結束的做法一致。
-    /// 此外，根物件第一次建立後約一秒內，執行階段會把每個已連線裝置都當成剛連線回報，即使回呼以 <c>GameInputNoEnumeration</c>
-    /// 註冊也一樣；以阻塞式列舉等待這段探索完成，之後等待裝置事件時才不會被原本就已連線的裝置完成。
-    /// </remarks>
-    /// <param name="root">The root object pointer returned by <c>GameInputInitialize</c>. <c>GameInputInitialize</c> 傳回的根物件指標。</param>
+    /// <param name="root">The native root pointer. 原生根物件指標。</param>
     private static void InitializeRuntimeOnce(IntPtr root)
     {
         if (Volatile.Read(ref s_runtimeInitialized))
@@ -1187,22 +996,42 @@ public sealed class GameInputClient : IDisposable
             // 錨點參考刻意不歸還，讓單例根物件的參考計數永遠不會歸零。
             Marshal.AddRef(root);
 
-            // context 為零時原生回呼會直接略過，不需要配置 GCHandle；探索失敗只是失去這項保證，不讓建立 client 失敗。
-            IGameInput native = GameInputComHandle.FromPointer<IGameInput>(root);
-            int hResult = native.RegisterDeviceCallback(
-                null,
-                AllInputKinds,
-                GameInputDeviceStatus.GameInputDeviceAnyStatus,
-                GameInputEnumerationKind.GameInputBlockingEnumeration,
-                IntPtr.Zero,
-                DeviceCallbackPointer,
-                out ulong token);
-            if (hResult >= 0 && token != 0)
-            {
-                _ = native.UnregisterCallback(token);
-            }
-
             Volatile.Write(ref s_runtimeInitialized, true);
+        }
+    }
+
+    /// <summary>Enables or disables background input. 啟用或停用背景輸入。</summary>
+    /// <param name="enable">Whether to enable background input. 是否啟用背景輸入。</param>
+    public void EnableBackgroundInput(bool enable)
+    {
+        using ComLease<IGameInput> call = EnterNative();
+        call.Native.EnableBackgroundInput(enable ? (byte)1 : (byte)0);
+    }
+
+    /// <summary>Registers the unified API 4 device event callback. The borrowed device is valid only during the handler. 註冊 API 4 統一裝置事件回呼。借用裝置僅在處理常式執行期間有效。</summary>
+    /// <param name="device">An optional device filter. 選用的裝置篩選。</param>
+    /// <param name="inputKind">The input kinds to filter. 要篩選的輸入種類。</param>
+    /// <param name="handler">The event handler. 事件處理常式。</param>
+    /// <returns>The owned callback registration. 自有回呼註冊。</returns>
+    public GameInputCallbackRegistration RegisterDeviceCallback(GameInputDevice? device, GameInputKind inputKind, GameInputDeviceEventHandler handler)
+    {
+        if (handler is null)
+        {
+            throw new ArgumentNullException(nameof(handler));
+        }
+        DeviceEventCallbackContext context = new(handler);
+        GCHandle handle = GCHandle.Alloc(context);
+        try
+        {
+            using ComLease<IGameInput> call = EnterNative();
+            using ComLease<IGameInputDevice> deviceLease = device is null ? default : device.EnterNative();
+            GameInputException.ThrowIfFailed(call.Native.RegisterDeviceCallback(deviceLease.NativeOrNull, inputKind, GCHandle.ToIntPtr(handle), DeviceCallbackPointer, out ulong token));
+            return AddRegistration(token, handle, context.Deactivate);
+        }
+        catch
+        {
+            handle.Free();
+            throw;
         }
     }
 
@@ -1406,13 +1235,30 @@ public sealed class GameInputClient : IDisposable
 #if NET8_0_OR_GREATER
     [UnmanagedCallersOnly(CallConvs = [typeof(CallConvStdcall)])]
 #endif
-    private static void OnDeviceCallback(ulong callbackToken, IntPtr context, IGameInputDevice device, ulong timestamp, GameInputDeviceStatus currentStatus, GameInputDeviceStatus previousStatus)
+    private static void OnDeviceCallback(ulong callbackToken, IntPtr context, GameInputDeviceEvent deviceEvent, IGameInputDevice device)
     {
         GameInputCallbackThread.Enter();
         try
         {
+            if (TryGetContext(context, out DeviceEventCallbackContext? eventContext) && eventContext!.TryGetHandler(out GameInputDeviceEventHandler? eventHandler))
+            {
+                using GameInputDevice managed = WrapBorrowedDevice(device);
+                eventHandler(deviceEvent, managed);
+                return;
+            }
+
+            if (deviceEvent is not (GameInputDeviceEvent.GameInputDeviceEventConnected or GameInputDeviceEvent.GameInputDeviceEventDisconnected))
+            {
+                return;
+            }
+
             if (TryGetContext(context, out DeviceEnumerationContext? enumerationContext))
             {
+                if (deviceEvent == GameInputDeviceEvent.GameInputDeviceEventDisconnected)
+                {
+                    enumerationContext!.Remove(device.Pointer);
+                    return;
+                }
                 GameInputDevice managedDevice = WrapBorrowedDevice(device);
                 if (!enumerationContext!.TryAdd(managedDevice))
                 {
@@ -1423,59 +1269,7 @@ public sealed class GameInputClient : IDisposable
                 return;
             }
 
-            if (TryGetContext(context, out DeviceCallbackContext? callbackContext) && callbackContext!.TryGetHandler(out GameInputDeviceHandler? handler))
-            {
-                using GameInputDevice managedDevice = WrapBorrowedDevice(device);
-                handler(managedDevice, timestamp, currentStatus, previousStatus);
-            }
-        }
-        catch (Exception ex)
-        {
-            RaiseUnhandledCallbackException(ex);
-        }
-        finally
-        {
-            GameInputCallbackThread.Exit();
-        }
-    }
 
-#if NET8_0_OR_GREATER
-    [UnmanagedCallersOnly(CallConvs = [typeof(CallConvStdcall)])]
-#endif
-    private static void OnSystemButtonCallback(ulong callbackToken, IntPtr context, IGameInputDevice device, ulong timestamp, GameInputSystemButtons currentButtons, GameInputSystemButtons previousButtons)
-    {
-        GameInputCallbackThread.Enter();
-        try
-        {
-            if (TryGetContext(context, out SystemButtonCallbackContext? callbackContext) && callbackContext!.TryGetHandler(out GameInputSystemButtonHandler? handler))
-            {
-                using GameInputDevice managedDevice = WrapBorrowedDevice(device);
-                handler(managedDevice, timestamp, currentButtons, previousButtons);
-            }
-        }
-        catch (Exception ex)
-        {
-            RaiseUnhandledCallbackException(ex);
-        }
-        finally
-        {
-            GameInputCallbackThread.Exit();
-        }
-    }
-
-#if NET8_0_OR_GREATER
-    [UnmanagedCallersOnly(CallConvs = [typeof(CallConvStdcall)])]
-#endif
-    private static void OnKeyboardLayoutCallback(ulong callbackToken, IntPtr context, IGameInputDevice device, ulong timestamp, uint currentLayout, uint previousLayout)
-    {
-        GameInputCallbackThread.Enter();
-        try
-        {
-            if (TryGetContext(context, out KeyboardLayoutCallbackContext? callbackContext) && callbackContext!.TryGetHandler(out GameInputKeyboardLayoutHandler? handler))
-            {
-                using GameInputDevice managedDevice = WrapBorrowedDevice(device);
-                handler(managedDevice, timestamp, currentLayout, previousLayout);
-            }
         }
         catch (Exception ex)
         {
@@ -1623,11 +1417,10 @@ public sealed class GameInputClient : IDisposable
 
     internal sealed class ReadingCallbackContext(GameInputReadingHandler handler) : HandlerCallbackContext<GameInputReadingHandler>(handler);
 
-    internal sealed class DeviceCallbackContext(GameInputDeviceHandler handler) : HandlerCallbackContext<GameInputDeviceHandler>(handler);
+    internal sealed class DeviceEventCallbackContext(GameInputDeviceEventHandler handler) : HandlerCallbackContext<GameInputDeviceEventHandler>(handler);
 
-    internal sealed class SystemButtonCallbackContext(GameInputSystemButtonHandler handler) : HandlerCallbackContext<GameInputSystemButtonHandler>(handler);
 
-    internal sealed class KeyboardLayoutCallbackContext(GameInputKeyboardLayoutHandler handler) : HandlerCallbackContext<GameInputKeyboardLayoutHandler>(handler);
+
 
     internal sealed class DeviceEnumerationContext : CallbackContext
     {
@@ -1642,6 +1435,30 @@ public sealed class GameInputClient : IDisposable
         /// Adds a device collected by the callback; returns false after the context has been detached.
         /// 加入回呼收集到的裝置；內容已分離後傳回 false。
         /// </summary>
+        public void CollectFor(TimeSpan duration)
+        {
+            // 原生 API 4 不提供同步列舉完成訊號；只收集明確時間窗內的通知。
+            Thread.Sleep(duration);
+        }
+
+        public void Remove(IntPtr pointer)
+        {
+            GameInputDevice? removed = null;
+            lock (_syncRoot)
+            {
+                if (_devices is not null)
+                {
+                    int index = _devices.FindIndex(device => device.NativeInterface.Pointer == pointer);
+                    if (index >= 0)
+                    {
+                        removed = _devices[index];
+                        _devices.RemoveAt(index);
+                    }
+                }
+            }
+            removed?.Dispose();
+        }
+
         public bool TryAdd(GameInputDevice device)
         {
             lock (_syncRoot)
@@ -1651,6 +1468,10 @@ public sealed class GameInputClient : IDisposable
                     return false;
                 }
 
+                if (_devices.Any(existing => existing.NativeInterface.Pointer == device.NativeInterface.Pointer))
+                {
+                    return false;
+                }
                 _devices.Add(device);
                 return true;
             }

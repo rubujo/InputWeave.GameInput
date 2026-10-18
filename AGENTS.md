@@ -18,7 +18,11 @@
 
 ## GameInput 維護邊界
 
-- 目前基準是 `Microsoft.GameInput` `3.5.283`，API 版本 `3`。
+- 目前基準是 `Microsoft.GameInput` `4.0.300`，API 版本 `4`。
+- 使用官方 `native/include/GameInput.h` 的 API 4 主標頭；不保留 API 3 原生介面、舊狀態列舉或指標容器。一般套件追版不自動切換 API；明確遷移時使用更新腳本的 `-ApiVersion`。
+- NuGet 相依套件使用最新穩定版本，不自動採用預覽版；GitHub Release tag 與 NuGet 版本不得直接比較大小。
+- API 4 裝置回呼為非同步派送，沒有原生同步列舉完成訊號。裝置探索必須明確記載收集時間窗；事件包含 `GameInputDeviceEvent`，不得虛構舊版前後狀態。
+- 原生宣告覆蓋率以主標頭、ABI manifest、`eng/gameinput-wrapper-coverage.json` 與驗證器共同核對；宣告零缺口不代表所有硬體功能皆已實測。
 - 修改互通層、版本基準或發佈包裝前，先使用對應 `.agents/skills/` 流程；不要把多步驟程序塞回本檔。
 - `src/InputWeave.GameInput/Interop/Generated/` 下的 `.g.cs` 與 `gameinput-abi-manifest.json` 必須由產生器產生；不要手改產生式互通層。
 - 產生式互通層的 XML 文件註解來源是 `eng/gameinput-xml-docs.json`；若缺文件，修改文件來源與產生器後重產。

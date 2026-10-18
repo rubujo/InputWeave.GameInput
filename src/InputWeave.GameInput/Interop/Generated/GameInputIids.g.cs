@@ -14,22 +14,22 @@ public static class GameInputIids
     /// <summary>
     /// Represents the native GameInput field or constant corresponding to GameInputIids.IGameInput. 表示 GameInputIids.IGameInput 對應的 GameInput 原生欄位或常數。
     /// </summary>
-    public static readonly Guid IGameInput = new("20EFC1C7-5D9A-43BA-B26F-B807FA48609C");
+    public static readonly Guid IGameInput = new("F2DAAE4C-4D21-4250-8953-4F791E6279AB");
 
     /// <summary>
     /// Represents the native GameInput field or constant corresponding to GameInputIids.IGameInputRawDeviceReport. 表示 GameInputIids.IGameInputRawDeviceReport 對應的 GameInput 原生欄位或常數。
     /// </summary>
-    public static readonly Guid IGameInputRawDeviceReport = new("05A42D89-2CB6-45A3-874D-E635723587AB");
+    public static readonly Guid IGameInputRawDeviceReport = new("E35550A9-8507-404B-823C-2035958A6936");
 
     /// <summary>
     /// Represents the native GameInput field or constant corresponding to GameInputIids.IGameInputReading. 表示 GameInputIids.IGameInputReading 對應的 GameInput 原生欄位或常數。
     /// </summary>
-    public static readonly Guid IGameInputReading = new("C81C4CDE-ED1A-4631-A30F-C556A6241A1F");
+    public static readonly Guid IGameInputReading = new("0DFAA2A2-688B-4A9C-A3A9-0FEB4F90EE12");
 
     /// <summary>
     /// Represents the native GameInput field or constant corresponding to GameInputIids.IGameInputDevice. 表示 GameInputIids.IGameInputDevice 對應的 GameInput 原生欄位或常數。
     /// </summary>
-    public static readonly Guid IGameInputDevice = new("63E2F38B-A399-4275-8AE7-D4C6E524D12A");
+    public static readonly Guid IGameInputDevice = new("4420F01D-8918-49D4-B302-DBEAD986105F");
 
     /// <summary>
     /// Represents the native GameInput field or constant corresponding to GameInputIids.IGameInputDispatcher. 表示 GameInputIids.IGameInputDispatcher 對應的 GameInput 原生欄位或常數。
@@ -39,7 +39,7 @@ public static class GameInputIids
     /// <summary>
     /// Represents the native GameInput field or constant corresponding to GameInputIids.IGameInputForceFeedbackEffect. 表示 GameInputIids.IGameInputForceFeedbackEffect 對應的 GameInput 原生欄位或常數。
     /// </summary>
-    public static readonly Guid IGameInputForceFeedbackEffect = new("FF61096A-3373-4093-A1DF-6D31846B3511");
+    public static readonly Guid IGameInputForceFeedbackEffect = new("BB3500C0-4B43-44CA-81A2-382FC63AE0E9");
 
     /// <summary>
     /// Represents the native GameInput field or constant corresponding to GameInputIids.IGameInputMapper. 表示 GameInputIids.IGameInputMapper 對應的 GameInput 原生欄位或常數。

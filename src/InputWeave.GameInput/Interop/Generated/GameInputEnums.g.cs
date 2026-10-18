@@ -61,62 +61,46 @@ public enum GameInputKind
     /// <summary>
     /// Represents the native GameInput enumeration value corresponding to GameInputKindRacingWheel. 代表 GameInputKindRacingWheel 對應的 GameInput 原生列舉值。
     /// </summary>
-    GameInputKindRacingWheel = 524288
+    GameInputKindRacingWheel = 524288,
+    /// <summary>
+    /// GameInputKindLighting value. GameInputKindLighting 值。
+    /// </summary>
+    GameInputKindLighting = 1048576,
+    /// <summary>
+    /// GameInputKindSystemButton value. GameInputKindSystemButton 值。
+    /// </summary>
+    GameInputKindSystemButton = 2097152,
+    /// <summary>
+    /// GameInputKindTouch value. GameInputKindTouch 值。
+    /// </summary>
+    GameInputKindTouch = 4194304
 }
 
 /// <summary>
-/// Defines the native GameInput enumeration values corresponding to GameInputEnumerationKind. 定義 GameInputEnumerationKind 對應的 GameInput 原生列舉值。
+/// Device lifecycle or capability change event. 裝置生命週期或能力異動事件。
 /// </summary>
-public enum GameInputEnumerationKind
+public enum GameInputDeviceEvent
 {
     /// <summary>
-    /// Represents the native GameInput enumeration value corresponding to GameInputNoEnumeration. 代表 GameInputNoEnumeration 對應的 GameInput 原生列舉值。
+    /// GameInputDeviceEventConnected value. GameInputDeviceEventConnected 值。
     /// </summary>
-    GameInputNoEnumeration = 0,
+    GameInputDeviceEventConnected = 0,
     /// <summary>
-    /// Represents the native GameInput enumeration value corresponding to GameInputAsyncEnumeration. 代表 GameInputAsyncEnumeration 對應的 GameInput 原生列舉值。
+    /// GameInputDeviceEventDisconnected value. GameInputDeviceEventDisconnected 值。
     /// </summary>
-    GameInputAsyncEnumeration = 1,
+    GameInputDeviceEventDisconnected = 1,
     /// <summary>
-    /// Represents the native GameInput enumeration value corresponding to GameInputBlockingEnumeration. 代表 GameInputBlockingEnumeration 對應的 GameInput 原生列舉值。
+    /// GameInputDeviceEventKeyboardLayoutUpdated value. GameInputDeviceEventKeyboardLayoutUpdated 值。
     /// </summary>
-    GameInputBlockingEnumeration = 2
-}
-
-/// <summary>
-/// Defines the native GameInput enumeration values corresponding to GameInputFocusPolicy. 定義 GameInputFocusPolicy 對應的 GameInput 原生列舉值。
-/// </summary>
-[System.Flags]
-public enum GameInputFocusPolicy
-{
+    GameInputDeviceEventKeyboardLayoutUpdated = 2,
     /// <summary>
-    /// Represents the native GameInput enumeration value corresponding to GameInputDefaultFocusPolicy. 代表 GameInputDefaultFocusPolicy 對應的 GameInput 原生列舉值。
+    /// GameInputDeviceEventHapticInfoUpdated value. GameInputDeviceEventHapticInfoUpdated 值。
     /// </summary>
-    GameInputDefaultFocusPolicy = 0,
+    GameInputDeviceEventHapticInfoUpdated = 3,
     /// <summary>
-    /// Represents the native GameInput enumeration value corresponding to GameInputExclusiveForegroundInput. 代表 GameInputExclusiveForegroundInput 對應的 GameInput 原生列舉值。
+    /// GameInputDeviceEventXInputIndexUpdated value. GameInputDeviceEventXInputIndexUpdated 值。
     /// </summary>
-    GameInputExclusiveForegroundInput = 2,
-    /// <summary>
-    /// Represents the native GameInput enumeration value corresponding to GameInputExclusiveForegroundGuideButton. 代表 GameInputExclusiveForegroundGuideButton 對應的 GameInput 原生列舉值。
-    /// </summary>
-    GameInputExclusiveForegroundGuideButton = 8,
-    /// <summary>
-    /// Represents the native GameInput enumeration value corresponding to GameInputExclusiveForegroundShareButton. 代表 GameInputExclusiveForegroundShareButton 對應的 GameInput 原生列舉值。
-    /// </summary>
-    GameInputExclusiveForegroundShareButton = 32,
-    /// <summary>
-    /// Represents the native GameInput enumeration value corresponding to GameInputEnableBackgroundInput. 代表 GameInputEnableBackgroundInput 對應的 GameInput 原生列舉值。
-    /// </summary>
-    GameInputEnableBackgroundInput = 64,
-    /// <summary>
-    /// Represents the native GameInput enumeration value corresponding to GameInputEnableBackgroundGuideButton. 代表 GameInputEnableBackgroundGuideButton 對應的 GameInput 原生列舉值。
-    /// </summary>
-    GameInputEnableBackgroundGuideButton = 128,
-    /// <summary>
-    /// Represents the native GameInput enumeration value corresponding to GameInputEnableBackgroundShareButton. 代表 GameInputEnableBackgroundShareButton 對應的 GameInput 原生列舉值。
-    /// </summary>
-    GameInputEnableBackgroundShareButton = 256
+    GameInputDeviceEventXInputIndexUpdated = 4
 }
 
 /// <summary>
@@ -392,7 +376,15 @@ public enum GameInputArcadeStickButtons
     /// <summary>
     /// Represents the native GameInput enumeration value corresponding to GameInputArcadeStickSpecial2. 代表 GameInputArcadeStickSpecial2 對應的 GameInput 原生列舉值。
     /// </summary>
-    GameInputArcadeStickSpecial2 = 8192
+    GameInputArcadeStickSpecial2 = 8192,
+    /// <summary>
+    /// GameInputArcadeStickLeftThumbstick value. GameInputArcadeStickLeftThumbstick 值。
+    /// </summary>
+    GameInputArcadeStickLeftThumbstick = 16384,
+    /// <summary>
+    /// GameInputArcadeStickRightThumbstick value. GameInputArcadeStickRightThumbstick 值。
+    /// </summary>
+    GameInputArcadeStickRightThumbstick = 32768
 }
 
 /// <summary>
@@ -607,7 +599,11 @@ public enum GameInputRawDeviceReportKind
     /// <summary>
     /// Represents the native GameInput enumeration value corresponding to GameInputRawOutputReport. 代表 GameInputRawOutputReport 對應的 GameInput 原生列舉值。
     /// </summary>
-    GameInputRawOutputReport = 1
+    GameInputRawOutputReport = 1,
+    /// <summary>
+    /// GameInputRawFeatureReport value. GameInputRawFeatureReport 值。
+    /// </summary>
+    GameInputRawFeatureReport = 2
 }
 
 /// <summary>
@@ -799,30 +795,6 @@ public enum GameInputRacingWheelAxes
 }
 
 /// <summary>
-/// Defines the native GameInput enumeration values corresponding to GameInputDeviceStatus. 定義 GameInputDeviceStatus 對應的 GameInput 原生列舉值。
-/// </summary>
-[System.Flags]
-public enum GameInputDeviceStatus
-{
-    /// <summary>
-    /// Represents the native GameInput enumeration value corresponding to GameInputDeviceNoStatus. 代表 GameInputDeviceNoStatus 對應的 GameInput 原生列舉值。
-    /// </summary>
-    GameInputDeviceNoStatus = 0,
-    /// <summary>
-    /// Represents the native GameInput enumeration value corresponding to GameInputDeviceConnected. 代表 GameInputDeviceConnected 對應的 GameInput 原生列舉值。
-    /// </summary>
-    GameInputDeviceConnected = 1,
-    /// <summary>
-    /// Represents the native GameInput enumeration value corresponding to GameInputDeviceHapticInfoReady. 代表 GameInputDeviceHapticInfoReady 對應的 GameInput 原生列舉值。
-    /// </summary>
-    GameInputDeviceHapticInfoReady = 2097152,
-    /// <summary>
-    /// Represents the native GameInput enumeration value corresponding to GameInputDeviceAnyStatus. 代表 GameInputDeviceAnyStatus 對應的 GameInput 原生列舉值。
-    /// </summary>
-    GameInputDeviceAnyStatus = -1
-}
-
-/// <summary>
 /// Defines the native GameInput enumeration values corresponding to GameInputDeviceFamily. 定義 GameInputDeviceFamily 對應的 GameInput 原生列舉值。
 /// </summary>
 public enum GameInputDeviceFamily
@@ -855,6 +827,54 @@ public enum GameInputDeviceFamily
     /// Represents the native GameInput enumeration value corresponding to GameInputFamilyAggregate. 代表 GameInputFamilyAggregate 對應的 GameInput 原生列舉值。
     /// </summary>
     GameInputFamilyAggregate = 5
+}
+
+/// <summary>
+/// Device lighting groups. 裝置燈光群組。
+/// </summary>
+[System.Flags]
+public enum GameInputLightingGroups
+{
+    /// <summary>
+    /// GameInputLightingGroupUnknown value. GameInputLightingGroupUnknown 值。
+    /// </summary>
+    GameInputLightingGroupUnknown = 0,
+    /// <summary>
+    /// GameInputLightingGroupLeftThumbstick value. GameInputLightingGroupLeftThumbstick 值。
+    /// </summary>
+    GameInputLightingGroupLeftThumbstick = 1,
+    /// <summary>
+    /// GameInputLightingGroupRightThumbstick value. GameInputLightingGroupRightThumbstick 值。
+    /// </summary>
+    GameInputLightingGroupRightThumbstick = 2,
+    /// <summary>
+    /// GameInputLightingGroupDPad value. GameInputLightingGroupDPad 值。
+    /// </summary>
+    GameInputLightingGroupDPad = 4,
+    /// <summary>
+    /// GameInputLightingGroupFaceButtons value. GameInputLightingGroupFaceButtons 值。
+    /// </summary>
+    GameInputLightingGroupFaceButtons = 8,
+    /// <summary>
+    /// GameInputLightingGroupCenterLight value. GameInputLightingGroupCenterLight 值。
+    /// </summary>
+    GameInputLightingGroupCenterLight = 16,
+    /// <summary>
+    /// GameInputLightingGroupKeyboardKey value. GameInputLightingGroupKeyboardKey 值。
+    /// </summary>
+    GameInputLightingGroupKeyboardKey = 32,
+    /// <summary>
+    /// GameInputLightingGroupLeftHeadset value. GameInputLightingGroupLeftHeadset 值。
+    /// </summary>
+    GameInputLightingGroupLeftHeadset = 64,
+    /// <summary>
+    /// GameInputLightingGroupRightHeadset value. GameInputLightingGroupRightHeadset 值。
+    /// </summary>
+    GameInputLightingGroupRightHeadset = 128,
+    /// <summary>
+    /// GameInputLightingGroupAll value. GameInputLightingGroupAll 值。
+    /// </summary>
+    GameInputLightingGroupAll = -1
 }
 
 /// <summary>
@@ -1361,7 +1381,71 @@ public enum GameInputLabel
     /// <summary>
     /// Represents the native GameInput enumeration value corresponding to GameInputLabelPaddleRight2. 代表 GameInputLabelPaddleRight2 對應的 GameInput 原生列舉值。
     /// </summary>
-    GameInputLabelPaddleRight2 = 124
+    GameInputLabelPaddleRight2 = 124,
+    /// <summary>
+    /// GameInputLabelTouchpadButton value. GameInputLabelTouchpadButton 值。
+    /// </summary>
+    GameInputLabelTouchpadButton = 125,
+    /// <summary>
+    /// GameInputLabelLeftThumbstickX value. GameInputLabelLeftThumbstickX 值。
+    /// </summary>
+    GameInputLabelLeftThumbstickX = 126,
+    /// <summary>
+    /// GameInputLabelLeftThumbstickY value. GameInputLabelLeftThumbstickY 值。
+    /// </summary>
+    GameInputLabelLeftThumbstickY = 127,
+    /// <summary>
+    /// GameInputLabelRightThumbstickX value. GameInputLabelRightThumbstickX 值。
+    /// </summary>
+    GameInputLabelRightThumbstickX = 128,
+    /// <summary>
+    /// GameInputLabelRightThumbstickY value. GameInputLabelRightThumbstickY 值。
+    /// </summary>
+    GameInputLabelRightThumbstickY = 129,
+    /// <summary>
+    /// GameInputLabelRoll value. GameInputLabelRoll 值。
+    /// </summary>
+    GameInputLabelRoll = 130,
+    /// <summary>
+    /// GameInputLabelPitch value. GameInputLabelPitch 值。
+    /// </summary>
+    GameInputLabelPitch = 131,
+    /// <summary>
+    /// GameInputLabelYaw value. GameInputLabelYaw 值。
+    /// </summary>
+    GameInputLabelYaw = 132,
+    /// <summary>
+    /// GameInputLabelThrottle value. GameInputLabelThrottle 值。
+    /// </summary>
+    GameInputLabelThrottle = 133,
+    /// <summary>
+    /// GameInputLabelSteering value. GameInputLabelSteering 值。
+    /// </summary>
+    GameInputLabelSteering = 134,
+    /// <summary>
+    /// GameInputLabelBrake value. GameInputLabelBrake 值。
+    /// </summary>
+    GameInputLabelBrake = 135,
+    /// <summary>
+    /// GameInputLabelClutch value. GameInputLabelClutch 值。
+    /// </summary>
+    GameInputLabelClutch = 136,
+    /// <summary>
+    /// GameInputLabelHandbrake value. GameInputLabelHandbrake 值。
+    /// </summary>
+    GameInputLabelHandbrake = 137,
+    /// <summary>
+    /// GameInputLabelPatternShifter value. GameInputLabelPatternShifter 值。
+    /// </summary>
+    GameInputLabelPatternShifter = 138,
+    /// <summary>
+    /// GameInputLabelFirePrimary value. GameInputLabelFirePrimary 值。
+    /// </summary>
+    GameInputLabelFirePrimary = 139,
+    /// <summary>
+    /// GameInputLabelFireSecondary value. GameInputLabelFireSecondary 值。
+    /// </summary>
+    GameInputLabelFireSecondary = 140
 }
 
 /// <summary>
@@ -1500,6 +1584,25 @@ public enum GameInputRumbleMotors
     /// Represents the native GameInput enumeration value corresponding to GameInputRumbleRightTrigger. 代表 GameInputRumbleRightTrigger 對應的 GameInput 原生列舉值。
     /// </summary>
     GameInputRumbleRightTrigger = 8
+}
+
+/// <summary>
+/// The kind of touch surface. 觸控表面種類。
+/// </summary>
+public enum GameInputTouchSurfaceType
+{
+    /// <summary>
+    /// GameInputTouchSurfaceTypeUnknown value. GameInputTouchSurfaceTypeUnknown 值。
+    /// </summary>
+    GameInputTouchSurfaceTypeUnknown = 0,
+    /// <summary>
+    /// GameInputTouchSurfaceTypeTouchscreen value. GameInputTouchSurfaceTypeTouchscreen 值。
+    /// </summary>
+    GameInputTouchSurfaceTypeTouchscreen = 1,
+    /// <summary>
+    /// GameInputTouchSurfaceTypeTouchpad value. GameInputTouchSurfaceTypeTouchpad 值。
+    /// </summary>
+    GameInputTouchSurfaceTypeTouchpad = 2
 }
 
 /// <summary>

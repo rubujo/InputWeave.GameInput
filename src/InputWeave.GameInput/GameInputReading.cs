@@ -659,6 +659,34 @@ public sealed class GameInputReading : IDisposable
         }
     }
 
+    /// <summary>Reads system button state. 讀取系統按鈕狀態。</summary>
+    /// <param name="buttons">Receives the buttons. 接收按鈕。</param>
+    /// <returns>True when supported. 支援時為 true。</returns>
+    public bool TryGetSystemButtonState(out GameInputSystemButtons buttons)
+    {
+        using ComLease<IGameInputReading> call = EnterNative();
+        return call.Native.GetSystemButtonState(out buttons);
+    }
+
+    /// <summary>Gets the touch contact count. 取得觸控接觸點數量。</summary>
+    /// <param name="surfaceIndex">The surface index. 表面索引。</param>
+    /// <returns>The contact count. 接觸點數量。</returns>
+    public uint GetTouchContactCount(uint surfaceIndex)
+    {
+        using ComLease<IGameInputReading> call = EnterNative();
+        return call.Native.GetTouchContactCount(surfaceIndex);
+    }
+
+    /// <summary>Copies the contacts of a touch surface. 複製觸控表面的接觸點。</summary>
+    /// <param name="surfaceIndex">The surface index. 表面索引。</param>
+    /// <returns>An independent contact array. 獨立接觸點陣列。</returns>
+    public GameInputTouchContact[] GetTouchSurfaceState(uint surfaceIndex)
+    {
+        using ComLease<IGameInputReading> call = EnterNative();
+        IGameInputReading native = call.Native;
+        return GameInputDevice.ReadArray<GameInputTouchContact>(() => native.GetTouchContactCount(surfaceIndex), (count, buffer) => native.GetTouchSurfaceState(surfaceIndex, count, buffer));
+    }
+
     /// <summary>
     /// Releases the COM reference held by the reading wrapper.
     /// 釋放 reading 包裝持有的 COM 參考。

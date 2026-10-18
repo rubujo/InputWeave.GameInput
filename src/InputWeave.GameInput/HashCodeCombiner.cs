@@ -4,7 +4,7 @@ namespace InputWeave.GameInput;
 /// The shared hash code combining helper used by the <see cref="object.GetHashCode"/> overrides of the snapshot types; both TFMs
 /// share the same code (it does not depend on <c>System.HashCode</c>, which <c>net48</c> lacks).
 /// 共用的雜湊碼組合輔助方法，供 Snapshot 型別的 <see cref="object.GetHashCode"/> 覆寫使用；
-/// 兩個 TFM 共用同一份程式碼（不依賴 <c>System.HashCode</c>，因為 <c>net48</c> 不支援）。
+/// 三個 TFM 共用同一份程式碼（不依賴 <c>System.HashCode</c>，因為 <c>net48</c> 不支援）。
 /// </summary>
 internal static class HashCodeCombiner
 {

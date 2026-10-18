@@ -2,6 +2,8 @@
 
 Microsoft 官方 `Microsoft.GameInput` NuGet 套件會提供最新 `GameInput.h`、原生程式庫與 Windows PC 用 `GameInputRedist.msi`。這個包裝套件不會重新散佈 MSI、可轉散發 DLL 或任何原生橋接 DLL，也不會在使用者電腦上自動安裝可轉散發套件。
 
+目前 NuGet 基準為 `Microsoft.GameInput 4.0.300`，使用套件隨附的官方 `native/include/GameInput.h` 主標頭，包裝 API 已升至 4。應用程式需要支援 API 4 的執行階段；舊版執行階段可能在建立用戶端時回報 `E_NOINTERFACE`。新版套件的 Windows／Xbox 並存部署二進位檔也未納入本套件。更新 NuGet 基準不會自動更新本機已安裝的執行階段。
+
 InputWeave 目前支援一般 .NET Framework 與 .NET Windows 應用程式。`net8.0` 與 `net10.0` 已實際跑過 `dotnet publish -p:PublishAot=true` 端對端驗證（獨立探測專案 + 實體硬體，詳見 README「支援範圍」段落）；不宣告 single-file 發佈相容性。
 
 InputWeave 目前採取純受控載入器，預設對齊 Microsoft C++ 載入器的執行階段選擇行為。載入候選來源如下：

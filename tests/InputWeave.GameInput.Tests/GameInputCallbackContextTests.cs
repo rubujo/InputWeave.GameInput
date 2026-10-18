@@ -9,13 +9,13 @@ public sealed class GameInputCallbackContextTests
     [TestMethod]
     public void DeactivateDropsHandler()
     {
-        GameInputClient.DeviceCallbackContext context = new(static (_, _, _, _) => { });
+        GameInputClient.DeviceEventCallbackContext context = new(static (_, _) => { });
         Assert.IsTrue(context.TryGetHandler(out _));
 
         context.Deactivate();
 
         Assert.IsFalse(context.IsActive);
-        Assert.IsFalse(context.TryGetHandler(out GameInputDeviceHandler? handler));
+        Assert.IsFalse(context.TryGetHandler(out GameInputDeviceEventHandler? handler));
         Assert.IsNull(handler);
     }
 

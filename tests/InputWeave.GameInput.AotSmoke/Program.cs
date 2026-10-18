@@ -24,20 +24,23 @@ if (!available)
 
 const GameInputKind kinds = GameInputKind.GameInputKindGamepad | GameInputKind.GameInputKindKeyboard | GameInputKind.GameInputKindMouse;
 
-// 必須是處理序內第一個 client：GameInput 會在根物件第一次建立後約一秒內，把已連線裝置當成剛連線回報；
-// Create 應先等這段探索完成，之後等待裝置事件時不應被原本就已連線的裝置完成。
+// API 4 的新註冊會非同步回播既有裝置；直接驗證這條原生事件路徑。
 using (GameInputDeviceManager firstManager = GameInputDeviceManager.Create())
 {
-    using CancellationTokenSource timeout = new(TimeSpan.FromSeconds(1.5));
+    using CancellationTokenSource timeout = new(TimeSpan.FromSeconds(3));
     try
     {
-        GameInputDeviceManagerEvent unexpected = await firstManager.WaitForDeviceEventAsync(timeout.Token);
-        Console.Error.WriteLine($"建立後立即等待裝置事件卻被既有裝置完成：{unexpected.Device.DisplayName}（{unexpected.PreviousStatus} -> {unexpected.CurrentStatus}）");
-        return 1;
+        GameInputDeviceManagerEvent initial = await firstManager.WaitForDeviceEventAsync(timeout.Token);
+        if (initial.DeviceEvent != GameInputDeviceEvent.GameInputDeviceEventConnected)
+        {
+            Console.Error.WriteLine($"預期初始 Connected 事件，實際收到 {initial.DeviceEvent}");
+            return 1;
+        }
+        Console.WriteLine($"API 4 初始裝置事件：{initial.Device.DisplayName} / {initial.DeviceEvent}");
     }
     catch (OperationCanceledException)
     {
-        Console.WriteLine("建立後立即等待裝置事件：1.5 秒內沒有被既有裝置完成");
+        Console.WriteLine("探索時間窗內沒有收到裝置事件；環境可能沒有連線裝置。");
     }
 }
 
@@ -61,7 +64,7 @@ using (GameInputClient client = GameInputClient.Create())
     }
 
     _ = client.TryGetCurrentGamepad(out GamepadReadingSnapshot gamepad);
-    Console.WriteLine($"目前 Gamepad 按鈕：{gamepad.State.Buttons}");
+    Console.WriteLine($"API {GameInputConstants.ApiVersion}；目前 Gamepad 按鈕：{gamepad.State.Buttons}");
 }
 
 ServiceCollection services = new();

@@ -8,16 +8,9 @@ namespace InputWeave.GameInput;
 /// A GameInput device wrapper.
 /// GameInput 裝置包裝。
 /// </summary>
-public sealed class GameInputDevice : IDisposable
+public sealed partial class GameInputDevice : IDisposable
 {
     private readonly GameInputComHandle _handle;
-    private GameInputDeviceInfoSnapshot? _cachedInfoSnapshot;
-
-#if NET9_0_OR_GREATER
-    private readonly System.Threading.Lock _cacheSyncRoot = new();
-#else
-    private readonly object _cacheSyncRoot = new();
-#endif
 
     internal GameInputDevice(IGameInputDevice native)
     {
@@ -35,41 +28,6 @@ public sealed class GameInputDevice : IDisposable
     }
 
     /// <summary>
-    /// The current device status.
-    /// 目前裝置狀態。
-    /// </summary>
-    public GameInputDeviceStatus Status
-    {
-        get
-        {
-            using ComLease<IGameInputDevice> call = EnterNative();
-            return call.Native.GetDeviceStatus();
-        }
-    }
-
-    /// <summary>
-    /// Gets the device information.
-    /// 取得裝置資訊。
-    /// </summary>
-    /// <remarks>
-    /// The string and array fields inside the returned structure (such as <see cref="GameInputDeviceInfo.DisplayName"/> and
-    /// <see cref="GameInputDeviceInfo.PnpPath"/>) are pointers into native memory whose lifetime is bound to the underlying COM
-    /// object of this <see cref="GameInputDevice"/>. Accessing those pointers after the device is disposed causes undefined
-    /// behavior (for example <see cref="AccessViolationException"/>). In typical scenarios use
-    /// <see cref="GetDeviceInfoSnapshot"/>, which holds no native pointers.
-    /// 傳回結構內的字串與陣列欄位（例如 <see cref="GameInputDeviceInfo.DisplayName"/>、
-    /// <see cref="GameInputDeviceInfo.PnpPath"/>）是指向原生記憶體的指標，其生命週期綁定於這個
-    /// <see cref="GameInputDevice"/> 的底層 COM 物件。裝置被 <see cref="Dispose"/> 後再存取這些指標會導致未定義行為
-    /// （例如 <see cref="AccessViolationException"/>）。一般情境應改用不持有原生指標的
-    /// <see cref="GetDeviceInfoSnapshot"/>。
-    /// </remarks>
-    /// <returns>The native device information structure. 原生裝置資訊結構。</returns>
-    public GameInputDeviceInfo GetDeviceInfo()
-    {
-        return ReadDeviceInfo(static info => info);
-    }
-
-    /// <summary>
     /// Gets the device display name.
     /// 取得裝置顯示名稱。
     /// </summary>
@@ -77,7 +35,8 @@ public sealed class GameInputDevice : IDisposable
     /// <exception cref="InvalidOperationException">The string length reported by the native side exceeds the internal limit, which is treated as an anomalous device or driver report. 原生回報的字串長度超過內部上限，視為裝置或驅動程式回報異常。</exception>
     public string? GetDisplayName()
     {
-        return ReadDeviceInfo(static info => NativeUtf8String.FromNullTerminated(info.DisplayName));
+        using ComLease<IGameInputDevice> call = EnterNative();
+        return ReadString(call.Native.GetDisplayName);
     }
 
     /// <summary>
@@ -88,31 +47,20 @@ public sealed class GameInputDevice : IDisposable
     /// <exception cref="InvalidOperationException">The string length reported by the native side exceeds the internal limit, which is treated as an anomalous device or driver report. 原生回報的字串長度超過內部上限，視為裝置或驅動程式回報異常。</exception>
     public string? GetPnpPath()
     {
-        return ReadDeviceInfo(static info => NativeUtf8String.FromNullTerminated(info.PnpPath));
+        using ComLease<IGameInputDevice> call = EnterNative();
+        return ReadString(call.Native.GetPnpPath);
     }
 
     /// <summary>
     /// Gets a device information snapshot that holds no native pointers.
     /// 取得不持有原生指標的裝置資訊快照。
     /// </summary>
-    /// <remarks>
-    /// Device capabilities (such as supported input kinds and rumble motors) are fixed for the lifetime of the device, so this
-    /// method caches the result on the same <see cref="GameInputDevice"/> instance to avoid repeated full native marshaling.
-    /// 裝置能力（例如支援的輸入種類、rumble 馬達）在裝置存續期間為固定值，此方法會在同一個
-    /// <see cref="GameInputDevice"/> 執行個體上快取結果，避免重複的完整原生 marshal。
-    /// </remarks>
+    /// <remarks>A fresh copy is obtained on every call because API 4 capabilities may change. Every native getter runs under one COM lease. API 4 能力可能異動，因此每次呼叫都建立新複本。所有原生 getter 都在同一個 COM 租約內執行。</remarks>
     /// <returns>The device information snapshot that holds no native pointers. 不持有原生指標的裝置資訊快照。</returns>
     public GameInputDeviceInfoSnapshot GetDeviceInfoSnapshot()
     {
-        if (_cachedInfoSnapshot is { } cached)
-        {
-            return cached;
-        }
-
-        lock (_cacheSyncRoot)
-        {
-            return _cachedInfoSnapshot ??= ReadDeviceInfo(GameInputDeviceInfoSnapshot.FromNative);
-        }
+        using ComLease<IGameInputDevice> call = EnterNative();
+        return ReadSnapshot(call.Native);
     }
 
     /// <summary>
@@ -555,25 +503,6 @@ public sealed class GameInputDevice : IDisposable
         GC.SuppressFinalize(this);
     }
 
-    /// <summary>
-    /// Reads the native device information and runs <paramref name="read"/> while the lease is still held, because the pointers
-    /// inside <see cref="GameInputDeviceInfo"/> are only valid while the underlying COM object is alive.
-    /// 讀取原生裝置資訊，並在租約仍持有期間執行 <paramref name="read"/>；<see cref="GameInputDeviceInfo"/> 內的指標
-    /// 只在底層 COM 物件存活期間有效。
-    /// </summary>
-    private T ReadDeviceInfo<T>(Func<GameInputDeviceInfo, T> read)
-    {
-        using ComLease<IGameInputDevice> call = EnterNative();
-        int hResult = call.Native.GetDeviceInfo(out IntPtr info);
-        GameInputException.ThrowIfFailed(hResult);
-        if (info == IntPtr.Zero)
-        {
-            // 原生端回報成功卻沒有提供資訊指標時，以 E_POINTER 表示，而不是讓封送拋出非預期的 ArgumentNullException。
-            throw new GameInputException(unchecked((int)0x80004003));
-        }
-
-        return read(Marshal.PtrToStructure<GameInputDeviceInfo>(info));
-    }
     internal ComLease<IGameInputDevice> EnterNative()
     {
         return _handle.Acquire<IGameInputDevice>(nameof(GameInputDevice));

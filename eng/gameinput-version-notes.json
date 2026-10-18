@@ -8,5 +8,15 @@
     "修正 Xbox 輸入裝置缺少顯示名稱的問題。",
     "修正部分 Windows.Gaming.Input 遊戲收到重複 DualSense Edge 輸入的問題。",
     "包含其他穩定性與效能改善。"
+  ],
+  "4.0": [
+    "新增裝置燈光、觸控裝置與 Nintendo Switch Pro 控制器支援。",
+    "新增查詢裝置 XInput 索引的支援，以及軸、主要／次要開火與背鍵標籤欄位。",
+    "GameInputArcadeStickInfo 新增 LSB／RSB 按鈕旗標與對應標籤。",
+    "NuGet 套件新增 Windows 與 Xbox 的並存部署二進位檔，並提供有限的 x86 架構支援。",
+    "將多種 IGameInputDevice 回呼整併為單一事件通知，並以 IGameInputDevice getter 取代 GameInputDeviceInfo 與相關結構。",
+    "改善遠端存取應用程式的裝置支援與 HID 裝置震動支援，並包含穩定性與效能改善。",
+    "包裝程式庫已遷移至 API 4，使用 native/include/GameInput.h 主標頭並更新裝置 getter、統一事件、燈光、觸控與功能報告 API。",
+    "已交叉核對 GitHub 最新 v3.3.195.0 Release Notes；其中背鍵、DualSense 陀螺儀、PNP 容器分組、ARM 支援、Elite 重複裝置修正、終端機控制器支援與 CFG 改善均屬既有歷史異動，並非 4.0 新增功能。"
   ]
 }
