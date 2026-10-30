@@ -51,6 +51,8 @@
 - 禁止一行提交；主旨後必須空一行，並撰寫至少一段內文說明變更內容與驗證重點。
 - 主旨使用祈使或描述式短句，不加句號；內文可使用段落或條列。
 - 若提交包含破壞性變更，必須在內文以 `BREAKING CHANGE:` 段落明確說明影響與遷移方式。
+- 嚴禁終止或重啟 GnuPG 處理序：Agent 禁止執行任何會終止或重啟 `gpg-agent`、`scdaemon` 或 `pinentry` 的指令（如 `gpgconf --kill`、`Stop-Process -Name gpg*` 等）。Windows 環境下 `gpg-agent` 必須維持由使用者於互動式終端機啟動，以確保 Pinentry GUI 密碼輸入視窗能正常於桌面顯示；若由 Agent 於背景終止或啟動，將導致 Pinentry 視窗隱形而永久卡住。若遇 GPG 未就緒，Agent 應提示使用者於其互動端重啟，不可代為執行。
+- 不可修改、覆寫或壓制使用者的 GPG 與 Git 簽章設定（如 `commit.gpgsign`、`tag.gpgsign`、`user.signingkey` 等）。
 
 ## 文字、編碼與腳本
 
