@@ -1,6 +1,6 @@
 # API 4 遷移
 
-目前基準為 Microsoft.GameInput 4.0.300 / API 4，支援 net48、net8.0、net10.0。這次變更會破壞 API 3 呼叫端相容性，不保留 v3 COM 投影、舊狀態列舉、列舉模式或裝置資訊指標容器。
+目前基準為 Microsoft.GameInput 4.0.306 / API 4，支援 net48、net8.0、net10.0。這次變更會破壞 API 3 呼叫端相容性，不保留 v3 COM 投影、舊狀態列舉、列舉模式或裝置資訊指標容器。
 
 | API 3 使用方式 | API 4 替代方式 |
 | --- | --- |

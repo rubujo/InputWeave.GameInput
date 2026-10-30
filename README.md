@@ -15,7 +15,7 @@
 - 套件版本：`0.0.1`
 - 發佈標籤：`v0.0.1`
 - 目標框架：`net48;net8.0;net10.0`
-- GameInput 基準：`Microsoft.GameInput` `4.0.300`，包裝 API 版本 `4`（使用官方 `native/include/GameInput.h` 主標頭）
+- GameInput 基準：`Microsoft.GameInput` `4.0.306`，包裝 API 版本 `4`（使用官方 `native/include/GameInput.h` 主標頭）
 - API 4 遷移與破壞性變更：[docs/gameinput-api4-migration.md](docs/gameinput-api4-migration.md)
 - API 4 驗證紀錄：[docs/gameinput-api4-validation.md](docs/gameinput-api4-validation.md)
 - DualSense helper 評估：[docs/gameinput-dualsense-helper.md](docs/gameinput-dualsense-helper.md)

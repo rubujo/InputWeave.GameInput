@@ -18,7 +18,7 @@
 
 ## GameInput 維護邊界
 
-- 目前基準是 `Microsoft.GameInput` `4.0.300`，API 版本 `4`。
+- 目前基準是 `Microsoft.GameInput` `4.0.306`，API 版本 `4`。
 - 使用官方 `native/include/GameInput.h` 的 API 4 主標頭；不保留 API 3 原生介面、舊狀態列舉或指標容器。一般套件追版不自動切換 API；明確遷移時使用更新腳本的 `-ApiVersion`。
 - NuGet 相依套件使用最新穩定版本，不自動採用預覽版；GitHub Release tag 與 NuGet 版本不得直接比較大小。
 - API 4 裝置回呼為非同步派送，沒有原生同步列舉完成訊號。裝置探索必須明確記載收集時間窗；事件包含 `GameInputDeviceEvent`，不得虛構舊版前後狀態。

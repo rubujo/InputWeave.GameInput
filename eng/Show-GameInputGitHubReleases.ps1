@@ -55,7 +55,7 @@ if ($MarkReviewed)
     }
 
     $json = $tracking | ConvertTo-Json -Depth 5
-    Write-Utf8NoBomFile -Path $trackingPath -Content $json -NewLine CRLF
+    Write-Utf8NoBomFile -Path $trackingPath -Content ($json + [Environment]::NewLine) -NewLine CRLF
 
     Write-Information "已將 GitHub Release 核對紀錄更新為 $latestTag（$reviewedAt）。" -InformationAction Continue
     exit 0
