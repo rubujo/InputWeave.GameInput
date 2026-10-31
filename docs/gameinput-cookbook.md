@@ -44,6 +44,72 @@ for (int frame = 0; frame < 600; frame++)
 }
 ```
 
+> [!WARNING]
+> **不得在輪詢期間或持有鎖時同步呼叫 `EnumerateDevices`／`RefreshDevices`**：
+> API 4 移除了同步裝置狀態列舉，`EnumerateDevices` 與 `RefreshDevices` 內部包含 1.25 秒的有界探索時間窗（直接執行 `Thread.Sleep`）。若在 60Hz/120Hz 實時輪詢迴圈內或持有控制器保護鎖（如 `_deviceLock`）時同步呼叫，將造成整個輪詢停頓至少 1.25 秒，導致既有手把被凍結且按鍵事件遺失。需要支援熱插拔時，請使用下方的「熱插拔安全的手把輪詢迴圈」模式。
+
+## 熱插拔安全的手把輪詢迴圈
+
+在實際遊戲或應用程式中，手把可能在執行期間動態插拔。這個範例示範如何在啟動時建立初始快照，後續透過 `DeviceChanged` 事件在背景非同步更新作用中手把參考，並以原子操作替換，完全不阻塞 60Hz 輪詢迴圈：
+
+```csharp
+using System;
+using System.Threading;
+using System.Threading.Tasks;
+using InputWeave.GameInput;
+using InputWeave.GameInput.Interop;
+
+using GameInputDeviceManager manager = GameInputDeviceManager.Create();
+
+// 1. 於啟動時初始化快取（耗時 1.25 秒有界探索，此時遊戲尚未進入實時輪詢）
+manager.RefreshDevices();
+
+// 2. 以原子方式保存目前作用中的手把參考
+GameInputDevice? activeGamepad = null;
+if (manager.TryGetFirstGamepad(out GameInputDevice? initialGamepad, out GameInputDeviceInfoSnapshot initialSnapshot))
+{
+    activeGamepad = initialGamepad;
+}
+
+// 3. 訂閱裝置變更事件：收到插拔通知時，在背景執行緒非同步重新整理，絕不卡住輪詢執行緒
+manager.DeviceChanged += (sender, e) =>
+{
+    if (e.DeviceEvent is GameInputDeviceEvent.GameInputDeviceEventConnected or GameInputDeviceEvent.GameInputDeviceEventDisconnected)
+    {
+        _ = Task.Run(async () =>
+        {
+            await manager.RefreshDevicesAsync();
+            if (manager.TryGetFirstGamepad(out GameInputDevice? newGamepad, out GameInputDeviceInfoSnapshot newSnapshot))
+            {
+                Interlocked.Exchange(ref activeGamepad, newGamepad);
+            }
+            else
+            {
+                Interlocked.Exchange(ref activeGamepad, null);
+            }
+        });
+    }
+};
+
+// 4. 實時輪詢迴圈：無鎖／零等待存取局部引用，維持 60Hz/120Hz 不卡頓
+GamepadReadingSnapshot previous = default;
+for (int frame = 0; frame < 60; frame++)
+{
+    GameInputDevice? current = Volatile.Read(ref activeGamepad);
+    if (current is not null && manager.TryGetCurrentGamepad(current, out GamepadReadingSnapshot gamepad))
+    {
+        if (gamepad.WasButtonPressed(previous, GameInputGamepadButtons.GameInputGamepadA))
+        {
+            Console.WriteLine("A 鍵剛按下。");
+        }
+
+        previous = gamepad;
+    }
+
+    Thread.Sleep(16);
+}
+```
+
 ## 多輸入輪詢
 
 `TryGetCurrent*` 系列在有資料時回傳 `true` 並直接輸出快照，沒有資料時回傳 `false`，不需要把 `GameInputReading` 或 COM 物件保存到下一個 frame。應用程式可以依自己的 frame loop 只取需要的 snapshot。若偏好可為 null 的回傳值，也可以使用對應的 `GetCurrent*`，但讀取成員前要先經過 `.Value`。

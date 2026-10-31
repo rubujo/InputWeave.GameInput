@@ -146,6 +146,15 @@ public sealed class GameInputDeviceManager : IDisposable
     /// Refreshes the device cache.
     /// 重新整理裝置快取。
     /// </summary>
+    /// <remarks>
+    /// Collects asynchronous API 4 notifications during a 1.25-second discovery window. Do not call synchronously in real-time
+    /// polling loops or while holding locks protecting controller state, as the 1.25-second sleep stalls polling and causes missed
+    /// inputs; use <see cref="DeviceChanged"/> events or <see cref="RefreshDevicesAsync(GameInputKind, CancellationToken)"/> in the
+    /// background instead.
+    /// 收集 API 4 非同步通知，時間窗為 1.25 秒。不得在即時輪詢迴圈內或持有控制器保護鎖時同步呼叫，
+    /// 否則 1.25 秒停頓會凍結輪詢並導致輸入遺失；請改用 <see cref="DeviceChanged"/> 事件或於背景呼叫
+    /// <see cref="RefreshDevicesAsync(GameInputKind, CancellationToken)"/>。
+    /// </remarks>
     /// <param name="inputKind">The GameInput input kind to query or filter. 要查詢或篩選的 GameInput 輸入種類。</param>
     /// <returns>The refreshed device information snapshot list. 重新整理後的裝置資訊快照清單。</returns>
     public IReadOnlyList<GameInputDeviceInfoSnapshot> RefreshDevices(GameInputKind inputKind)

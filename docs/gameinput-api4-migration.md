@@ -15,7 +15,7 @@
 
 裝置能力可能異動，GetDeviceInfoSnapshot 每次重新複製 getter 結果，不快取 XInput 索引或鍵盤配置。集合包含 FeatureReports 與 TouchSurfaces，值相等性與雜湊計算會逐一比較內容。
 
-API 4 的 RegisterDeviceCallback 非同步派送初始裝置事件，沒有同步列舉完成訊號。EnumerateDevices / RefreshDevices 是便利探索快照：收集固定的 1.25 秒時間窗；可能晚於時間窗出現的新裝置應透過持續事件訂閱取得。兩次探索不保證相同集合或順序。不得從原生回呼執行緒同步探索裝置；需要時使用背景非同步方法。
+API 4 的 RegisterDeviceCallback 非同步派送初始裝置事件，沒有同步列舉完成訊號。EnumerateDevices / RefreshDevices 是便利探索快照：收集固定的 1.25 秒時間窗（內部執行 Thread.Sleep）；可能晚於時間窗出現的新裝置應透過持續事件訂閱取得。兩次探索不保證相同集合或順序。不得從原生回呼執行緒同步探索裝置，亦嚴禁在即時輪詢迴圈（如 60Hz/120Hz Poll）或持有控制器保護鎖時同步呼叫，否則會凍結輪詢 1.25 秒並導致按鍵事件遺失；需要時請使用背景非同步方法或透過持續註冊的 DeviceChanged 事件驅動更新。
 
 WaitForDeviceEventAsync 直接遵循原生 API 4 事件語意，包含新註冊對既有裝置派送的初始 Connected 通知；不模擬 v3 的 NoEnumeration 模式。需要持續處理連線與中繼資料異動時，應持有一個 RegisterDeviceCallback 註冊並依應用程式需求追蹤裝置 ID。回呼借用裝置僅在處理常式執行期間有效，跨執行緒或延後處理時請複製快照。
 

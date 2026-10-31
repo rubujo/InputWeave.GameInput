@@ -611,7 +611,7 @@ public sealed class GameInputClient : IDisposable
     /// </summary>
     /// <param name="inputKind">The GameInput input kind to query or filter. 要查詢或篩選的 GameInput 輸入種類。</param>
     /// <returns>The list of devices matching the requested input kind. 符合指定輸入種類的裝置清單。</returns>
-    /// <remarks>Collects asynchronous API 4 notifications during a 1.25-second discovery window. This is a bounded discovery snapshot, not an atomic native enumeration. Do not call synchronously from a native callback. 收集 API 4 非同步通知，時間窗為 1.25 秒。這是有界探索快照，並非原生原子列舉。不得在原生回呼內同步呼叫。</remarks>
+    /// <remarks>Collects asynchronous API 4 notifications during a 1.25-second discovery window. This is a bounded discovery snapshot, not an atomic native enumeration. Do not call synchronously from a native callback, within real-time polling loops, or while holding controller state locks. 收集 API 4 非同步通知，時間窗為 1.25 秒。這是有界探索快照，並非原生原子列舉。不得在原生回呼內、即時輪詢迴圈中或持有控制器保護鎖時同步呼叫。</remarks>
     public IReadOnlyList<GameInputDevice> EnumerateDevices(GameInputKind inputKind)
     {
         if (GameInputCallbackThread.IsExecutingCallback)

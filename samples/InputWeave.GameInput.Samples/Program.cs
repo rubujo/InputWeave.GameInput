@@ -14,6 +14,7 @@ string[] knownFlags =
     "--async",
     "--events",
     "--di",
+    "--poll",
     "--help",
     "-h"
 ];
@@ -30,6 +31,7 @@ bool enableMapping = HasFlag("--mapping");
 bool enableAsync = HasFlag("--async");
 bool enableEvents = HasFlag("--events");
 bool enableDi = HasFlag("--di");
+bool enablePoll = HasFlag("--poll");
 
 string? unknownArgument = args.FirstOrDefault(argument => !knownFlags.Any(flag => string.Equals(argument, flag, StringComparison.OrdinalIgnoreCase)));
 
@@ -88,6 +90,11 @@ try
     {
         DemonstrateDependencyInjection();
     }
+
+    if (enablePoll)
+    {
+        DemonstrateNonBlockingGamepadPoll(manager);
+    }
 }
 catch (DllNotFoundException ex)
 {
@@ -121,6 +128,7 @@ static void PrintUsage()
     Console.WriteLine("  dotnet run --project samples/InputWeave.GameInput.Samples -- --async");
     Console.WriteLine("  dotnet run --project samples/InputWeave.GameInput.Samples -- --events");
     Console.WriteLine("  dotnet run --project samples/InputWeave.GameInput.Samples -- --di");
+    Console.WriteLine("  dotnet run --project samples/InputWeave.GameInput.Samples -- --poll");
     Console.WriteLine();
     Console.WriteLine("預設只做唯讀列舉、polling 與 callback 示範。各旗標可疊加使用，示範對應的進階功能：");
     Console.WriteLine("  --rumble        對支援裝置短暫輸出低強度震動。");
@@ -130,6 +138,7 @@ static void PrintUsage()
     Console.WriteLine("  --async         示範 RefreshDevicesAsync/WaitForGamepadAsync 等非同步 API。");
     Console.WriteLine("  --events        示範 DeviceChanged event 與 DeviceChanges/IObservable 訂閱。");
     Console.WriteLine("  --di            示範透過 ServiceCollection 以 DI 註冊並解析 GameInputDeviceManager。");
+    Console.WriteLine("  --poll          示範熱插拔安全、無阻塞手把輪詢迴圈（Non-blocking Hot-plug Polling Loop）。");
 }
 
 static void PrintHeader(bool enableRumble)
@@ -460,6 +469,91 @@ static void DemonstrateDependencyInjection()
     using ServiceProvider provider = services.BuildServiceProvider();
     GameInputDeviceManager resolved = provider.GetRequiredService<GameInputDeviceManager>();
     Console.WriteLine($"已透過 ServiceCollection 解析 GameInputDeviceManager，目前裝置快取數：{resolved.Devices.Count}");
+}
+
+static void DemonstrateNonBlockingGamepadPoll(GameInputDeviceManager manager)
+{
+    WriteSection("熱插拔安全手把輪詢（Non-blocking Hot-plug Polling）");
+    Console.WriteLine("API 4 的 EnumerateDevices 與 RefreshDevices 內部包含 1.25 秒有界探索時間窗（Thread.Sleep）。");
+    Console.WriteLine("本示範展示如何在不阻塞 60Hz 輪詢迴圈的前提下，結合 DeviceChanged 事件安全處理手把動態插拔。");
+
+    GameInputDevice? activeGamepad = null;
+    if (manager.TryGetFirstGamepad(out GameInputDevice? initialGamepad, out GameInputDeviceInfoSnapshot initialSnapshot))
+    {
+        activeGamepad = initialGamepad;
+        Console.WriteLine($"初始作用中手把：{GetDisplayName(initialSnapshot)}");
+    }
+    else
+    {
+        Console.WriteLine("目前無可用手把，等待手把連接...");
+    }
+
+    int refreshCount = 0;
+    EventHandler<GameInputDeviceManagerEvent> onDeviceChanged = (_, e) =>
+    {
+        Console.WriteLine($"[事件] 裝置狀態異動：{e.DeviceEvent} - {GetDisplayName(e.Device)}");
+        if (e.DeviceEvent is GameInputDeviceEvent.GameInputDeviceEventConnected or GameInputDeviceEvent.GameInputDeviceEventDisconnected)
+        {
+            // 關鍵：在背景非同步更新快取，絕對不可在回呼或輪詢執行緒中同步呼叫 RefreshDevices()
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    await manager.RefreshDevicesAsync();
+                    if (manager.TryGetFirstGamepad(out GameInputDevice? newGamepad, out GameInputDeviceInfoSnapshot newSnapshot))
+                    {
+                        GameInputDevice? old = Interlocked.Exchange(ref activeGamepad, newGamepad);
+                        if (!ReferenceEquals(old, newGamepad))
+                        {
+                            Console.WriteLine($"[快取更新] 切換作用中手把：{GetDisplayName(newSnapshot)}");
+                        }
+                    }
+                    else
+                    {
+                        _ = Interlocked.Exchange(ref activeGamepad, null);
+                        Console.WriteLine("[快取更新] 目前已無可用手把。");
+                    }
+
+                    _ = Interlocked.Increment(ref refreshCount);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"[快取更新失敗] {ex.Message}");
+                }
+            });
+        }
+    };
+
+    manager.DeviceChanged += onDeviceChanged;
+    try
+    {
+        Console.WriteLine("開始執行 3 秒輪詢示範（模擬 60Hz 遊戲迴圈，期間可插拔手把測試）...");
+        GamepadReadingSnapshot previous = default;
+        Stopwatch stopwatch = Stopwatch.StartNew();
+        int frameCount = 0;
+        while (stopwatch.ElapsedMilliseconds < 3000)
+        {
+            GameInputDevice? target = Volatile.Read(ref activeGamepad);
+            if (target is not null && manager.TryGetCurrentGamepad(target, out GamepadReadingSnapshot gamepad))
+            {
+                if (gamepad.WasButtonPressed(previous, GameInputGamepadButtons.GameInputGamepadA))
+                {
+                    Console.WriteLine($"[Frame {frameCount}] 按下 A 鍵！");
+                }
+
+                previous = gamepad;
+            }
+
+            frameCount++;
+            Thread.Sleep(16);
+        }
+
+        Console.WriteLine($"輪詢結束：共執行 {frameCount} frames，期間觸發 {refreshCount} 次背景快取更新。");
+    }
+    finally
+    {
+        manager.DeviceChanged -= onDeviceChanged;
+    }
 }
 
 static string GetDisplayName(GameInputDeviceInfoSnapshot? snapshot)
